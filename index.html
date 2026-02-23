@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion FOI - Sécurisé</title>
+    <title>Gestion FOI - Modèles & Historique</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
             --text1:#f1f5f9; --text2:#cbd5e1; 
-            --success:#059669; --danger:#dc2626;
-            --polcant-blue: #334b7a; /* Bleu plus fade / sourd */
-            --apm-gray: #334155; --asp-light: #94a3b8;
-            --flag-red: #e11d48; --flag-yellow: #fbbf24;
+            --success:#059669; --danger:#dc2626; --archive:#64748b;
+            --polcant-blue: #334b7a; --apm-gray: #334155; --asp-light: #94a3b8;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: sans-serif; background:var(--bg1); color:var(--text1); padding: 10px 20px; }
@@ -19,47 +17,36 @@
         
         header, .mini-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
         header { background:var(--bg2); padding:15px 20px; border-radius:12px; border: 1px solid var(--bg3); }
-        .mini-header { padding: 10px 0; border-bottom: 1px solid var(--bg3); }
+        
+        .section-title { margin: 30px 0 15px 0; font-size: 1.2rem; border-left: 4px solid var(--primary); padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
 
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:15px; }
 
-        /* CARDS */
-        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; overflow: hidden; display:flex; flex-direction:column; min-height: 160px; }
-        .card:hover { border-color: var(--primary); }
+        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 150px; }
+        .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
-        .card.style-apm { background: var(--apm-gray); padding-top: 25px; }
-        .card.style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background: var(--flag-yellow); }
-        .card.style-apm::after { content:''; position:absolute; top:3px; left:0; width:100%; height:3px; background: var(--flag-red); }
-        
+        /* Styles spécifiques */
+        .card.style-apm { background: var(--apm-gray); border-top: 4px solid var(--flag-yellow); }
         .card.style-polcant { background: var(--polcant-blue); }
         .card.style-asp { background: var(--asp-light); color: #0f172a; }
         .card.style-asp h3, .card.style-asp p, .card.style-asp small { color: #0f172a; }
-
-        .alert-dot { position: absolute; top: 10px; right: 40px; background: var(--danger); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
-
-        .prog-bg { background: rgba(0,0,0,0.2); height: 8px; border-radius: 4px; margin: 10px 0; overflow: hidden; }
-        .prog-fill { height: 100%; transition: 0.6s; background: linear-gradient(90deg, #dc2626 0%, #fbbf24 50%, #059669 100%); background-size: 400px; }
-
-        .btn { background:var(--primary); color: white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold; }
-        .btn-secondary { background:var(--bg3); color:var(--text1); padding: 6px 12px; font-size: 0.8rem; }
-        .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; padding: 5px; font-size: 1rem; }
-        .card.style-asp .btn-icon { color: #1e293b; }
-
-        .card-actions { margin-top: auto; display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; }
-        .card.style-asp .card-actions { border-top-color: rgba(0,0,0,0.1); }
-
-        /* TACHES */
-        .task-item { background: var(--bg2); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--bg3); }
-        .task-header { padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; border-left: 6px solid transparent; }
-        .task-header.todo { border-left-color: var(--muted); }
-        .task-header.done { border-left-color: var(--success); }
-        .task-header.late { border-left-color: var(--danger); background: rgba(220, 38, 38, 0.1); }
         
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal-content { background: var(--bg2); padding: 20px; border-radius: 12px; width: 95%; max-width: 500px; border: 1px solid var(--bg3); }
-        input, select, textarea { width:100%; margin: 5px 0 12px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
+        /* Badge Modèle */
+        .template-badge { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .prog-bg { background: rgba(0,0,0,0.2); height: 6px; border-radius: 3px; margin: 10px 0; overflow: hidden; }
+        .prog-fill { height: 100%; transition: 0.6s; background: var(--success); }
+
+        .btn { background:var(--primary); color: white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.85rem; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; margin-top: 10px; }
+        .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; padding: 5px; }
+
+        .card-actions { margin-top: auto; display: flex; gap: 8px; padding-top: 10px; }
         .hidden { display:none !important; }
+
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 500px; border: 1px solid var(--bg3); }
+        input, select { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
     </style>
 </head>
 
@@ -68,28 +55,29 @@
     <div id="formationsView">
         <header>
             <h1>📋 Gestion FOI</h1>
-            <button class="btn" onclick="openModal('formationModal')">+ Formation</button>
+            <button class="btn" onclick="openModal('formationModal')">+ Nouveau Modèle/Session</button>
         </header>
-        <div class="grid" id="formationsGrid"></div>
+
+        <div class="section-title">🚀 Sessions Actives</div>
+        <div class="grid" id="activeGrid"></div>
+
+        <div class="section-title">📂 Modèles de Référence</div>
+        <div class="grid" id="templateGrid"></div>
     </div>
 
     <div id="blocsView" class="hidden">
-        <div class="mini-header">
-            <div style="display:flex; align-items:center; gap:15px">
-                <button class="btn btn-secondary" onclick="showView('formationsView')">← Retour</button>
-                <h2 id="formationTitle" style="font-size: 1.1rem; color: var(--primary);"></h2>
-            </div>
+        <div class="mini-header" style="margin-top:20px;">
+            <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
+            <h2 id="formationTitle"></h2>
             <button class="btn" onclick="openModal('blocModal')">+ Bloc</button>
         </div>
         <div class="grid" id="blocsGrid"></div>
     </div>
 
     <div id="tasksView" class="hidden">
-        <div class="mini-header">
-            <div style="display:flex; align-items:center; gap:15px">
-                <button class="btn btn-secondary" onclick="showView('blocsView')">← Retour</button>
-                <div><h2 id="blocTitle" style="font-size: 1.1rem;"></h2><span id="blocInfo" style="font-size: 0.75rem; color: var(--text2);"></span></div>
-            </div>
+        <div class="mini-header" style="margin-top:20px;">
+            <button class="btn" style="background:var(--bg3)" onclick="showView('blocsView')">← Retour</button>
+            <h2 id="blocTitle"></h2>
             <button class="btn" onclick="openModal('taskModal')">+ Tâche</button>
         </div>
         <div id="tasksList"></div>
@@ -98,36 +86,29 @@
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Formation</h3>
-        <label>Nom</label><input id="formName">
-        <label>Corps</label><select id="formType"><option value="pm">APM</option><option value="pc">PolCant</option><option value="asp">ASP</option></select>
-        <div style="display:flex; gap:10px"><div style="flex:1"><label>Début</label><input id="formStart" type="date"></div><div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div></div>
-        <div style="display:flex; gap:10px; margin-top:15px"><button class="btn-secondary" onclick="closeModal('formationModal')" style="flex:1">Annuler</button><button class="btn" onclick="saveFormation()" style="flex:1">Enregistrer</button></div>
-    </div>
-</div>
-
-<div id="blocModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <h3>Bloc</h3>
-        <label>Nom</label><input id="blocName">
-        <label>Date prévue</label><input id="blocDate" type="date">
-        <div style="display:flex; gap:10px"><div style="flex:1"><label>Resp 1</label><input id="resp1" maxlength="3"></div><div style="flex:1"><label>Resp 2</label><input id="resp2" maxlength="3"></div></div>
-        <div style="display:flex; gap:10px; margin-top:15px"><button class="btn-secondary" onclick="closeModal('blocModal')" style="flex:1">Annuler</button><button class="btn" onclick="saveBloc()" style="flex:1">Enregistrer</button></div>
-    </div>
-</div>
-
-<div id="taskModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <h3>Tâche</h3>
-        <label>Titre</label><input id="taskTitle">
-        <label>Responsable</label><input id="taskResp">
-        <label>Description</label><textarea id="taskDesc" rows="3"></textarea>
-        <div style="display:flex; gap:10px">
-            <div style="flex:1"><label>Début (Av.)</label><input id="startVal" type="number" value="1"></div>
-            <div style="flex:1"><label>Fin (Av.)</label><input id="endVal" type="number" value="1"></div>
-            <input type="hidden" id="startUnit" value="weeks"><input type="hidden" id="endUnit" value="weeks">
+        <h3 id="formModalTitle">Configuration Formation</h3>
+        <label>Nom</label><input id="formName" placeholder="Ex: FOI 2026-1">
+        <label>Corps</label>
+        <select id="formType">
+            <option value="pm">APM</option>
+            <option value="pc">PolCant</option>
+            <option value="asp">ASP</option>
+        </select>
+        <label>Type de fiche</label>
+        <select id="formIsTemplate">
+            <option value="false">Session Active (avec dates)</option>
+            <option value="true">Modèle de base (réutilisable)</option>
+        </select>
+        <div id="dateFields">
+            <div style="display:flex; gap:10px">
+                <div style="flex:1"><label>Début</label><input id="formStart" type="date"></div>
+                <div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div>
+            </div>
         </div>
-        <div style="display:flex; gap:10px; margin-top:15px"><button class="btn-secondary" onclick="closeModal('taskModal')" style="flex:1">Annuler</button><button class="btn" onclick="saveTask()" style="flex:1">Enregistrer</button></div>
+        <div style="display:flex; gap:10px; margin-top:15px">
+            <button class="btn" style="background:var(--bg3); flex:1" onclick="closeModal('formationModal')">Annuler</button>
+            <button class="btn" style="flex:1" onclick="saveFormation()">Enregistrer</button>
+        </div>
     </div>
 </div>
 
@@ -146,7 +127,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    let state = { formations: [], blocs: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView' };
+    let state = { formations: [], blocs: [], currentFormationId: null, currentView: 'formationsView' };
 
     onSnapshot(doc(db, "data", "appState"), (docSnap) => {
         if (docSnap.exists()) {
@@ -159,171 +140,98 @@
 
     async function save() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs }); }
 
-    function calculateDate(baseDate, val, unit) {
-        if(!baseDate) return null;
-        let d = new Date(baseDate);
-        d.setDate(d.getDate() - (parseInt(val) * 7));
-        d.setHours(0,0,0,0); return d;
-    }
-
-    function checkLate(tasks, blocDate) {
-        const today = new Date().setHours(0,0,0,0);
-        return tasks.some(t => {
-            const endD = calculateDate(blocDate, t.endVal, t.endUnit);
-            return (t.status !== 'done' && endD && endD < today);
-        });
-    }
-
     function refreshUI() {
-        if(state.currentView === 'formationsView') renderFormations();
-        else if(state.currentView === 'blocsView') renderBlocs();
-        else if(state.currentView === 'tasksView') renderTasks();
+        if(state.currentView === 'formationsView') {
+            renderGrid("activeGrid", state.formations.filter(f => f.isTemplate === false || f.isTemplate === "false"));
+            renderGrid("templateGrid", state.formations.filter(f => f.isTemplate === true || f.isTemplate === "true"));
+        } else if(state.currentView === 'blocsView') renderBlocs();
     }
 
-    window.renderFormations = () => {
-        const grid = document.getElementById("formationsGrid");
-        const sorted = [...state.formations].sort((a,b) => new Date(a.start || 0) - new Date(b.start || 0));
-        grid.innerHTML = sorted.map(f => {
-            const formationBlocs = state.blocs.filter(b => b.formationId === f.id);
-            const allTasks = formationBlocs.flatMap(b => b.tasks);
-            const prog = allTasks.length === 0 ? 0 : Math.round((allTasks.filter(t => t.status === 'done').length / allTasks.length) * 100);
+    window.renderGrid = (containerId, list) => {
+        const grid = document.getElementById(containerId);
+        // Tri chronologique pour les actives
+        const items = containerId === "activeGrid" ? list.sort((a,b) => new Date(a.start) - new Date(b.start)) : list;
+        
+        grid.innerHTML = items.map(f => {
+            const isTpl = f.isTemplate === true || f.isTemplate === "true";
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    ${formationBlocs.some(b => checkLate(b.tasks, b.date)) ? '<div class="alert-dot">!</div>' : ''}
-                    <div style="display:flex; justify-content:space-between"><h3>${f.name}</h3><button class="btn-icon" onclick="editFormation(event, ${f.id})">✏️</button></div>
-                    <small>📅 ${f.start ? new Date(f.start).toLocaleDateString() : '?'} - ${f.end ? new Date(f.end).toLocaleDateString() : '?'}</small>
-                    <div class="prog-bg"><div class="prog-fill" style="width:${prog}%;"></div></div>
+                    ${isTpl ? '<span class="template-badge">Modèle</span>' : ''}
+                    <h3>${f.name}</h3>
+                    <p style="font-size:0.8rem; opacity:0.8">${f.type.toUpperCase()}</p>
+                    ${!isTpl ? `<small>📅 ${new Date(f.start).toLocaleDateString()} - ${new Date(f.end).toLocaleDateString()}</small>` : '<small>Prêt à l\'emploi</small>'}
+                    
                     <div class="card-actions">
-                        <button class="btn-icon" onclick="duplicateFormation(event, ${f.id})" title="Copier">👯</button>
-                        <button class="btn-icon" onclick="deleteFormation(event, ${f.id})" title="Supprimer" style="color:var(--danger)">🗑️</button>
+                        <button class="btn-icon" onclick="deleteFormation(event, ${f.id})">🗑️</button>
+                        ${isTpl ? `<button class="btn-outline" onclick="instantiateTemplate(event, ${f.id})">⚡ Créer Session</button>` : ''}
                     </div>
                 </div>
             `;
         }).join("");
     }
 
-    window.renderBlocs = () => {
-        const grid = document.getElementById("blocsGrid");
-        let blocs = state.blocs.filter(b => b.formationId === state.currentFormationId).sort((a,b) => new Date(a.date) - new Date(b.date));
-        grid.innerHTML = blocs.map(b => {
-            const prog = b.tasks.length === 0 ? 0 : Math.round((b.tasks.filter(t => t.status === 'done').length / b.tasks.length) * 100);
-            return `
-                <div class="card" onclick="enterBloc(${b.id})">
-                    ${checkLate(b.tasks, b.date) ? '<div class="alert-dot">!</div>' : ''}
-                    <div style="display:flex; justify-content:space-between"><h3>${b.name}</h3><button class="btn-icon" onclick="editBloc(event, ${b.id})">✏️</button></div>
-                    <p style="font-size:0.85rem">📅 ${b.date || '?'} | 👥 ${b.r1 || '--'}/${b.r2 || '--'}</p>
-                    <div class="prog-bg"><div class="prog-fill" style="width:${prog}%;"></div></div>
-                    <div class="card-actions">
-                        <button class="btn-icon" onclick="duplicateBloc(event, ${b.id})" title="Copier">👯</button>
-                        <button class="btn-icon" onclick="deleteBloc(event, ${b.id})" title="Supprimer" style="color:var(--danger)">🗑️</button>
-                    </div>
-                </div>
-            `;
-        }).join("");
+    window.saveFormation = () => {
+        const isTpl = document.getElementById("formIsTemplate").value;
+        const data = {
+            id: Date.now(),
+            name: document.getElementById("formName").value,
+            type: document.getElementById("formType").value,
+            isTemplate: isTpl,
+            start: isTpl === "true" ? "" : document.getElementById("formStart").value,
+            end: isTpl === "true" ? "" : document.getElementById("formEnd").value
+        };
+        state.formations.push(data);
+        save();
+        closeModal('formationModal');
     }
 
-    window.renderTasks = () => {
-        const list = document.getElementById("tasksList");
-        const b = state.blocs.find(b => b.id === state.currentBlocId);
-        if(!b) return;
-        list.innerHTML = b.tasks.map(t => {
-            const endD = calculateDate(b.date, t.endVal, t.endUnit);
-            let sClass = t.status;
-            if(t.status !== 'done' && endD && endD < new Date().setHours(0,0,0,0)) sClass = 'late';
-            return `
-                <div class="task-item">
-                    <div class="task-header ${sClass}" onclick="toggleTask(${t.id})">
-                        <div><strong>${t.title}</strong><br><small>Échéance: ${endD ? endD.toLocaleDateString() : '?'}</small></div>
-                        <div style="display:flex; gap:10px">
-                            <button class="btn-secondary" onclick="cycleStatus(event, ${t.id})">${t.status}</button>
-                            <button class="btn-icon" onclick="deleteTask(event, ${t.id})">🗑️</button>
-                        </div>
-                    </div>
-                    <div class="task-body" id="body-${t.id}" style="display:none; padding:15px; border-top:1px solid var(--bg3)">${t.desc || '-'}</div>
-                </div>
-            `;
-        }).join("");
-    }
-
-    // --- ACTIONS AVEC CONFIRMATION ---
-    window.duplicateFormation = (e, id) => {
+    window.instantiateTemplate = (e, id) => {
         e.stopPropagation();
-        const f = state.formations.find(x => x.id === id);
-        if(confirm(`Voulez-vous dupliquer la formation "${f.name}" ?`)) {
-            const newFid = Date.now();
-            state.formations.push({ ...f, id: newFid, name: f.name + " (Copie)" });
+        const tpl = state.formations.find(f => f.id === id);
+        const newName = prompt("Nom de la nouvelle session ?", tpl.name + " - " + new Date().getFullYear());
+        const newDate = prompt("Date de début (AAAA-MM-JJ) ?");
+        
+        if(newName && newDate) {
+            const newId = Date.now();
+            // Création formation
+            state.formations.push({ ...tpl, id: newId, name: newName, isTemplate: false, start: newDate, end: "" });
+            // Duplication blocs
             state.blocs.filter(b => b.formationId === id).forEach(b => {
-                state.blocs.push({ ...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({ ...t, id: Math.random(), status: 'todo' })) });
+                state.blocs.push({ ...b, id: Math.random(), formationId: newId, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
             });
             save();
         }
-    };
+    }
 
     window.deleteFormation = (e, id) => {
         e.stopPropagation();
-        if(confirm("Supprimer définitivement cette formation et tous ses blocs ?")) {
+        if(confirm("Supprimer définitivement ?")) {
             state.formations = state.formations.filter(f => f.id !== id);
             state.blocs = state.blocs.filter(b => b.formationId !== id);
             save();
         }
-    };
+    }
 
-    window.duplicateBloc = (e, id) => {
-        e.stopPropagation();
-        const b = state.blocs.find(x => x.id === id);
-        if(confirm(`Dupliquer le bloc "${b.name}" ?`)) {
-            state.blocs.push({ ...b, id: Date.now(), name: b.name + " (Copie)", tasks: b.tasks.map(t => ({ ...t, id: Math.random(), status: 'todo' })) });
-            save();
-        }
+    // Navigation de base
+    window.showView = (id) => { 
+        state.currentView = id; 
+        document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); 
+        document.getElementById(id).classList.remove('hidden'); 
+        refreshUI(); 
     };
-
-    window.deleteBloc = (e, id) => {
-        e.stopPropagation();
-        if(confirm("Supprimer ce bloc ?")) {
-            state.blocs = state.blocs.filter(b => b.id !== id);
-            save();
-        }
+    window.enterFormation = (id) => { 
+        state.currentFormationId = id; 
+        const f = state.formations.find(x => x.id === id);
+        document.getElementById("formationTitle").textContent = f.name;
+        showView("blocsView"); 
     };
-
-    window.deleteTask = (e, id) => {
-        e.stopPropagation();
-        if(confirm("Supprimer cette tâche ?")) {
-            const b = state.blocs.find(x => x.id === state.currentBlocId);
-            b.tasks = b.tasks.filter(t => t.id !== id);
-            save();
-        }
-    };
-
-    // --- LOGIQUE COMMUNE ---
-    window.saveFormation = () => {
-        const data = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
-        if(state.editingId) state.formations[state.formations.findIndex(f => f.id === state.editingId)] = data;
-        else state.formations.push(data);
-        save(); closeModal('formationModal');
-    };
-    window.saveBloc = () => {
-        const data = { id: state.editingId || Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, r1: document.getElementById("resp1").value, r2: document.getElementById("resp2").value, tasks: [] };
-        if(state.editingId) { let b = state.blocs.find(x => x.id === state.editingId); b.name = data.name; b.date = data.date; b.r1 = data.r1; b.r2 = data.r2; }
-        else state.blocs.push(data);
-        save(); closeModal('blocModal');
-    };
-    window.saveTask = () => {
-        const b = state.blocs.find(x => x.id === state.currentBlocId);
-        const t = { id: state.editingId || Date.now(), title: document.getElementById("taskTitle").value, resp: document.getElementById("taskResp").value, desc: document.getElementById("taskDesc").value, startVal: document.getElementById("startVal").value, startUnit: 'weeks', endVal: document.getElementById("endVal").value, endUnit: 'weeks', status: 'todo' };
-        if(state.editingId) { let idx = b.tasks.findIndex(x => x.id === state.editingId); t.status = b.tasks[idx].status; b.tasks[idx] = t; }
-        else b.tasks.push(t);
-        save(); closeModal('taskModal');
-    };
-
-    window.editFormation = (e, id) => { e.stopPropagation(); state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; document.getElementById("formStart").value = f.start || ""; document.getElementById("formEnd").value = f.end || ""; openModal('formationModal'); };
-    window.editBloc = (e, id) => { e.stopPropagation(); state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date; document.getElementById("resp1").value = b.r1; document.getElementById("resp2").value = b.r2; openModal('blocModal'); };
-    window.cycleStatus = (e, id) => { e.stopPropagation(); const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); const seq = ['todo', 'progress', 'done']; t.status = seq[(seq.indexOf(t.status) + 1) % 3]; save(); };
-    window.toggleTask = (id) => { let el = document.getElementById(`body-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; };
-    window.showView = (id) => { state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
-    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView("blocsView"); };
-    window.enterBloc = (id) => { state.currentBlocId = id; let b = state.blocs.find(x => x.id === id); document.getElementById("blocTitle").textContent = b.name; document.getElementById("blocInfo").textContent = `${b.date} | ${b.r1}/${b.r2}`; showView("tasksView"); };
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; document.querySelectorAll(`#${id} input`).forEach(i => i.value = ""); };
+    window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
+    
+    // Gestion affichage dynamique modal
+    document.getElementById("formIsTemplate")?.addEventListener('change', (e) => {
+        document.getElementById("dateFields").style.display = e.target.value === "true" ? "none" : "block";
+    });
 </script>
 </body>
 </html>
