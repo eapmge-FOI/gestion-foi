@@ -2,11 +2,11 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Pilotage Intégral</title>
+    <title>Gestion FOI - Pilotage avec Alertes</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
-            --text1:#f1f5f9; --text2:#cbd5e1; --success:#059669; --danger:#dc2626;
+            --text1:#f1f5f9; --text2:#cbd5e1; --success:#059669; --danger:#e11d48;
             --polcant-blue: #334b7a; --apm-gray: #334155; --asp-light: #94a3b8;
             --flag-red: #e11d48; --flag-yellow: #fbbf24;
         }
@@ -17,26 +17,32 @@
         header, .mini-header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:15px; }
 
-        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 160px; }
-        .card:hover { border-color: var(--primary); }
+        /* CARTES PAR CORPS */
+        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 170px; transition: 0.2s; }
+        .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
-        /* Styles Corps */
-        .style-apm { border-top: 5px solid var(--flag-yellow); }
-        .style-polcant { border-top: 5px solid var(--polcant-blue); }
-        .style-asp { border-top: 5px solid var(--asp-light); }
+        .style-apm { background: var(--apm-gray) !important; border-top: 4px solid var(--flag-yellow); }
+        .style-apm::after { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background: var(--flag-red); transform: translateY(4px); }
+        .style-polcant { background: var(--polcant-blue) !important; }
+        .style-asp { background: var(--asp-light) !important; color: #0f172a; }
+        .style-asp h3, .style-asp p, .style-asp small, .style-asp .date-info { color: #0f172a !important; }
 
-        .prog-container { background: rgba(0,0,0,0.3); height: 8px; border-radius: 4px; margin: 12px 0; overflow: hidden; }
+        /* ALERTES RETARD */
+        .alert-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; animation: pulse 1.5s infinite; margin-left: 10px; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .task-overdue { border-left: 4px solid var(--danger) !important; background: rgba(225, 29, 72, 0.1) !important; }
+
+        .prog-container { background: rgba(0,0,0,0.2); height: 8px; border-radius: 4px; margin: 12px 0; overflow: hidden; }
         .prog-bar { height: 100%; background: var(--success); transition: width 0.4s; }
 
+        .date-info { font-size: 0.8rem; margin-top: 5px; opacity: 0.9; font-weight: 500; }
+        .card-actions { margin-top: auto; display: flex; gap: 8px; align-items: center; padding-top: 10px; }
         .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
-        .btn-icon { background: rgba(255,255,255,0.05); border: none; color: var(--text2); cursor: pointer; padding: 8px; border-radius: 6px; font-size: 1rem; }
-        .btn-icon:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-icon { background: rgba(255,255,255,0.1); border: none; color: inherit; cursor: pointer; padding: 7px; border-radius: 6px; }
 
         .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); padding: 15px; }
-        .task-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px; font-size: 0.8rem; color: var(--text2); }
-
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 500px; }
         input, select, textarea { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
         .hidden { display:none !important; }
     </style>
@@ -58,7 +64,7 @@
     <div id="templatesListView" class="hidden">
         <header>
             <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h1>📂 Bibliothèque Modèles</h1>
+            <h1>📂 Modèles</h1>
             <button class="btn" style="background:#6366f1" onclick="openFormModal(true)">+ Nouveau Modèle</button>
         </header>
         <div class="grid" id="templateGrid"></div>
@@ -83,43 +89,6 @@
     </div>
 </div>
 
-<div id="taskModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <h3>Paramètres de la tâche</h3>
-        <label>Titre</label><input id="taskTitle">
-        
-        <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
-            <p style="font-size: 0.8rem; color: var(--primary); margin-bottom: 5px;">DÉBUT (Quand commencer)</p>
-            <div style="display:flex; gap:5px">
-                <input type="number" id="taskStartVal" value="4">
-                <select id="taskStartUnit">
-                    <option value="days">Jours</option>
-                    <option value="weeks" selected>Semaines</option>
-                    <option value="months">Mois</option>
-                </select>
-            </div>
-            <p style="font-size: 0.8rem; color: var(--danger); margin-bottom: 5px;">ÉCHÉANCE (Quand finir)</p>
-            <div style="display:flex; gap:5px">
-                <input type="number" id="taskEndVal" value="2">
-                <select id="taskEndUnit">
-                    <option value="days">Jours</option>
-                    <option value="weeks" selected>Semaines</option>
-                    <option value="months">Mois</option>
-                </select>
-            </div>
-            <small style="opacity: 0.6">Temps calculé AVANT la date du bloc.</small>
-        </div>
-
-        <label>Responsable</label><input id="taskResp">
-        <label>Description</label><textarea id="taskDesc"></textarea>
-        
-        <div style="display:flex; gap:10px">
-            <button class="btn" style="background:var(--bg3); flex:1" onclick="closeModal('taskModal')">Annuler</button>
-            <button class="btn" style="flex:1" onclick="saveTask()">Enregistrer</button>
-        </div>
-    </div>
-</div>
-
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
         <h3>Configuration Formation</h3>
@@ -131,8 +100,13 @@
             <option value="polcant">PolCant</option>
             <option value="asp">ASP</option>
         </select>
-        <div id="dateSection"><label>Date début</label><input id="formStart" type="date"></div>
-        <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
+        <div id="dateSection">
+            <div style="display:flex; gap:10px">
+                <div style="flex:1"><label>Début</label><input id="formStart" type="date"></div>
+                <div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div>
+            </div>
+        </div>
+        <button class="btn" style="width:100%; margin-top:10px" onclick="saveFormation()">Enregistrer</button>
     </div>
 </div>
 
@@ -140,12 +114,29 @@
     <div class="modal-content">
         <h3>Configuration Bloc</h3>
         <label>Nom</label><input id="blocName">
-        <label>Date</label><input id="blocDate" type="date">
+        <label>Date du Bloc</label><input id="blocDate" type="date">
         <div style="display:flex; gap:10px">
             <input id="blocR1" placeholder="Resp 1">
             <input id="blocR2" placeholder="Resp 2">
         </div>
-        <button class="btn" style="width:100%" onclick="saveBloc()">Enregistrer</button>
+        <button class="btn" style="width:100%; margin-top:10px" onclick="saveBloc()">Enregistrer</button>
+    </div>
+</div>
+
+<div id="taskModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3>Paramètres Tâche</h3>
+        <input id="taskTitle" placeholder="Titre">
+        <div style="display:flex; gap:5px; margin-top:10px">
+            <div style="flex:1"><small>Début (Avant bloc)</small><input type="number" id="taskStartVal" value="4"></div>
+            <div style="flex:1"><small>Unité</small><select id="taskStartUnit"><option value="weeks">Semaines</option><option value="days">Jours</option></select></div>
+        </div>
+        <div style="display:flex; gap:5px">
+            <div style="flex:1"><small>Échéance (Avant bloc)</small><input type="number" id="taskEndVal" value="2"></div>
+            <div style="flex:1"><small>Unité</small><select id="taskEndUnit"><option value="weeks">Semaines</option><option value="days">Jours</option></select></div>
+        </div>
+        <input id="taskResp" placeholder="Responsable">
+        <button class="btn" style="width:100%; margin-top:10px" onclick="saveTask()">Enregistrer</button>
     </div>
 </div>
 
@@ -169,85 +160,99 @@
 
     async function push() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs }); }
 
-    function calcDate(base, val, unit) {
-        if(!base) return "??";
+    function getRawDate(base, val, unit) {
+        if(!base) return null;
         let d = new Date(base);
         if(unit === 'days') d.setDate(d.getDate() - val);
         else if(unit === 'weeks') d.setDate(d.getDate() - (val*7));
-        else if(unit === 'months') d.setMonth(d.getMonth() - val);
-        return d.toLocaleDateString('fr-FR');
+        return d;
     }
 
-    function getProg(items) {
-        if(!items || items.length === 0) return 0;
-        return Math.round((items.filter(i => i.status === 'done').length / items.length) * 100);
+    function isOverdue(blocDate, eVal, eUnit, status) {
+        if(status === 'done' || !blocDate) return false;
+        const deadline = getRawDate(blocDate, eVal, eUnit);
+        return deadline < new Date();
     }
 
-    // --- RENDUS ---
     window.refreshUI = () => {
         if(state.currentView === 'formationsView') {
             const list = state.formations.filter(f => !f.isTemplate).sort((a,b) => new Date(a.start) - new Date(b.start));
-            renderCards("activeGrid", list);
+            renderMainGrid("activeGrid", list);
         } else if(state.currentView === 'templatesListView') {
-            renderCards("templateGrid", state.formations.filter(f => f.isTemplate));
+            renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
         } else if(state.currentView === 'blocsView') {
             const list = state.blocs.filter(b => b.formationId === state.currentFormationId).sort((a,b) => new Date(a.date) - new Date(b.date));
-            const grid = document.getElementById("blocsGrid");
-            grid.innerHTML = list.map(b => `
-                <div class="card" onclick="enterBloc(${b.id})">
-                    <h3>${b.name}</h3>
-                    <p>📅 ${b.date || 'Modèle'}</p>
-                    <div class="prog-container"><div class="prog-bar" style="width:${getProg(b.tasks)}%"></div></div>
-                    <div class="card-actions">
-                        <button class="btn-icon" onclick="event.stopPropagation(); editBloc(${b.id})">✏️</button>
-                        <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc(${b.id})">🗑️</button>
+            document.getElementById("blocsGrid").innerHTML = list.map(b => {
+                const hasDelay = b.tasks.some(t => isOverdue(b.date, t.eVal, t.eUnit, t.status));
+                const done = b.tasks.filter(t => t.status === 'done').length;
+                const prog = b.tasks.length ? (done/b.tasks.length)*100 : 0;
+                return `
+                    <div class="card" onclick="enterBloc(${b.id})">
+                        <div style="display:flex; justify-content:space-between">
+                            <h3>${b.name}</h3>
+                            ${hasDelay ? '<span class="alert-badge">⚠️ RETARD</span>' : ''}
+                        </div>
+                        <p class="date-info">📅 ${b.date ? new Date(b.date).toLocaleDateString() : 'Modèle'}</p>
+                        <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
+                        <div class="card-actions">
+                            <button class="btn-icon" onclick="event.stopPropagation(); editBloc(${b.id})">✏️</button>
+                            <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc(${b.id})">🗑️</button>
+                        </div>
                     </div>
-                </div>
-            `).join("");
+                `;
+            }).join("");
         } else if(state.currentView === 'tasksView') {
             const b = state.blocs.find(x => x.id === state.currentBlocId);
-            document.getElementById("tasksList").innerHTML = b.tasks.map(t => `
-                <div class="task-item">
-                    <div style="display:flex; justify-content:space-between; align-items:start">
-                        <div onclick="toggleTask(${t.id})" style="cursor:pointer">
-                            <span style="color:${t.status==='done'?'var(--success)':'#999'}">${t.status==='done'?'✅':'⭕'}</span>
-                            <strong style="margin-left:8px">${t.title}</strong>
+            document.getElementById("tasksList").innerHTML = b.tasks.map(t => {
+                const overdue = isOverdue(b.date, t.eVal, t.eUnit, t.status);
+                return `
+                    <div class="task-item ${overdue ? 'task-overdue' : ''}">
+                        <div style="display:flex; justify-content:space-between">
+                            <div onclick="toggleTask(${t.id})" style="cursor:pointer">
+                                <strong>${t.status==='done'?'✅':'⭕'} ${t.title}</strong>
+                            </div>
+                            <div>
+                                <button class="btn-icon" onclick="editTask(${t.id})">✏️</button>
+                                <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
+                            </div>
                         </div>
-                        <div style="display:flex; gap:5px">
-                            <button class="btn-icon" onclick="editTask(${t.id})">✏️</button>
-                            <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
+                        <div style="font-size:0.8rem; margin-top:8px; display:flex; gap:15px; opacity:0.8">
+                            <span>Début: ${getRawDate(b.date, t.sVal, t.sUnit)?.toLocaleDateString() || '??'}</span>
+                            <span style="color:${overdue ? 'var(--danger)':'inherit'}">Échéance: ${getRawDate(b.date, t.eVal, t.eUnit)?.toLocaleDateString() || '??'}</span>
                         </div>
                     </div>
-                    <div class="task-dates">
-                        <span>▶️ Début : ${calcDate(b.date, t.sVal, t.sUnit)}</span>
-                        <span>🚩 Échéance : ${calcDate(b.date, t.eVal, t.eUnit)}</span>
-                    </div>
-                </div>
-            `).join("");
+                `;
+            }).join("");
         }
     };
 
-    function renderCards(id, list) {
+    function renderMainGrid(id, list) {
         document.getElementById(id).innerHTML = list.map(f => {
-            const tasks = state.blocs.filter(b => b.formationId === f.id).flatMap(b => b.tasks);
+            const fBlocs = state.blocs.filter(b => b.formationId === f.id);
+            const allTasks = fBlocs.flatMap(b => b.tasks);
+            const hasDelay = fBlocs.some(b => b.tasks.some(t => isOverdue(b.date, t.eVal, t.eUnit, t.status)));
+            const done = allTasks.filter(t => t.status === 'done').length;
+            const prog = allTasks.length ? (done/allTasks.length)*100 : 0;
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    <h3>${f.name}</h3>
-                    <div class="prog-container"><div class="prog-bar" style="width:${getProg(tasks)}%"></div></div>
+                    <div style="display:flex; justify-content:space-between">
+                        <h3>${f.name}</h3>
+                        ${hasDelay ? '<span class="alert-badge">⚠️ RETARD</span>' : ''}
+                    </div>
+                    ${f.start ? `<p class="date-info">⏳ Du ${new Date(f.start).toLocaleDateString()} au ${new Date(f.end).toLocaleDateString()}</p>` : ''}
+                    <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
                     <div class="card-actions">
                         <button class="btn-icon" onclick="event.stopPropagation(); editForm(${f.id})">✏️</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
-                        ${f.isTemplate ? `<button class="btn" onclick="event.stopPropagation(); deploy(${f.id})">⚡</button>` : ''}
                     </div>
                 </div>
             `;
         }).join("");
     }
 
-    // --- FONCTIONS CRUD ---
+    // --- LOGIQUE CRUD (Corrigée pour dates début/fin) ---
     window.saveFormation = () => {
-        const isTpl = document.getElementById("formIsTemplate").value === "true";
-        const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: isTpl, start: document.getElementById("formStart").value };
+        const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === "true", start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
         if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
         else state.formations.push(d);
         push(); closeModal('formationModal');
@@ -263,45 +268,26 @@
 
     window.saveTask = () => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
-        const t = { id: state.editingId || Date.now(), title: document.getElementById("taskTitle").value, resp: document.getElementById("taskResp").value, desc: document.getElementById("taskDesc").value, sVal: parseInt(document.getElementById("taskStartVal").value), sUnit: document.getElementById("taskStartUnit").value, eVal: parseInt(document.getElementById("taskEndVal").value), eUnit: document.getElementById("taskEndUnit").value, status: 'todo' };
-        if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? {...t, status: x.status} : x);
+        const t = { id: state.editingId || Date.now(), title: document.getElementById("taskTitle").value, resp: document.getElementById("taskResp").value, sVal: parseInt(document.getElementById("taskStartVal").value), sUnit: document.getElementById("taskStartUnit").value, eVal: parseInt(document.getElementById("taskEndVal").value), eUnit: document.getElementById("taskEndUnit").value, status: state.editingId ? b.tasks.find(x => x.id === state.editingId).status : 'todo' };
+        if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? t : x);
         else b.tasks.push(t);
         push(); closeModal('taskModal');
     };
 
-    // --- SUPPRESSIONS ---
-    window.deleteForm = (id) => { if(confirm("Supprimer cette formation et tous ses blocs ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
-    window.deleteBloc = (id) => { if(confirm("Supprimer ce bloc ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
-    window.deleteTask = (id) => { if(confirm("Supprimer cette tâche ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
-
-    // --- EDITIONS ---
-    window.editForm = (id) => {
-        state.editingId = id; const f = state.formations.find(x => x.id === id);
-        document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type;
-        document.getElementById("formIsTemplate").value = f.isTemplate; openModal('formationModal');
-    };
-    window.editBloc = (id) => {
-        state.editingId = id; const b = state.blocs.find(x => x.id === id);
-        document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date;
-        document.getElementById("blocR1").value = b.r1; document.getElementById("blocR2").value = b.r2; openModal('blocModal');
-    };
-    window.editTask = (id) => {
-        state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id);
-        document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp;
-        document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskEndVal").value = t.eVal;
-        openModal('taskModal');
-    };
+    // --- ACTIONS BOUTONS ---
+    window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; document.getElementById("formStart").value = f.start; document.getElementById("formEnd").value = f.end; document.getElementById("formIsTemplate").value = f.isTemplate; openModal('formationModal'); };
+    window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date; document.getElementById("blocR1").value = b.r1; document.getElementById("blocR2").value = b.r2; openModal('blocModal'); };
+    window.editTask = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskEndVal").value = t.eVal; openModal('taskModal'); };
+    window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
+    window.deleteBloc = (id) => { if(confirm("Supprimer ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
+    window.deleteTask = (id) => { if(confirm("Supprimer ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
+    window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
 
     // --- NAVIGATION ---
-    window.showView = (id) => {
-        if(id === 'formationsView' || id === 'templatesListView') state.lastParentView = id;
-        state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden'));
-        document.getElementById(id).classList.remove('hidden'); refreshUI();
-    };
+    window.showView = (id) => { if(id === 'formationsView' || id === 'templatesListView') state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
     window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
     window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2><small>Resp: ${b.r1}/${b.r2}</small>`; showView('tasksView'); };
-    window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
-    window.openFormModal = (tpl) => { state.editingId = null; document.getElementById("formIsTemplate").value = tpl; openModal('formationModal'); };
+    window.openFormModal = (tpl) => { state.editingId = null; document.getElementById("formIsTemplate").value = tpl; document.getElementById("dateSection").style.display = tpl ? "none" : "block"; openModal('formationModal'); };
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
     window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
     document.getElementById("backBtn").onclick = () => showView(state.lastParentView);
