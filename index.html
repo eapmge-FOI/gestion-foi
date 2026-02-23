@@ -3,86 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des tâches FOI</title>
+    <title>Gestion des tâches FOI - Expert</title>
     <style>
         :root {
-            --primary:#38bdf8;
-            --bg1:#0f172a;
-            --bg2:#1e293b;
-            --bg3:#334155;
-            --text1:#f1f5f9;
-            --text2:#cbd5e1;
-            --success:#059669; 
-            --warning:#d97706; 
-            --danger:#dc2626;  
-            --muted:#475569;   
+            --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
+            --text1:#f1f5f9; --text2:#cbd5e1; --success:#059669; 
+            --warning:#d97706; --danger:#dc2626; --muted:#475569;   
         }
-
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: sans-serif; background:var(--bg1); color:var(--text1); line-height: 1.5; padding: 20px; }
         .app { max-width:1200px; margin:auto; }
-
-        header {
-            background:var(--bg2); padding:20px; border-radius:12px;
-            margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;
-            border: 1px solid var(--bg3);
-        }
-
+        header { background:var(--bg2); padding:20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px; }
 
-        .card {
-            background:var(--bg2); padding:20px; border-radius:12px;
-            cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative;
-            display: flex; flex-direction: column;
-        }
+        /* CARDS */
+        .card { background:var(--bg2); padding:20px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display: flex; flex-direction: column; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
-
         .prog-bg { background: var(--bg3); height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
         .prog-fill { background: var(--primary); height: 100%; transition: 0.3s; }
 
-        .btn {
-            background:var(--primary); color: white; border:none; padding:12px 18px;
-            border-radius:8px; cursor:pointer; font-weight:bold;
-        }
+        /* BOUTONS */
+        .btn { background:var(--primary); color: white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer; font-weight:bold; }
         .btn-secondary { background:var(--bg3); color:var(--text1); margin-right: 8px; }
-        .btn-duplicate { 
-            background: #475569; color: white; border: none; padding: 5px 10px; 
-            border-radius: 4px; font-size: 0.7rem; margin-top: 10px; cursor: pointer;
-        }
-        .btn-duplicate:hover { background: var(--primary); }
+        .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 1.2rem; padding: 5px; }
+        .btn-icon:hover { color: var(--primary); }
 
-        .btn-edit { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 5px 10px; font-size: 0.7rem; margin-top: auto; align-self: flex-start; }
-
-        .task {
-            padding:20px; border-radius:10px; margin-bottom:15px;
-            display: flex; justify-content: space-between; align-items: center;
-            border-left: 15px solid var(--muted);
-        }
-        .task.todo { background: rgba(71, 85, 105, 0.15); border-left-color: var(--muted); }
-        .task.progress { background: rgba(217, 119, 6, 0.2); border-left-color: var(--warning); }
-        .task.done { background: rgba(5, 150, 105, 0.2); border-left-color: var(--success); }
-        .task.late { 
-            background: rgba(220, 38, 38, 0.3); border-left-color: var(--danger); 
-            animation: flash-red 1.5s infinite;
-        }
-
-        @keyframes flash-red { 0% { opacity: 1; } 50% { opacity: 0.8; } 100% { opacity: 1; } }
-
-        .alert-badge {
-            background: var(--danger); color: white; padding: 4px 10px;
-            border-radius: 4px; font-size: 0.75rem; font-weight: bold;
-            position: absolute; top: 15px; right: 15px;
-        }
-
-        .modal-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100;
-        }
-        .modal-content { background: var(--bg2); padding: 30px; border-radius: 12px; width: 95%; max-width: 500px; border: 1px solid var(--bg3); }
-        input, select {
-            width:100%; margin: 8px 0 15px 0; padding:12px;
-            background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px;
-        }
+        /* TACHES */
+        .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); overflow: hidden; }
+        .task-header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 10px solid var(--muted); cursor: pointer; }
+        .task-header.todo { border-left-color: var(--muted); }
+        .task-header.progress { border-left-color: var(--warning); }
+        .task-header.done { border-left-color: var(--success); }
+        .task-header.late { border-left-color: var(--danger); animation: flash 1.5s infinite; }
+        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        
+        .task-body { padding: 15px; background: rgba(0,0,0,0.2); display: none; border-top: 1px solid var(--bg3); }
+        .task-body.active { display: block; }
+        
+        /* MODALS */
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; border: 1px solid var(--bg3); max-height: 90vh; overflow-y: auto; }
+        input, select, textarea { width:100%; margin: 5px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
+        label { font-size: 0.85rem; color: var(--text2); }
         .row { display: flex; gap: 10px; }
         .hidden { display:none !important; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 5px; background: var(--primary); z-index: 1000; display: none; }
@@ -93,7 +55,7 @@
 <div id="loading"></div>
 <div class="app">
     <header>
-        <h1>📋 Gestion des tâches FOI</h1>
+        <h1>📋 Gestion FOI</h1>
         <button class="btn" onclick="openModal('formationModal')">+ Formation</button>
     </header>
 
@@ -103,64 +65,98 @@
 
     <div id="blocsView" class="hidden">
         <button class="btn btn-secondary" onclick="showView('formationsView')">← Retour</button>
-        <h2 id="formationTitle" style="margin: 20px 0;"></h2>
-        <button class="btn" onclick="openModal('blocModal')">+ Ajouter un Bloc</button>
-        <div class="grid" id="blocsGrid" style="margin-top:20px;"></div>
+        <div style="display:flex; justify-content: space-between; align-items: center; margin: 20px 0;">
+            <h2 id="formationTitle"></h2>
+            <button class="btn" onclick="openModal('blocModal')">+ Ajouter un Bloc</button>
+        </div>
+        <div class="grid" id="blocsGrid"></div>
     </div>
 
     <div id="tasksView" class="hidden">
         <button class="btn btn-secondary" onclick="showView('blocsView')">← Retour</button>
-        <h2 id="blocTitle" style="margin: 10px 0 5px 0;"></h2>
-        <p id="blocInfo" style="color: var(--text2); margin-bottom: 20px;"></p>
-        <button class="btn" onclick="openModal('taskModal')">+ Ajouter une Tâche</button>
-        <div id="tasksList" style="margin-top:20px;"></div>
+        <div style="display:flex; justify-content: space-between; align-items: center; margin: 15px 0;">
+            <div>
+                <h2 id="blocTitle"></h2>
+                <p id="blocInfo" style="font-size: 0.9rem; color: var(--text2);"></p>
+            </div>
+            <button class="btn" onclick="openModal('taskModal')">+ Ajouter une Tâche</button>
+        </div>
+        <div id="tasksList"></div>
     </div>
 </div>
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Nouvelle formation</h3>
-        <input id="formationName" placeholder="Nom de la formation">
-        <select id="formationType">
+        <h3 id="formModalTitle">Nouvelle formation</h3>
+        <label>Nom</label><input id="formName">
+        <label>Type</label>
+        <select id="formType">
             <option value="pm">Police Municipale</option>
             <option value="pc">Police Cantonale</option>
             <option value="asp">ASP</option>
         </select>
-        <button class="btn-secondary" onclick="closeModal('formationModal')">Annuler</button>
-        <button class="btn" onclick="saveFormation()">Créer</button>
+        <div class="row">
+            <button class="btn-secondary" onclick="closeModal('formationModal')" style="flex:1">Annuler</button>
+            <button class="btn" onclick="saveFormation()" style="flex:1">Enregistrer</button>
+        </div>
     </div>
 </div>
 
 <div id="blocModal" class="modal-overlay hidden">
     <div class="modal-content">
         <h3 id="blocModalTitle">Nouveau Bloc</h3>
-        <input id="blocName" placeholder="Nom du bloc">
-        <label>Date prévue du bloc :</label>
-        <input id="blocDate" type="date">
+        <label>Nom du bloc</label><input id="blocName">
+        <label>Date prévue</label><input id="blocDate" type="date">
         <div class="row">
             <div style="flex:1"><label>Resp. 1</label><input id="resp1" maxlength="3"></div>
             <div style="flex:1"><label>Resp. 2</label><input id="resp2" maxlength="3"></div>
         </div>
-        <button class="btn-secondary" onclick="closeModal('blocModal')">Annuler</button>
-        <button class="btn" onclick="saveBloc()">Enregistrer</button>
+        <div class="row">
+            <button class="btn-secondary" onclick="closeModal('blocModal')" style="flex:1">Annuler</button>
+            <button class="btn" onclick="saveBloc()" style="flex:1">Enregistrer</button>
+        </div>
     </div>
 </div>
 
 <div id="taskModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Nouvelle tâche</h3>
-        <input id="taskTitle" placeholder="Titre de la tâche">
-        <label>🏁 À terminer :</label>
+        <h3 id="taskModalTitle">Paramètres de la tâche</h3>
+        <label>Titre de la tâche</label><input id="taskTitle">
+        <label>Responsable</label><input id="taskResp" placeholder="Nom ou initiales">
+        <label>Description / Détails particuliers</label>
+        <textarea id="taskDesc" rows="3"></textarea>
+        
         <div class="row">
-            <input id="endVal" type="number" value="1" style="flex:1">
-            <select id="endUnit" style="flex:2">
-                <option value="days">Jours avant le bloc</option>
-                <option value="weeks">Semaines avant le bloc</option>
-                <option value="months">Mois avant le bloc</option>
-            </select>
+            <div style="flex:1">
+                <label>Commencer (Avant Bloc)</label>
+                <div class="row">
+                    <input id="startVal" type="number" value="1">
+                    <select id="startUnit">
+                        <option value="days">Jours</option>
+                        <option value="weeks">Sem.</option>
+                        <option value="months">Mois</option>
+                        <option value="years">Années</option>
+                    </select>
+                </div>
+            </div>
+            <div style="flex:1">
+                <label>Terminer (Avant Bloc)</label>
+                <div class="row">
+                    <input id="endVal" type="number" value="1">
+                    <select id="endUnit">
+                        <option value="days">Jours</option>
+                        <option value="weeks">Sem.</option>
+                        <option value="months">Mois</option>
+                        <option value="years">Années</option>
+                    </select>
+                </div>
+            </div>
         </div>
-        <button class="btn-secondary" onclick="closeModal('taskModal')">Annuler</button>
-        <button class="btn" onclick="saveTask()">Ajouter</button>
+        
+        <div class="row" style="margin-top:10px;">
+            <button class="btn-secondary" onclick="closeModal('taskModal')" style="flex:1">Annuler</button>
+            <button class="btn" onclick="saveTask()" style="flex:1">Enregistrer</button>
+        </div>
     </div>
 </div>
 
@@ -180,9 +176,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    let state = {
-        formations: [], blocs: [], currentFormationId: null, currentBlocId: null, editingBlocId: null, currentView: 'formationsView'
-    };
+    let state = { formations: [], blocs: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView' };
 
     onSnapshot(doc(db, "data", "appState"), (docSnap) => {
         if (docSnap.exists()) {
@@ -193,31 +187,22 @@
         }
     });
 
-    async function pushToFirebase() {
+    async function save() {
         document.getElementById('loading').style.display = 'block';
-        try {
-            await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs });
-        } catch (e) { console.error(e); }
+        await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs });
         document.getElementById('loading').style.display = 'none';
     }
 
-    function getDeadline(blocDate, val, unit) {
-        if(!blocDate) return null;
-        let d = new Date(blocDate);
-        let amount = parseInt(val);
-        if(unit === 'days') d.setDate(d.getDate() - amount);
-        else if(unit === 'weeks') d.setDate(d.getDate() - (amount * 7));
-        else if(unit === 'months') d.setMonth(d.getMonth() - amount);
+    function calculateDate(baseDate, val, unit) {
+        if(!baseDate) return null;
+        let d = new Date(baseDate);
+        let v = parseInt(val);
+        if(unit === 'days') d.setDate(d.getDate() - v);
+        else if(unit === 'weeks') d.setDate(d.getDate() - (v * 7));
+        else if(unit === 'months') d.setMonth(d.getMonth() - v);
+        else if(unit === 'years') d.setFullYear(d.getFullYear() - v);
         d.setHours(0,0,0,0);
         return d;
-    }
-
-    function isBlocLate(bloc) {
-        const today = new Date(); today.setHours(0,0,0,0);
-        return (bloc.tasks || []).some(t => {
-            const dl = getDeadline(bloc.date, t.endVal, t.endUnit);
-            return (t.status !== 'done' && dl && dl < today);
-        });
     }
 
     function refreshUI() {
@@ -230,69 +215,31 @@
         const grid = document.getElementById("formationsGrid");
         grid.innerHTML = state.formations.map(f => `
             <div class="card" onclick="enterFormation(${f.id})">
-                <h3>${f.name}</h3>
+                <div style="display:flex; justify-content:space-between">
+                    <h3>${f.name}</h3>
+                    <button class="btn-icon" onclick="editFormation(event, ${f.id})">✏️</button>
+                </div>
                 <p style="color:var(--primary); font-weight:bold;">${f.type.toUpperCase()}</p>
-                <button class="btn-duplicate" onclick="duplicateFormation(event, ${f.id})">👯 Dupliquer Modèle</button>
+                <button class="btn-duplicate" onclick="duplicateFormation(event, ${f.id})" style="margin-top:10px; background:#475569; color:white; border:none; padding:5px; border-radius:4px; font-size:0.7rem">👯 Dupliquer</button>
             </div>
         `).join("");
     }
 
-    // --- FONCTION DUPLICATION ---
-    window.duplicateFormation = (event, id) => {
-        event.stopPropagation();
-        const original = state.formations.find(f => f.id === id);
-        if(!original) return;
-
-        const newFid = Date.now();
-        // 1. Créer la formation
-        const newFormation = { 
-            ...original, 
-            id: newFid, 
-            name: "COPIE - " + original.name 
-        };
-
-        // 2. Copier les blocs
-        const newBlocs = state.blocs
-            .filter(b => b.formationId === id)
-            .map(b => {
-                const newBid = Math.floor(Math.random() * 10000000) + Date.now();
-                return {
-                    ...b,
-                    id: newBid,
-                    formationId: newFid,
-                    date: "", // On efface la date pour le nouveau cycle
-                    r1: "", r2: "", // On efface les responsables
-                    tasks: b.tasks.map(t => ({ ...t, id: Math.random(), status: 'todo' })) // Reset tâches
-                };
-            });
-
-        state.formations.push(newFormation);
-        state.blocs = [...state.blocs, ...newBlocs];
-        pushToFirebase();
-        alert("Formation dupliquée ! Modifiez maintenant les dates du nouveau cycle.");
-    };
-
     window.renderBlocs = () => {
         const grid = document.getElementById("blocsGrid");
         let blocs = state.blocs.filter(b => b.formationId === state.currentFormationId);
-        blocs.sort((a, b) => {
-            const aL = isBlocLate(a); const bL = isBlocLate(b);
-            if (aL && !bL) return -1; if (!aL && bL) return 1;
-            if (!a.date) return 1; if (!b.date) return -1;
-            return new Date(a.date) - new Date(b.date);
-        });
         grid.innerHTML = blocs.map(b => {
             const done = b.tasks.filter(t => t.status === 'done').length;
             const prog = b.tasks.length === 0 ? 0 : Math.round((done / b.tasks.length) * 100);
             return `
                 <div class="card" onclick="enterBloc(${b.id})">
-                    ${isBlocLate(b) ? '<span class="alert-badge">RETARD</span>' : ''}
-                    <h3>${b.name}</h3>
-                    <p>📅 Date: ${b.date || '<i>À définir</i>'}</p>
-                    <p>👥 Resps: <b>${b.r1 || '--'} / ${b.r2 || '--'}</b></p>
+                    <div style="display:flex; justify-content:space-between">
+                        <h3>${b.name}</h3>
+                        <button class="btn-icon" onclick="editBloc(event, ${b.id})">✏️</button>
+                    </div>
+                    <p>📅 ${b.date || 'À définir'}</p>
+                    <p>👥 ${b.r1 || '--'} / ${b.r2 || '--'}</p>
                     <div class="prog-bg"><div class="prog-fill" style="width:${prog}%"></div></div>
-                    <small>${done}/${b.tasks.length} terminées</small>
-                    <button class="btn-edit" onclick="editBloc(event, ${b.id})">Modifier Infos</button>
                 </div>
             `;
         }).join("");
@@ -302,66 +249,147 @@
         const list = document.getElementById("tasksList");
         const b = state.blocs.find(b => b.id === state.currentBlocId);
         const today = new Date(); today.setHours(0,0,0,0);
-        if(!b || b.tasks.length === 0) { list.innerHTML = "<p>Aucune tâche.</p>"; return; }
+        if(!b) return;
+
         list.innerHTML = b.tasks.map(t => {
-            const dl = getDeadline(b.date, t.endVal, t.endUnit);
-            let sClass = t.status; let sLabel = t.status === 'todo' ? 'À faire' : (t.status === 'progress' ? 'En cours' : 'Terminé');
-            if(t.status !== 'done' && dl && dl < today) { sClass = 'late'; sLabel = 'RETARD'; }
+            const startD = calculateDate(b.date, t.startVal, t.startUnit);
+            const endD = calculateDate(b.date, t.endVal, t.endUnit);
+            let sClass = t.status;
+            if(t.status !== 'done' && endD && endD < today) sClass = 'late';
+
             return `
-                <div class="task ${sClass}">
-                    <div style="flex:1"><strong>${t.title}</strong><br><small>Échéance: ${dl ? dl.toLocaleDateString() : 'Attente date'}</small></div>
-                    <button class="btn" onclick="cycleStatus(${t.id})">${sLabel}</button>
+                <div class="task-item">
+                    <div class="task-header ${sClass}" onclick="toggleTask(${t.id})">
+                        <div>
+                            <strong style="font-size:1.1rem">${t.title}</strong><br>
+                            <small>Fin: ${endD ? endD.toLocaleDateString() : '?'}</small>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px">
+                            <span style="font-size:0.8rem; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px">${t.resp || '--'}</span>
+                            <button class="btn" onclick="cycleStatus(event, ${t.id})">${t.status.toUpperCase()}</button>
+                            <button class="btn-icon" onclick="editTask(event, ${t.id})">✏️</button>
+                        </div>
+                    </div>
+                    <div class="task-body" id="body-${t.id}">
+                        <p><strong>Responsable :</strong> ${t.resp || 'Non assigné'}</p>
+                        <p><strong>Période :</strong> du ${startD ? startD.toLocaleDateString() : '?'} au ${endD ? endD.toLocaleDateString() : '?'}</p>
+                        <p style="margin-top:10px; white-space: pre-wrap;"><strong>Description :</strong>\n${t.desc || 'Aucune description.'}</p>
+                    </div>
                 </div>
             `;
         }).join("");
     }
 
-    window.showView = (id) => { state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
-    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); document.querySelectorAll(`#${id} input`).forEach(i => i.value = ""); state.editingBlocId = null; };
-    
+    // --- ACTIONS ---
+    window.toggleTask = (id) => document.getElementById(`body-${id}`).classList.toggle('active');
+
     window.saveFormation = () => {
-        const name = document.getElementById("formationName").value; if(!name) return;
-        state.formations.push({ id: Date.now(), name, type: document.getElementById("formationType").value });
-        pushToFirebase(); window.closeModal('formationModal');
+        const name = document.getElementById("formName").value;
+        if(state.editingId) {
+            const f = state.formations.find(f => f.id === state.editingId);
+            f.name = name; f.type = document.getElementById("formType").value;
+        } else {
+            state.formations.push({ id: Date.now(), name, type: document.getElementById("formType").value });
+        }
+        save(); closeModal('formationModal');
     };
 
-    window.enterFormation = (id) => { state.currentFormationId = id; const f = state.formations.find(f => f.id === id); document.getElementById("formationTitle").textContent = f.name; window.showView("blocsView"); };
+    window.editFormation = (e, id) => {
+        e.stopPropagation(); state.editingId = id;
+        const f = state.formations.find(f => f.id === id);
+        document.getElementById("formName").value = f.name;
+        document.getElementById("formType").value = f.type;
+        document.getElementById("formModalTitle").textContent = "Modifier Formation";
+        openModal('formationModal');
+    };
 
     window.saveBloc = () => {
-        const name = document.getElementById("blocName").value; const date = document.getElementById("blocDate").value;
-        const r1 = document.getElementById("resp1").value; const r2 = document.getElementById("resp2").value;
-        if(state.editingBlocId) {
-            const b = state.blocs.find(b => b.id === state.editingBlocId); b.name = name; b.date = date; b.r1 = r1; b.r2 = r2;
+        if(state.editingId) {
+            const b = state.blocs.find(b => b.id === state.editingId);
+            b.name = document.getElementById("blocName").value; b.date = document.getElementById("blocDate").value;
+            b.r1 = document.getElementById("resp1").value; b.r2 = document.getElementById("resp2").value;
         } else {
-            state.blocs.push({ id: Date.now(), formationId: state.currentFormationId, name, date, r1, r2, tasks: [] });
+            state.blocs.push({ id: Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, r1: document.getElementById("resp1").value, r2: document.getElementById("resp2").value, tasks: [] });
         }
-        pushToFirebase(); window.closeModal('blocModal');
+        save(); closeModal('blocModal');
     };
 
     window.editBloc = (e, id) => {
-        e.stopPropagation(); state.editingBlocId = id; const b = state.blocs.find(b => b.id === id);
-        document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || "";
-        document.getElementById("resp1").value = b.r1 || ""; document.getElementById("resp2").value = b.r2 || "";
-        window.openModal('blocModal');
-    };
-
-    window.enterBloc = (id) => {
-        state.currentBlocId = id; const b = state.blocs.find(b => b.id === id);
-        document.getElementById("blocTitle").textContent = b.name; window.showView("tasksView");
+        e.stopPropagation(); state.editingId = id;
+        const b = state.blocs.find(b => b.id === id);
+        document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date;
+        document.getElementById("resp1").value = b.r1; document.getElementById("resp2").value = b.r2;
+        openModal('blocModal');
     };
 
     window.saveTask = () => {
         const b = state.blocs.find(b => b.id === state.currentBlocId);
-        b.tasks.push({ id: Date.now(), title: document.getElementById("taskTitle").value, status: 'todo', endVal: document.getElementById("endVal").value, endUnit: document.getElementById("endUnit").value });
-        pushToFirebase(); window.closeModal('taskModal');
+        const taskData = {
+            id: state.editingId || Date.now(),
+            title: document.getElementById("taskTitle").value,
+            resp: document.getElementById("taskResp").value,
+            desc: document.getElementById("taskDesc").value,
+            startVal: document.getElementById("startVal").value,
+            startUnit: document.getElementById("startUnit").value,
+            endVal: document.getElementById("endVal").value,
+            endUnit: document.getElementById("endUnit").value,
+            status: 'todo'
+        };
+
+        if(state.editingId) {
+            const idx = b.tasks.findIndex(t => t.id === state.editingId);
+            taskData.status = b.tasks[idx].status;
+            b.tasks[idx] = taskData;
+        } else {
+            b.tasks.push(taskData);
+        }
+        save(); closeModal('taskModal');
     };
 
-    window.cycleStatus = (id) => {
+    window.editTask = (e, id) => {
+        e.stopPropagation(); state.editingId = id;
         const b = state.blocs.find(b => b.id === state.currentBlocId);
         const t = b.tasks.find(t => t.id === id);
-        t.status = t.status === 'todo' ? 'progress' : (t.status === 'progress' ? 'done' : 'todo');
-        pushToFirebase();
+        document.getElementById("taskTitle").value = t.title;
+        document.getElementById("taskResp").value = t.resp || "";
+        document.getElementById("taskDesc").value = t.desc || "";
+        document.getElementById("startVal").value = t.startVal;
+        document.getElementById("startUnit").value = t.startUnit;
+        document.getElementById("endVal").value = t.endVal;
+        document.getElementById("endUnit").value = t.endUnit;
+        openModal('taskModal');
+    };
+
+    window.cycleStatus = (e, id) => {
+        e.stopPropagation();
+        const b = state.blocs.find(b => b.id === state.currentBlocId);
+        const t = b.tasks.find(t => t.id === id);
+        const seq = ['todo', 'progress', 'done'];
+        t.status = seq[(seq.indexOf(t.status) + 1) % 3];
+        save();
+    };
+
+    window.duplicateFormation = (e, id) => {
+        e.stopPropagation();
+        const orig = state.formations.find(f => f.id === id);
+        const newFid = Date.now();
+        state.formations.push({ ...orig, id: newFid, name: "COPIE - " + orig.name });
+        const newBlocs = state.blocs.filter(b => b.formationId === id).map(b => ({
+            ...b, id: Math.random(), formationId: newFid, date: "", tasks: b.tasks.map(t => ({ ...t, id: Math.random(), status: 'todo' }))
+        }));
+        state.blocs = [...state.blocs, ...newBlocs];
+        save();
+    };
+
+    // NAV
+    window.showView = (id) => { state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
+    window.enterFormation = (id) => { state.currentFormationId = id; const f = state.formations.find(f => f.id === id); document.getElementById("formationTitle").textContent = f.name; window.showView("blocsView"); };
+    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(b => b.id === id); document.getElementById("blocTitle").textContent = b.name; document.getElementById("blocInfo").textContent = `Date: ${b.date || '?'} | Responsables: ${b.r1}/${b.r2}`; window.showView("tasksView"); };
+    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
+    window.closeModal = (id) => { 
+        document.getElementById(id).classList.add("hidden"); 
+        document.querySelectorAll(`#${id} input, #${id} textarea`).forEach(i => i.value = ""); 
+        state.editingId = null; 
     };
 </script>
 </body>
