@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Pilotage Complet</title>
+    <title>Gestion FOI - Pilotage Intégral</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
@@ -17,29 +17,39 @@
         header, .mini-header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:15px; }
 
-        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 170px; transition: 0.2s; overflow: hidden; }
+        /* CARTES ET STYLES CORPS */
+        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 180px; transition: 0.2s; overflow: hidden; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
+        /* STYLE APM : Lignes jaune et rouge collées */
         .style-apm { background: var(--apm-gray) !important; padding-top: 25px; }
         .style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background: var(--flag-yellow); z-index: 2; }
         .style-apm::after { content:''; position:absolute; top:4px; left:0; width:100%; height:4px; background: var(--flag-red); z-index: 2; }
+
         .style-polcant { background: var(--polcant-blue) !important; border-top: 5px solid rgba(255,255,255,0.2); }
         .style-asp { background: var(--asp-light) !important; color: #0f172a; border-top: 5px solid #64748b; }
-        .style-asp h3, .style-asp p, .style-asp small { color: #0f172a !important; }
+        .style-asp h3, .style-asp p, .style-asp small, .style-asp .date-info { color: #0f172a !important; }
 
+        /* ALERTES & PROGRESSION */
         .alert-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
         .prog-container { background: rgba(0,0,0,0.2); height: 8px; border-radius: 4px; margin: 12px 0; overflow: hidden; }
         .prog-bar { height: 100%; background: var(--success); transition: width 0.4s; }
 
+        .date-info { font-size: 0.85rem; margin-top: 5px; font-weight: 500; }
         .card-actions { margin-top: auto; display: flex; gap: 8px; align-items: center; padding-top: 10px; }
+        
         .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
         .btn-icon { background: rgba(255,255,255,0.1); border: none; color: inherit; cursor: pointer; padding: 7px; border-radius: 6px; }
 
+        /* TÂCHES */
         .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); padding: 15px; }
-        .resp-tag { background: var(--bg3); color: var(--primary); padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 10px; }
+        .task-overdue { border-left: 4px solid var(--danger) !important; background: rgba(225, 29, 72, 0.05) !important; }
+        .resp-tag { background: var(--bg3); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 10px; }
+        .style-asp .resp-tag { background: #0f172a; color: white; }
 
+        /* MODALS */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
         input, select, textarea { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
@@ -90,7 +100,7 @@
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Formation</h3>
+        <h3>Configuration Formation</h3>
         <input type="hidden" id="formIsTemplate">
         <label>Nom</label><input id="formName">
         <label>Corps</label>
@@ -105,20 +115,20 @@
                 <div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div>
             </div>
         </div>
-        <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
+        <button class="btn" style="width:100%; margin-top:10px" onclick="saveFormation()">Enregistrer</button>
     </div>
 </div>
 
 <div id="blocModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Bloc</h3>
-        <label>Nom</label><input id="blocName">
+        <h3>Configuration Bloc</h3>
+        <label>Nom du bloc</label><input id="blocName">
         <label>Date du Bloc</label><input id="blocDate" type="date">
         <div style="display:flex; gap:10px">
-            <input id="blocR1" placeholder="Resp 1">
-            <input id="blocR2" placeholder="Resp 2">
+            <input id="blocR1" placeholder="Initiales Resp 1">
+            <input id="blocR2" placeholder="Initiales Resp 2">
         </div>
-        <button class="btn" style="width:100%" onclick="saveBloc()">Enregistrer</button>
+        <button class="btn" style="width:100%; margin-top:10px" onclick="saveBloc()">Enregistrer</button>
     </div>
 </div>
 
@@ -126,7 +136,7 @@
     <div class="modal-content">
         <h3>Paramètres Tâche</h3>
         <label>Titre</label><input id="taskTitle">
-        <label>Responsable</label><input id="taskResp">
+        <label>Responsable</label><input id="taskResp" placeholder="ex: JD">
         
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px;">
             <div>
@@ -174,7 +184,8 @@
 
     async function push() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs }); }
 
-    function getRelativeDate(base, val, unit) {
+    // --- CALCUL DES DATES ---
+    function getCalcDate(base, val, unit) {
         if(!base) return null;
         let d = new Date(base);
         val = parseInt(val);
@@ -187,12 +198,14 @@
 
     function isOverdue(blocDate, eVal, eUnit, status) {
         if(status === 'done' || !blocDate) return false;
-        return getRelativeDate(blocDate, eVal, eUnit) < new Date();
+        return getCalcDate(blocDate, eVal, eUnit) < new Date();
     }
 
+    // --- RENDUS UI ---
     window.refreshUI = () => {
         if(state.currentView === 'formationsView') {
-            renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate).sort((a,b) => new Date(a.start) - new Date(b.start)));
+            const list = state.formations.filter(f => !f.isTemplate).sort((a,b) => new Date(a.start) - new Date(b.start));
+            renderMainGrid("activeGrid", list);
         } else if(state.currentView === 'templatesListView') {
             renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
         } else if(state.currentView === 'blocsView') {
@@ -202,11 +215,11 @@
                 const prog = b.tasks.length ? (b.tasks.filter(t => t.status === 'done').length / b.tasks.length)*100 : 0;
                 return `
                     <div class="card" onclick="enterBloc(${b.id})">
-                        <div style="display:flex; justify-content:space-between">
+                        <div style="display:flex; justify-content:space-between; align-items:start">
                             <h3>${b.name}</h3>
                             ${hasDelay ? '<span class="alert-badge">⚠️ RETARD</span>' : ''}
                         </div>
-                        <p style="font-size:0.8rem; margin:5px 0">📅 ${b.date ? new Date(b.date).toLocaleDateString() : 'Modèle'}</p>
+                        <p class="date-info">📅 ${b.date ? new Date(b.date).toLocaleDateString() : 'Pas de date'}</p>
                         <small>👥 ${b.r1 || '?'}/${b.r2 || '?'}</small>
                         <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
                         <div class="card-actions">
@@ -226,16 +239,16 @@
                             <div onclick="toggleTask(${t.id})" style="cursor:pointer; display:flex; align-items:center">
                                 <span>${t.status==='done'?'✅':'⭕'}</span>
                                 <strong style="margin-left:10px">${t.title}</strong>
-                                <span class="resp-tag">${t.resp || 'Sans resp.'}</span>
+                                <span class="resp-tag">${t.resp || '-'}</span>
                             </div>
-                            <div>
+                            <div style="display:flex; gap:5px">
                                 <button class="btn-icon" onclick="editTask(${t.id})">✏️</button>
                                 <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
                             </div>
                         </div>
                         <div style="font-size:0.8rem; margin-top:10px; display:flex; gap:20px; opacity:0.8">
-                            <span>▶️ Début : ${getRelativeDate(b.date, t.sVal, t.sUnit)?.toLocaleDateString() || '??'}</span>
-                            <span style="color:${overdue ? 'var(--danger)':'inherit'}">🚩 Fin : ${getRelativeDate(b.date, t.eVal, t.eUnit)?.toLocaleDateString() || '??'}</span>
+                            <span>▶️ Début : ${getCalcDate(b.date, t.sVal, t.sUnit)?.toLocaleDateString() || '??'}</span>
+                            <span style="color:${overdue ? 'var(--danger)':'inherit'}">🚩 Fin : ${getCalcDate(b.date, t.eVal, t.eUnit)?.toLocaleDateString() || '??'}</span>
                         </div>
                     </div>
                 `;
@@ -246,42 +259,61 @@
     function renderMainGrid(id, list) {
         document.getElementById(id).innerHTML = list.map(f => {
             const fBlocs = state.blocs.filter(b => b.formationId === f.id);
-            const tasks = fBlocs.flatMap(b => b.tasks);
+            const allTasks = fBlocs.flatMap(b => b.tasks);
             const hasDelay = fBlocs.some(b => b.tasks.some(t => isOverdue(b.date, t.eVal, t.eUnit, t.status)));
-            const prog = tasks.length ? (tasks.filter(t => t.status === 'done').length / tasks.length)*100 : 0;
+            const prog = allTasks.length ? (allTasks.filter(t => t.status === 'done').length / allTasks.length)*100 : 0;
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    <div style="display:flex; justify-content:space-between">
+                    <div style="display:flex; justify-content:space-between; align-items:start">
                         <h3>${f.name}</h3>
                         ${hasDelay ? '<span class="alert-badge">⚠️ RETARD</span>' : ''}
                     </div>
-                    ${f.start ? `<p style="font-size:0.8rem; margin:5px 0">⏳ Du ${new Date(f.start).toLocaleDateString()} au ${new Date(f.end).toLocaleDateString()}</p>` : ''}
+                    ${f.start ? `<p class="date-info">⏳ Du ${new Date(f.start).toLocaleDateString()} au ${new Date(f.end).toLocaleDateString()}</p>` : ''}
                     <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
                     <div class="card-actions">
                         <button class="btn-icon" onclick="event.stopPropagation(); editForm(${f.id})">✏️</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
-                        ${f.isTemplate ? `<button class="btn" style="padding:5px 10px" onclick="event.stopPropagation(); deploy(${f.id})">⚡ Déployer</button>` : ''}
+                        ${f.isTemplate ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem" onclick="event.stopPropagation(); deploy(${f.id})">⚡ Déployer</button>` : ''}
                     </div>
                 </div>
             `;
         }).join("");
     }
 
+    // --- ACTIONS DÉPLOYER ---
     window.deploy = (id) => {
         const tpl = state.formations.find(f => f.id === id);
-        const start = prompt("Date de début de la session (AAAA-MM-JJ) ?");
+        const newName = prompt("Nom de la nouvelle session ?", tpl.name);
+        if(!newName) return;
+        const start = prompt("Date de début (AAAA-MM-JJ) ?");
         if(!start) return;
-        const end = prompt("Date de fin de la session (AAAA-MM-JJ) ?");
+        const end = prompt("Date de fin (AAAA-MM-JJ) ?");
+        if(!end) return;
+
         const newFid = Date.now();
-        state.formations.push({ ...tpl, id: newFid, name: tpl.name + " (Copie)", isTemplate: false, start, end });
+        state.formations.push({ ...tpl, id: newFid, name: newName, isTemplate: false, start, end });
+        
         state.blocs.filter(b => b.formationId === id).forEach(b => {
-            state.blocs.push({ ...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
+            state.blocs.push({ 
+                ...b, 
+                id: Math.random(), 
+                formationId: newFid, 
+                tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) 
+            });
         });
         push(); showView('formationsView');
     };
 
+    // --- CRUD ---
     window.saveFormation = () => {
-        const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === "true", start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
+        const d = { 
+            id: state.editingId || Date.now(), 
+            name: document.getElementById("formName").value, 
+            type: document.getElementById("formType").value, 
+            isTemplate: document.getElementById("formIsTemplate").value === "true", 
+            start: document.getElementById("formStart").value, 
+            end: document.getElementById("formEnd").value 
+        };
         if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
         else state.formations.push(d);
         push(); closeModal('formationModal');
@@ -289,7 +321,15 @@
 
     window.saveBloc = () => {
         const old = state.editingId ? state.blocs.find(x => x.id === state.editingId) : {tasks:[]};
-        const d = { id: state.editingId || Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, r1: document.getElementById("blocR1").value, r2: document.getElementById("blocR2").value, tasks: old.tasks };
+        const d = { 
+            id: state.editingId || Date.now(), 
+            formationId: state.currentFormationId, 
+            name: document.getElementById("blocName").value, 
+            date: document.getElementById("blocDate").value, 
+            r1: document.getElementById("blocR1").value, 
+            r2: document.getElementById("blocR2").value, 
+            tasks: old.tasks 
+        };
         if(state.editingId) state.blocs = state.blocs.map(b => b.id === state.editingId ? d : b);
         else state.blocs.push(d);
         push(); closeModal('blocModal');
@@ -312,17 +352,20 @@
         push(); closeModal('taskModal');
     };
 
+    // --- GESTION ÉVÉNEMENTS ---
     window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; document.getElementById("formStart").value = f.start || ""; document.getElementById("formEnd").value = f.end || ""; document.getElementById("formIsTemplate").value = f.isTemplate; openModal('formationModal'); };
     window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; document.getElementById("blocR1").value = b.r1 || ""; document.getElementById("blocR2").value = b.r2 || ""; openModal('blocModal'); };
     window.editTask = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskStartUnit").value = t.sUnit; document.getElementById("taskEndVal").value = t.eVal; document.getElementById("taskEndUnit").value = t.eUnit; openModal('taskModal'); };
-    window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
-    window.deleteBloc = (id) => { if(confirm("Supprimer ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
-    window.deleteTask = (id) => { if(confirm("Supprimer ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
+    
+    window.deleteForm = (id) => { if(confirm("Supprimer la formation et tous ses blocs ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
+    window.deleteBloc = (id) => { if(confirm("Supprimer ce bloc ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
+    window.deleteTask = (id) => { if(confirm("Supprimer cette tâche ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
     window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
 
+    // --- NAVIGATION ---
     window.showView = (id) => { if(id === 'formationsView' || id === 'templatesListView') state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
     window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
-    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2><small>Resp: ${b.r1}/${b.r2}</small>`; showView('tasksView'); };
+    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2><small>Resp: ${b.r1 || '?'}/${b.r2 || '?'}</small>`; showView('tasksView'); };
     window.openFormModal = (tpl) => { state.editingId = null; document.getElementById("formIsTemplate").value = tpl; document.getElementById("dateSection").style.display = tpl ? "none" : "block"; openModal('formationModal'); };
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
     window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
