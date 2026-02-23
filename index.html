@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion FOI - Modèles et Actifs</title>
+    <title>Gestion FOI - Interface Finale</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
@@ -16,36 +16,38 @@
         body { font-family: sans-serif; background:var(--bg1); color:var(--text1); padding: 10px 20px; }
         .app { max-width:1200px; margin:auto; }
         
-        /* HEADER PRINCIPAL */
+        /* HEADER */
         header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
-        .mini-header { padding: 10px 0; margin-bottom: 15px; border-bottom: 1px solid var(--bg3); display: flex; align-items: center; justify-content: space-between; }
+        .header-btns { display: flex; gap: 10px; }
 
-        .section-title { margin: 25px 0 15px 0; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .section-title { margin: 25px 0 15px 0; font-size: 1rem; color: var(--text2); display: flex; align-items: center; gap: 10px; font-weight: bold; text-transform: uppercase; }
         .section-title::after { content: ""; flex: 1; height: 1px; background: var(--bg3); }
 
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:15px; }
 
-        /* CARDS */
+        /* CARDS PAR CORPS */
         .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 140px; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
-        .card.style-apm { background: var(--apm-gray); padding-top: 22px; }
+        /* APM: Gris + Liserés */
+        .card.style-apm { background: var(--apm-gray); padding-top: 25px; }
         .card.style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background: var(--flag-yellow); }
         .card.style-apm::after { content:''; position:absolute; top:3px; left:0; width:100%; height:3px; background: var(--flag-red); }
         
-        .card.style-polcant { background: var(--polcant-blue); }
-        .card.style-asp { background: var(--asp-light); color: #0f172a; }
+        /* PolCant: Bleu électrique fade */
+        .card.style-polcant { background: var(--polcant-blue); border-color: #475569; }
+        
+        /* ASP: Gris clair */
+        .card.style-asp { background: var(--asp-light); color: #0f172a; border-color: #cbd5e1; }
         .card.style-asp h3, .card.style-asp p, .card.style-asp small { color: #0f172a; }
 
-        .btn { background:var(--primary); color: white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .btn { background:var(--primary); color: white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.85rem; }
+        .btn-model { background: #6366f1; } /* Indigo pour différencier */
         .btn-secondary { background:var(--bg3); color:var(--text1); padding: 6px 12px; font-size: 0.8rem; border: none; border-radius: 6px; cursor: pointer; }
-        .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; padding: 5px; font-size: 1.1rem; }
-        .card.style-asp .btn-icon { color: #0f172a; }
-
-        .card-actions { margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; }
         
-        .prog-bg { background: rgba(0,0,0,0.2); height: 6px; border-radius: 3px; margin: 10px 0; overflow: hidden; }
-        .prog-fill { height: 100%; background: var(--success); transition: 0.5s; }
+        .card-actions { margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; }
+        .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 1.1rem; }
+        .card.style-asp .btn-icon { color: #0f172a; }
 
         .hidden { display:none !important; }
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
@@ -59,21 +61,24 @@
     <div id="formationsView">
         <header>
             <h1>📋 Gestion FOI</h1>
-            <button class="btn" onclick="openModal('formationModal')">+ Ajouter</button>
+            <div class="header-btns">
+                <button class="btn btn-model" onclick="prepareModal(true)">📂 + Modèle</button>
+                <button class="btn" onclick="prepareModal(false)">+ Ajouter Session</button>
+            </div>
         </header>
 
-        <div class="section-title">📂 Modèles (Templates)</div>
+        <div class="section-title">📂 Modèles de Référence</div>
         <div class="grid" id="templateGrid"></div>
 
-        <div class="section-title">🚀 Sessions Actives</div>
+        <div class="section-title">🚀 Sessions Actives (Chronologique)</div>
         <div class="grid" id="activeGrid"></div>
     </div>
 
     <div id="blocsView" class="hidden">
-        <div class="mini-header">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--bg3); padding-bottom:10px;">
             <div style="display:flex; align-items:center; gap:15px">
                 <button class="btn-secondary" onclick="showView('formationsView')">← Retour</button>
-                <h2 id="formationTitle" style="font-size: 1.1rem;"></h2>
+                <h2 id="formationTitle" style="font-size: 1.1rem; color: var(--primary);"></h2>
             </div>
             <button class="btn" onclick="openModal('blocModal')">+ Bloc</button>
         </div>
@@ -83,25 +88,25 @@
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Nouvelle Formation</h3>
-        <label>Nom</label><input id="formName" placeholder="Ex: FOI Standard ou FOI 2026-1">
+        <h3 id="modalTitle">Nouvelle Formation</h3>
+        <input type="hidden" id="formIsTemplate">
+        
+        <label>Nom</label><input id="formName" placeholder="Nom de la formation">
+        
         <label>Corps</label>
         <select id="formType">
-            <option value="pm">APM</option>
-            <option value="pc">PolCant</option>
+            <option value="apm">APM</option>
+            <option value="polcant">PolCant</option>
             <option value="asp">ASP</option>
         </select>
-        <label>Catégorie</label>
-        <select id="formIsTemplate" onchange="toggleDateFields()">
-            <option value="true">Modèle de base (Référence)</option>
-            <option value="false">Session Active (Dates réelles)</option>
-        </select>
-        <div id="dateFields" style="display:none;">
+        
+        <div id="dateSection">
             <div style="display:flex; gap:10px">
-                <div style="flex:1"><label>Début</label><input id="formStart" type="date"></div>
-                <div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div>
+                <div style="flex:1"><label>Date début</label><input id="formStart" type="date"></div>
+                <div style="flex:1"><label>Date fin</label><input id="formEnd" type="date"></div>
             </div>
         </div>
+
         <div style="display:flex; gap:10px; margin-top:15px">
             <button class="btn-secondary" style="flex:1" onclick="closeModal('formationModal')">Annuler</button>
             <button class="btn" style="flex:1" onclick="saveFormation()">Enregistrer</button>
@@ -139,8 +144,8 @@
 
     function refreshUI() {
         if(state.currentView === 'formationsView') {
-            renderList("templateGrid", state.formations.filter(f => f.isTemplate === "true" || f.isTemplate === true));
-            renderList("activeGrid", state.formations.filter(f => f.isTemplate === "false" || f.isTemplate === false));
+            renderList("templateGrid", state.formations.filter(f => f.isTemplate === true));
+            renderList("activeGrid", state.formations.filter(f => f.isTemplate === false));
         } else if(state.currentView === 'blocsView') renderBlocs();
     }
 
@@ -149,45 +154,51 @@
         const sorted = containerId === "activeGrid" ? list.sort((a,b) => new Date(a.start) - new Date(b.start)) : list;
         
         grid.innerHTML = sorted.map(f => {
-            const isTpl = f.isTemplate === "true" || f.isTemplate === true;
+            const isTpl = f.isTemplate === true;
+            const corpsDisplay = f.type === 'apm' ? 'APM' : (f.type === 'polcant' ? 'PolCant' : 'ASP');
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
                     <h3>${f.name}</h3>
-                    <p style="font-size:0.8rem; opacity:0.8; margin-bottom:5px;">${f.type.toUpperCase()}</p>
-                    ${!isTpl ? `<small>📅 ${new Date(f.start).toLocaleDateString()} - ${new Date(f.end).toLocaleDateString()}</small>` : '<small>📑 Fiche de référence</small>'}
+                    <p style="font-size:0.8rem; font-weight:bold; opacity:0.9; margin-top:2px;">${corpsDisplay}</p>
+                    ${!isTpl ? `<small>📅 ${new Date(f.start).toLocaleDateString()} - ${new Date(f.end).toLocaleDateString()}</small>` : '<small>📑 Fiche modèle</small>'}
                     <div class="card-actions">
                         <button class="btn-icon" onclick="deleteFormation(event, ${f.id})">🗑️</button>
-                        ${isTpl ? `<button class="btn-secondary" onclick="useTemplate(event, ${f.id})">⚡ Déployer</button>` : ''}
+                        ${isTpl ? `<button class="btn-secondary" onclick="deploySession(event, ${f.id})">⚡ Déployer</button>` : ''}
                     </div>
                 </div>
             `;
         }).join("");
     }
 
+    window.prepareModal = (isTemplate) => {
+        document.getElementById("modalTitle").textContent = isTemplate ? "Nouveau Modèle" : "Nouvelle Session";
+        document.getElementById("formIsTemplate").value = isTemplate;
+        document.getElementById("dateSection").style.display = isTemplate ? "none" : "block";
+        openModal('formationModal');
+    }
+
     window.saveFormation = () => {
-        const isTpl = document.getElementById("formIsTemplate").value;
+        const isTpl = document.getElementById("formIsTemplate").value === "true";
         const data = {
             id: Date.now(),
             name: document.getElementById("formName").value,
             type: document.getElementById("formType").value,
             isTemplate: isTpl,
-            start: isTpl === "true" ? "" : document.getElementById("formStart").value,
-            end: isTpl === "true" ? "" : document.getElementById("formEnd").value
+            start: isTpl ? "" : document.getElementById("formStart").value,
+            end: isTpl ? "" : document.getElementById("formEnd").value
         };
         state.formations.push(data);
         save();
         closeModal('formationModal');
     }
 
-    window.useTemplate = (e, id) => {
+    window.deploySession = (e, id) => {
         e.stopPropagation();
         const tpl = state.formations.find(f => f.id === id);
-        const newName = prompt("Nom de la session active ?", tpl.name + " " + new Date().getFullYear());
-        const newDate = prompt("Date de début prévue (AAAA-MM-JJ) ?");
-        
-        if(newName && newDate && confirm(`Déployer une session active à partir du modèle "${tpl.name}" ?`)) {
+        const newDate = prompt("Date de début de la session (AAAA-MM-JJ) ?");
+        if(newDate) {
             const newFid = Date.now();
-            state.formations.push({ ...tpl, id: newFid, name: newName, isTemplate: false, start: newDate });
+            state.formations.push({ ...tpl, id: newFid, name: tpl.name + " (Active)", isTemplate: false, start: newDate });
             state.blocs.filter(b => b.formationId === id).forEach(b => {
                 state.blocs.push({ ...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
             });
@@ -197,16 +208,11 @@
 
     window.deleteFormation = (e, id) => {
         e.stopPropagation();
-        if(confirm("Supprimer définitivement cet élément ?")) {
+        if(confirm("Supprimer définitivement ?")) {
             state.formations = state.formations.filter(f => f.id !== id);
             state.blocs = state.blocs.filter(b => b.formationId !== id);
             save();
         }
-    }
-
-    window.toggleDateFields = () => {
-        const val = document.getElementById("formIsTemplate").value;
-        document.getElementById("dateFields").style.display = (val === "false") ? "block" : "none";
     }
 
     window.showView = (id) => { 
@@ -218,8 +224,7 @@
 
     window.enterFormation = (id) => { 
         state.currentFormationId = id; 
-        const f = state.formations.find(x => x.id === id);
-        document.getElementById("formationTitle").textContent = f.name;
+        document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name;
         showView("blocsView"); 
     };
 
