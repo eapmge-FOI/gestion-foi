@@ -3,12 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion des tâches FOI - Expert</title>
+    <title>Gestion des tâches FOI</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
-            --text1:#f1f5f9; --text2:#cbd5e1; --success:#059669; 
-            --warning:#d97706; --danger:#dc2626; --muted:#475569;   
+            --text1:#f1f5f9; --text2:#cbd5e1; 
+            --success:#059669; --success-bg: rgba(5, 150, 105, 0.3);
+            --warning:#d97706; --warning-bg: rgba(217, 119, 6, 0.3);
+            --danger:#dc2626; --danger-bg: rgba(220, 38, 38, 0.4);
+            --muted:#475569; --muted-bg: rgba(71, 85, 105, 0.2);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: sans-serif; background:var(--bg1); color:var(--text1); line-height: 1.5; padding: 20px; }
@@ -16,36 +19,39 @@
         header { background:var(--bg2); padding:20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px; }
 
-        /* CARDS */
         .card { background:var(--bg2); padding:20px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display: flex; flex-direction: column; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         .prog-bg { background: var(--bg3); height: 10px; border-radius: 5px; margin: 10px 0; overflow: hidden; }
         .prog-fill { background: var(--primary); height: 100%; transition: 0.3s; }
 
-        /* BOUTONS */
         .btn { background:var(--primary); color: white; border:none; padding:10px 15px; border-radius:8px; cursor:pointer; font-weight:bold; }
         .btn-secondary { background:var(--bg3); color:var(--text1); margin-right: 8px; }
         .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 1.2rem; padding: 5px; }
-        .btn-icon:hover { color: var(--primary); }
 
-        /* TACHES */
-        .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); overflow: hidden; }
-        .task-header { padding: 15px; display: flex; align-items: center; justify-content: space-between; border-left: 10px solid var(--muted); cursor: pointer; }
-        .task-header.todo { border-left-color: var(--muted); }
-        .task-header.progress { border-left-color: var(--warning); }
-        .task-header.done { border-left-color: var(--success); }
-        .task-header.late { border-left-color: var(--danger); animation: flash 1.5s infinite; }
-        @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        /* TACHES - STYLE VISUEL RENFORCÉ */
+        .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 12px; border: 1px solid var(--bg3); overflow: hidden; }
+        .task-header { padding: 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: 0.2s; border-left: 8px solid transparent; }
         
-        .task-body { padding: 15px; background: rgba(0,0,0,0.2); display: none; border-top: 1px solid var(--bg3); }
+        /* COULEURS DE FOND PAR STATUT */
+        .task-header.todo { background: var(--muted-bg); border-left-color: var(--muted); }
+        .task-header.progress { background: var(--warning-bg); border-left-color: var(--warning); }
+        .task-header.done { background: var(--success-bg); border-left-color: var(--success); }
+        .task-header.late { background: var(--danger-bg); border-left-color: var(--danger); animation: flash 2s infinite; }
+        
+        @keyframes flash { 0%, 100% { background: var(--danger-bg); } 50% { background: rgba(220, 38, 38, 0.6); } }
+        
+        .task-body { padding: 20px; background: rgba(0,0,0,0.4); display: none; border-top: 1px solid var(--bg3); }
         .task-body.active { display: block; }
         
-        /* MODALS */
+        .status-badge { font-weight: bold; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; text-transform: uppercase; min-width: 100px; text-align: center; color: white; border: none; cursor: pointer; }
+        .status-badge.todo { background: var(--muted); }
+        .status-badge.progress { background: var(--warning); }
+        .status-badge.done { background: var(--success); }
+        .status-badge.late { background: var(--danger); }
+
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; border: 1px solid var(--bg3); max-height: 90vh; overflow-y: auto; }
         input, select, textarea { width:100%; margin: 5px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
-        label { font-size: 0.85rem; color: var(--text2); }
-        .row { display: flex; gap: 10px; }
         .hidden { display:none !important; }
         #loading { position: fixed; top: 0; left: 0; width: 100%; height: 5px; background: var(--primary); z-index: 1000; display: none; }
     </style>
@@ -58,11 +64,7 @@
         <h1>📋 Gestion FOI</h1>
         <button class="btn" onclick="openModal('formationModal')">+ Formation</button>
     </header>
-
-    <div id="formationsView">
-        <div class="grid" id="formationsGrid"></div>
-    </div>
-
+    <div id="formationsView"><div class="grid" id="formationsGrid"></div></div>
     <div id="blocsView" class="hidden">
         <button class="btn btn-secondary" onclick="showView('formationsView')">← Retour</button>
         <div style="display:flex; justify-content: space-between; align-items: center; margin: 20px 0;">
@@ -71,14 +73,10 @@
         </div>
         <div class="grid" id="blocsGrid"></div>
     </div>
-
     <div id="tasksView" class="hidden">
         <button class="btn btn-secondary" onclick="showView('blocsView')">← Retour</button>
         <div style="display:flex; justify-content: space-between; align-items: center; margin: 15px 0;">
-            <div>
-                <h2 id="blocTitle"></h2>
-                <p id="blocInfo" style="font-size: 0.9rem; color: var(--text2);"></p>
-            </div>
+            <div><h2 id="blocTitle"></h2><p id="blocInfo" style="font-size: 0.9rem; color: var(--text2);"></p></div>
             <button class="btn" onclick="openModal('taskModal')">+ Ajouter une Tâche</button>
         </div>
         <div id="tasksList"></div>
@@ -90,12 +88,8 @@
         <h3 id="formModalTitle">Nouvelle formation</h3>
         <label>Nom</label><input id="formName">
         <label>Type</label>
-        <select id="formType">
-            <option value="pm">Police Municipale</option>
-            <option value="pc">Police Cantonale</option>
-            <option value="asp">ASP</option>
-        </select>
-        <div class="row">
+        <select id="formType"><option value="pm">Police Municipale</option><option value="pc">Police Cantonale</option><option value="asp">ASP</option></select>
+        <div class="row" style="display:flex; gap:10px">
             <button class="btn-secondary" onclick="closeModal('formationModal')" style="flex:1">Annuler</button>
             <button class="btn" onclick="saveFormation()" style="flex:1">Enregistrer</button>
         </div>
@@ -104,14 +98,14 @@
 
 <div id="blocModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3 id="blocModalTitle">Nouveau Bloc</h3>
+        <h3 id="blocModalTitle">Paramètres du Bloc</h3>
         <label>Nom du bloc</label><input id="blocName">
         <label>Date prévue</label><input id="blocDate" type="date">
-        <div class="row">
+        <div style="display:flex; gap:10px">
             <div style="flex:1"><label>Resp. 1</label><input id="resp1" maxlength="3"></div>
             <div style="flex:1"><label>Resp. 2</label><input id="resp2" maxlength="3"></div>
         </div>
-        <div class="row">
+        <div class="row" style="display:flex; gap:10px">
             <button class="btn-secondary" onclick="closeModal('blocModal')" style="flex:1">Annuler</button>
             <button class="btn" onclick="saveBloc()" style="flex:1">Enregistrer</button>
         </div>
@@ -121,39 +115,18 @@
 <div id="taskModal" class="modal-overlay hidden">
     <div class="modal-content">
         <h3 id="taskModalTitle">Paramètres de la tâche</h3>
-        <label>Titre de la tâche</label><input id="taskTitle">
-        <label>Responsable</label><input id="taskResp" placeholder="Nom ou initiales">
-        <label>Description / Détails particuliers</label>
-        <textarea id="taskDesc" rows="3"></textarea>
-        
-        <div class="row">
-            <div style="flex:1">
-                <label>Commencer (Avant Bloc)</label>
-                <div class="row">
-                    <input id="startVal" type="number" value="1">
-                    <select id="startUnit">
-                        <option value="days">Jours</option>
-                        <option value="weeks">Sem.</option>
-                        <option value="months">Mois</option>
-                        <option value="years">Années</option>
-                    </select>
-                </div>
+        <label>Titre</label><input id="taskTitle">
+        <label>Responsable</label><input id="taskResp">
+        <label>Description</label><textarea id="taskDesc" rows="3"></textarea>
+        <div style="display:flex; gap:10px">
+            <div style="flex:1"><label>Commencer (Avant Bloc)</label>
+                <div style="display:flex; gap:5px"><input id="startVal" type="number" value="1"><select id="startUnit"><option value="days">Jours</option><option value="weeks">Sem.</option><option value="months">Mois</option><option value="years">Années</option></select></div>
             </div>
-            <div style="flex:1">
-                <label>Terminer (Avant Bloc)</label>
-                <div class="row">
-                    <input id="endVal" type="number" value="1">
-                    <select id="endUnit">
-                        <option value="days">Jours</option>
-                        <option value="weeks">Sem.</option>
-                        <option value="months">Mois</option>
-                        <option value="years">Années</option>
-                    </select>
-                </div>
+            <div style="flex:1"><label>Terminer (Avant Bloc)</label>
+                <div style="display:flex; gap:5px"><input id="endVal" type="number" value="1"><select id="endUnit"><option value="days">Jours</option><option value="weeks">Sem.</option><option value="months">Mois</option><option value="years">Années</option></select></div>
             </div>
         </div>
-        
-        <div class="row" style="margin-top:10px;">
+        <div class="row" style="display:flex; gap:10px; margin-top:15px">
             <button class="btn-secondary" onclick="closeModal('taskModal')" style="flex:1">Annuler</button>
             <button class="btn" onclick="saveTask()" style="flex:1">Enregistrer</button>
         </div>
@@ -175,7 +148,6 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-
     let state = { formations: [], blocs: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView' };
 
     onSnapshot(doc(db, "data", "appState"), (docSnap) => {
@@ -215,12 +187,9 @@
         const grid = document.getElementById("formationsGrid");
         grid.innerHTML = state.formations.map(f => `
             <div class="card" onclick="enterFormation(${f.id})">
-                <div style="display:flex; justify-content:space-between">
-                    <h3>${f.name}</h3>
-                    <button class="btn-icon" onclick="editFormation(event, ${f.id})">✏️</button>
-                </div>
+                <div style="display:flex; justify-content:space-between"><h3>${f.name}</h3><button class="btn-icon" onclick="editFormation(event, ${f.id})">✏️</button></div>
                 <p style="color:var(--primary); font-weight:bold;">${f.type.toUpperCase()}</p>
-                <button class="btn-duplicate" onclick="duplicateFormation(event, ${f.id})" style="margin-top:10px; background:#475569; color:white; border:none; padding:5px; border-radius:4px; font-size:0.7rem">👯 Dupliquer</button>
+                <button onclick="duplicateFormation(event, ${f.id})" style="margin-top:10px; background:#475569; color:white; border:none; padding:5px; border-radius:4px; font-size:0.7rem; cursor:pointer">👯 Dupliquer</button>
             </div>
         `).join("");
     }
@@ -233,10 +202,7 @@
             const prog = b.tasks.length === 0 ? 0 : Math.round((done / b.tasks.length) * 100);
             return `
                 <div class="card" onclick="enterBloc(${b.id})">
-                    <div style="display:flex; justify-content:space-between">
-                        <h3>${b.name}</h3>
-                        <button class="btn-icon" onclick="editBloc(event, ${b.id})">✏️</button>
-                    </div>
+                    <div style="display:flex; justify-content:space-between"><h3>${b.name}</h3><button class="btn-icon" onclick="editBloc(event, ${b.id})">✏️</button></div>
                     <p>📅 ${b.date || 'À définir'}</p>
                     <p>👥 ${b.r1 || '--'} / ${b.r2 || '--'}</p>
                     <div class="prog-bg"><div class="prog-fill" style="width:${prog}%"></div></div>
@@ -252,21 +218,19 @@
         if(!b) return;
 
         list.innerHTML = b.tasks.map(t => {
-            const startD = calculateDate(b.date, t.startVal, t.startUnit);
             const endD = calculateDate(b.date, t.endVal, t.endUnit);
+            const startD = calculateDate(b.date, t.startVal, t.startUnit);
             let sClass = t.status;
-            if(t.status !== 'done' && endD && endD < today) sClass = 'late';
+            let label = t.status === 'todo' ? 'À faire' : (t.status === 'progress' ? 'En cours' : 'Terminé');
+            if(t.status !== 'done' && endD && endD < today) { sClass = 'late'; label = 'Retard'; }
 
             return `
                 <div class="task-item">
                     <div class="task-header ${sClass}" onclick="toggleTask(${t.id})">
-                        <div>
-                            <strong style="font-size:1.1rem">${t.title}</strong><br>
-                            <small>Fin: ${endD ? endD.toLocaleDateString() : '?'}</small>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px">
-                            <span style="font-size:0.8rem; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px">${t.resp || '--'}</span>
-                            <button class="btn" onclick="cycleStatus(event, ${t.id})">${t.status.toUpperCase()}</button>
+                        <div><strong style="font-size:1.1rem">${t.title}</strong><br><small>Échéance: ${endD ? endD.toLocaleDateString() : '?'}</small></div>
+                        <div style="display:flex; align-items:center; gap:12px">
+                            <span style="font-size:0.8rem; opacity:0.8">${t.resp || '--'}</span>
+                            <button class="status-badge ${sClass}" onclick="cycleStatus(event, ${t.id})">${label}</button>
                             <button class="btn-icon" onclick="editTask(event, ${t.id})">✏️</button>
                         </div>
                     </div>
@@ -280,7 +244,6 @@
         }).join("");
     }
 
-    // --- ACTIONS ---
     window.toggleTask = (id) => document.getElementById(`body-${id}`).classList.toggle('active');
 
     window.saveFormation = () => {
@@ -299,7 +262,6 @@
         const f = state.formations.find(f => f.id === id);
         document.getElementById("formName").value = f.name;
         document.getElementById("formType").value = f.type;
-        document.getElementById("formModalTitle").textContent = "Modifier Formation";
         openModal('formationModal');
     };
 
@@ -335,14 +297,11 @@
             endUnit: document.getElementById("endUnit").value,
             status: 'todo'
         };
-
         if(state.editingId) {
             const idx = b.tasks.findIndex(t => t.id === state.editingId);
             taskData.status = b.tasks[idx].status;
             b.tasks[idx] = taskData;
-        } else {
-            b.tasks.push(taskData);
-        }
+        } else { b.tasks.push(taskData); }
         save(); closeModal('taskModal');
     };
 
@@ -381,16 +340,11 @@
         save();
     };
 
-    // NAV
     window.showView = (id) => { state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
     window.enterFormation = (id) => { state.currentFormationId = id; const f = state.formations.find(f => f.id === id); document.getElementById("formationTitle").textContent = f.name; window.showView("blocsView"); };
-    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(b => b.id === id); document.getElementById("blocTitle").textContent = b.name; document.getElementById("blocInfo").textContent = `Date: ${b.date || '?'} | Responsables: ${b.r1}/${b.r2}`; window.showView("tasksView"); };
+    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(b => b.id === id); document.getElementById("blocTitle").textContent = b.name; document.getElementById("blocInfo").textContent = `Date: ${b.date || '?'} | Resps: ${b.r1}/${b.r2}`; window.showView("tasksView"); };
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => { 
-        document.getElementById(id).classList.add("hidden"); 
-        document.querySelectorAll(`#${id} input, #${id} textarea`).forEach(i => i.value = ""); 
-        state.editingId = null; 
-    };
+    window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); document.querySelectorAll(`#${id} input, #${id} textarea`).forEach(i => i.value = ""); state.editingId = null; };
 </script>
 </body>
 </html>
