@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion FOI - Séparation Modèles/Sessions</title>
+    <title>Gestion FOI - Complet</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
@@ -16,50 +16,50 @@
         body { font-family: sans-serif; background:var(--bg1); color:var(--text1); padding: 10px 20px; }
         .app { max-width:1200px; margin:auto; }
         
-        /* HEADERS */
-        header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
-        .header-btns { display: flex; gap: 10px; }
+        header, .mini-header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
 
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:15px; }
 
         /* CARDS */
-        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 140px; }
-        .card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 150px; }
+        .card:hover { border-color: var(--primary); }
         
         .card.style-apm { background: var(--apm-gray); padding-top: 25px; }
         .card.style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background: var(--flag-yellow); }
         .card.style-apm::after { content:''; position:absolute; top:3px; left:0; width:100%; height:3px; background: var(--flag-red); }
-        
-        .card.style-polcant { background: var(--polcant-blue); border-color: #475569; }
-        
-        .card.style-asp { background: var(--asp-light); color: #0f172a; border-color: #cbd5e1; }
+        .card.style-polcant { background: var(--polcant-blue); }
+        .card.style-asp { background: var(--asp-light); color: #0f172a; }
         .card.style-asp h3, .card.style-asp p, .card.style-asp small { color: #0f172a; }
 
-        /* BUTTONS */
-        .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.85rem; }
+        .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
         .btn-model { background: #6366f1; }
-        .btn-secondary { background:var(--bg3); color:var(--text1); padding: 6px 12px; font-size: 0.8rem; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-secondary { background:var(--bg3); color:var(--text1); padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; border:none; cursor:pointer; }
         
-        .card-actions { margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; }
+        .card-actions { margin-top: auto; display: flex; gap: 10px; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
         .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 1.1rem; }
         .card.style-asp .btn-icon { color: #0f172a; }
+
+        /* TACHES */
+        .task-item { background: var(--bg2); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--bg3); overflow: hidden; }
+        .task-header { padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .task-body { padding: 15px; background: rgba(0,0,0,0.2); border-top: 1px solid var(--bg3); display: none; }
+        .task-body.active { display: block; }
 
         .hidden { display:none !important; }
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 500px; border: 1px solid var(--bg3); }
-        input, select { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
+        input, select, textarea { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
     </style>
 </head>
 
 <body>
 <div class="app">
-    
     <div id="formationsView">
         <header>
             <h1>🚀 Sessions Actives</h1>
-            <div class="header-btns">
+            <div style="display:flex; gap:10px">
                 <button class="btn btn-model" onclick="showView('templatesListView')">📂 Modèles</button>
-                <button class="btn" onclick="prepareModal(false)">+ Ajouter Session</button>
+                <button class="btn" onclick="openFormModal(false)">+ Session</button>
             </div>
         </header>
         <div class="grid" id="activeGrid"></div>
@@ -69,31 +69,41 @@
         <header>
             <div style="display:flex; align-items:center; gap:15px">
                 <button class="btn-secondary" onclick="showView('formationsView')">← Retour</button>
-                <h1>📂 Bibliothèque de Modèles</h1>
+                <h1>📂 Modèles</h1>
             </div>
-            <button class="btn btn-model" onclick="prepareModal(true)">+ Nouveau Modèle</button>
+            <button class="btn btn-model" onclick="openFormModal(true)">+ Nouveau Modèle</button>
         </header>
         <div class="grid" id="templateGrid"></div>
     </div>
 
     <div id="blocsView" class="hidden">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--bg3); padding-bottom:10px;">
+        <div class="mini-header">
             <div style="display:flex; align-items:center; gap:15px">
-                <button id="backFromBlocs" class="btn-secondary">← Retour</button>
-                <h2 id="formationTitle" style="font-size: 1.1rem; color: var(--primary);"></h2>
+                <button class="btn-secondary" id="backBtn">← Retour</button>
+                <h2 id="formationTitle"></h2>
             </div>
             <button class="btn" onclick="openModal('blocModal')">+ Bloc</button>
         </div>
         <div class="grid" id="blocsGrid"></div>
     </div>
 
+    <div id="tasksView" class="hidden">
+        <div class="mini-header">
+            <div style="display:flex; align-items:center; gap:15px">
+                <button class="btn-secondary" onclick="showView('blocsView')">← Retour</button>
+                <h2 id="blocTitle"></h2>
+            </div>
+            <button class="btn" onclick="openModal('taskModal')">+ Tâche</button>
+        </div>
+        <div id="tasksList"></div>
+    </div>
 </div>
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3 id="modalTitle">Configuration</h3>
+        <h3 id="formModalTitle">Formation</h3>
         <input type="hidden" id="formIsTemplate">
-        <label>Nom</label><input id="formName" placeholder="Nom de la formation">
+        <label>Nom</label><input id="formName">
         <label>Corps</label>
         <select id="formType">
             <option value="apm">APM</option>
@@ -101,14 +111,36 @@
             <option value="asp">ASP</option>
         </select>
         <div id="dateSection">
-            <div style="display:flex; gap:10px">
-                <div style="flex:1"><label>Date début</label><input id="formStart" type="date"></div>
-                <div style="flex:1"><label>Date fin</label><input id="formEnd" type="date"></div>
-            </div>
+            <label>Date début</label><input id="formStart" type="date">
         </div>
         <div style="display:flex; gap:10px; margin-top:15px">
             <button class="btn-secondary" style="flex:1" onclick="closeModal('formationModal')">Annuler</button>
             <button class="btn" style="flex:1" onclick="saveFormation()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<div id="blocModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3>Bloc</h3>
+        <label>Nom</label><input id="blocName">
+        <label>Date</label><input id="blocDate" type="date">
+        <div style="display:flex; gap:10px; margin-top:15px">
+            <button class="btn-secondary" style="flex:1" onclick="closeModal('blocModal')">Annuler</button>
+            <button class="btn" style="flex:1" onclick="saveBloc()">Enregistrer</button>
+        </div>
+    </div>
+</div>
+
+<div id="taskModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3>Tâche</h3>
+        <label>Titre</label><input id="taskTitle">
+        <label>Responsable</label><input id="taskResp">
+        <label>Description</label><textarea id="taskDesc" rows="3"></textarea>
+        <div style="display:flex; gap:10px; margin-top:15px">
+            <button class="btn-secondary" style="flex:1" onclick="closeModal('taskModal')">Annuler</button>
+            <button class="btn" style="flex:1" onclick="saveTask()">Enregistrer</button>
         </div>
     </div>
 </div>
@@ -128,7 +160,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    let state = { formations: [], blocs: [], currentFormationId: null, currentView: 'formationsView', lastParentView: 'formationsView' };
+    let state = { formations: [], blocs: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView', lastParentView: 'formationsView' };
 
     onSnapshot(doc(db, "data", "appState"), (docSnap) => {
         if (docSnap.exists()) {
@@ -145,47 +177,132 @@
         if(state.currentView === 'formationsView') renderList("activeGrid", state.formations.filter(f => !f.isTemplate));
         else if(state.currentView === 'templatesListView') renderList("templateGrid", state.formations.filter(f => f.isTemplate));
         else if(state.currentView === 'blocsView') renderBlocs();
+        else if(state.currentView === 'tasksView') renderTasks();
     }
 
+    // --- RENDUS ---
     window.renderList = (containerId, list) => {
         const grid = document.getElementById(containerId);
         const sorted = containerId === "activeGrid" ? list.sort((a,b) => new Date(a.start) - new Date(b.start)) : list;
-        
-        grid.innerHTML = sorted.map(f => {
-            const corpsDisplay = f.type === 'apm' ? 'APM' : (f.type === 'polcant' ? 'PolCant' : 'ASP');
-            return `
-                <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    <h3>${f.name}</h3>
-                    <p style="font-size:0.8rem; font-weight:bold; opacity:0.9; margin-top:2px;">${corpsDisplay}</p>
-                    ${!f.isTemplate ? `<small>📅 ${new Date(f.start).toLocaleDateString()}</small>` : '<small>📑 Modèle de référence</small>'}
-                    <div class="card-actions">
-                        <button class="btn-icon" onclick="deleteFormation(event, ${f.id})">🗑️</button>
-                        ${f.isTemplate ? `<button class="btn-secondary" onclick="deploySession(event, ${f.id})">⚡ Déployer</button>` : ''}
+        grid.innerHTML = sorted.map(f => `
+            <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
+                <h3>${f.name}</h3>
+                <p style="font-size:0.8rem; font-weight:bold; margin-top:5px;">${f.type.toUpperCase()}</p>
+                <div class="card-actions">
+                    <button class="btn-icon" onclick="editFormation(event, ${f.id})">✏️</button>
+                    <button class="btn-icon" onclick="deleteFormation(event, ${f.id})">🗑️</button>
+                    ${f.isTemplate ? `<button class="btn-secondary" onclick="deploySession(event, ${f.id})">⚡ Déployer</button>` : ''}
+                </div>
+            </div>
+        `).join("");
+    };
+
+    window.renderBlocs = () => {
+        const grid = document.getElementById("blocsGrid");
+        const blocs = state.blocs.filter(b => b.formationId === state.currentFormationId);
+        grid.innerHTML = blocs.map(b => `
+            <div class="card" onclick="enterBloc(${b.id})">
+                <h3>${b.name}</h3>
+                <p>${b.date || 'Pas de date'}</p>
+                <div class="card-actions">
+                    <button class="btn-icon" onclick="editBloc(event, ${b.id})">✏️</button>
+                    <button class="btn-icon" onclick="deleteBloc(event, ${b.id})">🗑️</button>
+                </div>
+            </div>
+        `).join("");
+    };
+
+    window.renderTasks = () => {
+        const list = document.getElementById("tasksList");
+        const b = state.blocs.find(b => b.id === state.currentBlocId);
+        list.innerHTML = b.tasks.map(t => `
+            <div class="task-item">
+                <div class="task-header" onclick="this.nextElementSibling.classList.toggle('active')">
+                    <strong>${t.title}</strong>
+                    <div style="display:flex; gap:10px">
+                        <button class="btn-icon" onclick="editTask(event, ${t.id})">✏️</button>
+                        <button class="btn-icon" onclick="deleteTask(event, ${t.id})">🗑️</button>
                     </div>
                 </div>
-            `;
-        }).join("");
-    }
+                <div class="task-body">${t.desc || '-'}</div>
+            </div>
+        `).join("");
+    };
 
-    window.prepareModal = (isTemplate) => {
-        document.getElementById("modalTitle").textContent = isTemplate ? "Nouveau Modèle" : "Nouvelle Session";
-        document.getElementById("formIsTemplate").value = isTemplate;
-        document.getElementById("dateSection").style.display = isTemplate ? "none" : "block";
-        openModal('formationModal');
-    }
-
+    // --- ACTIONS SAUVEGARDE ---
     window.saveFormation = () => {
         const isTpl = document.getElementById("formIsTemplate").value === "true";
-        state.formations.push({
-            id: Date.now(),
-            name: document.getElementById("formName").value,
-            type: document.getElementById("formType").value,
-            isTemplate: isTpl,
-            start: isTpl ? "" : document.getElementById("formStart").value,
-            end: isTpl ? "" : document.getElementById("formEnd").value
-        });
+        const data = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: isTpl, start: document.getElementById("formStart").value };
+        if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? data : f);
+        else state.formations.push(data);
         save(); closeModal('formationModal');
-    }
+    };
+
+    window.saveBloc = () => {
+        const data = { id: state.editingId || Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, tasks: [] };
+        if(state.editingId) {
+            let b = state.blocs.find(x => x.id === state.editingId);
+            b.name = data.name; b.date = data.date;
+        } else state.blocs.push(data);
+        save(); closeModal('blocModal');
+    };
+
+    window.saveTask = () => {
+        const b = state.blocs.find(x => x.id === state.currentBlocId);
+        const t = { id: state.editingId || Date.now(), title: document.getElementById("taskTitle").value, resp: document.getElementById("taskResp").value, desc: document.getElementById("taskDesc").value, status: 'todo' };
+        if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? t : x);
+        else b.tasks.push(t);
+        save(); closeModal('taskModal');
+    };
+
+    // --- LOGIQUE EDITION / SUPPRESSION ---
+    window.openFormModal = (isTpl) => { 
+        state.editingId = null; 
+        document.getElementById("formIsTemplate").value = isTpl;
+        document.getElementById("dateSection").style.display = isTpl ? "none" : "block";
+        openModal('formationModal'); 
+    };
+
+    window.editFormation = (e, id) => {
+        e.stopPropagation(); state.editingId = id; const f = state.formations.find(x => x.id === id);
+        document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type;
+        document.getElementById("formIsTemplate").value = f.isTemplate;
+        document.getElementById("dateSection").style.display = f.isTemplate ? "none" : "block";
+        openModal('formationModal');
+    };
+
+    window.editBloc = (e, id) => {
+        e.stopPropagation(); state.editingId = id; const b = state.blocs.find(x => x.id === id);
+        document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date;
+        openModal('blocModal');
+    };
+
+    window.editTask = (e, id) => {
+        e.stopPropagation(); state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId);
+        const t = b.tasks.find(x => x.id === id);
+        document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; document.getElementById("taskDesc").value = t.desc;
+        openModal('taskModal');
+    };
+
+    window.deleteFormation = (e, id) => { e.stopPropagation(); if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); save(); } };
+    window.deleteBloc = (e, id) => { e.stopPropagation(); if(confirm("Supprimer ?")) { state.blocs = state.blocs.filter(b => b.id !== id); save(); } };
+    window.deleteTask = (e, id) => { e.stopPropagation(); if(confirm("Supprimer ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); save(); } };
+
+    // --- NAVIGATION ---
+    window.showView = (id) => { 
+        if (id !== 'blocsView' && id !== 'tasksView') state.lastParentView = id;
+        state.currentView = id; 
+        document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); 
+        document.getElementById(id).classList.remove('hidden'); 
+        refreshUI(); 
+    };
+
+    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView("blocsView"); };
+    window.enterBloc = (id) => { state.currentBlocId = id; document.getElementById("blocTitle").textContent = state.blocs.find(x => x.id === id).name; showView("tasksView"); };
+    document.getElementById('backBtn').onclick = () => showView(state.lastParentView);
+
+    window.openModal = (id) => { document.getElementById(id).classList.remove("hidden"); };
+    window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; document.querySelectorAll(`#${id} input, #${id} textarea`).forEach(i => i.value = ""); };
 
     window.deploySession = (e, id) => {
         e.stopPropagation();
@@ -193,44 +310,13 @@
         const date = prompt("Date de début (AAAA-MM-JJ) ?");
         if(date) {
             const newFid = Date.now();
-            state.formations.push({ ...tpl, id: newFid, name: tpl.name + " (Copie)", isTemplate: false, start: date });
+            state.formations.push({ ...tpl, id: newFid, name: tpl.name + " (Déployé)", isTemplate: false, start: date });
             state.blocs.filter(b => b.formationId === id).forEach(b => {
                 state.blocs.push({ ...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
             });
             save(); showView('formationsView');
         }
-    }
-
-    window.deleteFormation = (e, id) => {
-        e.stopPropagation();
-        if(confirm("Supprimer définitivement ?")) {
-            state.formations = state.formations.filter(f => f.id !== id);
-            state.blocs = state.blocs.filter(b => b.formationId !== id);
-            save();
-        }
-    }
-
-    window.showView = (id) => { 
-        if (id !== 'blocsView') state.lastParentView = id;
-        state.currentView = id; 
-        document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); 
-        document.getElementById(id).classList.remove('hidden'); 
-        refreshUI(); 
     };
-
-    window.enterFormation = (id) => { 
-        state.currentFormationId = id; 
-        document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name;
-        showView("blocsView"); 
-    };
-
-    document.getElementById('backFromBlocs').onclick = () => showView(state.lastParentView);
-
-    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => {
-        document.getElementById(id).classList.add("hidden");
-        document.querySelectorAll(`#${id} input`).forEach(i => i.value = "");
-    }
 </script>
 </body>
 </html>
