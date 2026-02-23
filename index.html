@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion FOI - Interface Finale</title>
+    <title>Gestion FOI - Séparation Modèles/Sessions</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
@@ -16,33 +16,28 @@
         body { font-family: sans-serif; background:var(--bg1); color:var(--text1); padding: 10px 20px; }
         .app { max-width:1200px; margin:auto; }
         
-        /* HEADER */
+        /* HEADERS */
         header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .header-btns { display: flex; gap: 10px; }
 
-        .section-title { margin: 25px 0 15px 0; font-size: 1rem; color: var(--text2); display: flex; align-items: center; gap: 10px; font-weight: bold; text-transform: uppercase; }
-        .section-title::after { content: ""; flex: 1; height: 1px; background: var(--bg3); }
-
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:15px; }
 
-        /* CARDS PAR CORPS */
+        /* CARDS */
         .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 140px; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
-        /* APM: Gris + Liserés */
         .card.style-apm { background: var(--apm-gray); padding-top: 25px; }
         .card.style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background: var(--flag-yellow); }
         .card.style-apm::after { content:''; position:absolute; top:3px; left:0; width:100%; height:3px; background: var(--flag-red); }
         
-        /* PolCant: Bleu électrique fade */
         .card.style-polcant { background: var(--polcant-blue); border-color: #475569; }
         
-        /* ASP: Gris clair */
         .card.style-asp { background: var(--asp-light); color: #0f172a; border-color: #cbd5e1; }
         .card.style-asp h3, .card.style-asp p, .card.style-asp small { color: #0f172a; }
 
-        .btn { background:var(--primary); color: white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.85rem; }
-        .btn-model { background: #6366f1; } /* Indigo pour différencier */
+        /* BUTTONS */
+        .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.85rem; }
+        .btn-model { background: #6366f1; }
         .btn-secondary { background:var(--bg3); color:var(--text1); padding: 6px 12px; font-size: 0.8rem; border: none; border-radius: 6px; cursor: pointer; }
         
         .card-actions { margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; }
@@ -58,55 +53,59 @@
 
 <body>
 <div class="app">
+    
     <div id="formationsView">
         <header>
-            <h1>📋 Gestion FOI</h1>
+            <h1>🚀 Sessions Actives</h1>
             <div class="header-btns">
-                <button class="btn btn-model" onclick="prepareModal(true)">📂 + Modèle</button>
+                <button class="btn btn-model" onclick="showView('templatesListView')">📂 Modèles</button>
                 <button class="btn" onclick="prepareModal(false)">+ Ajouter Session</button>
             </div>
         </header>
-
-        <div class="section-title">📂 Modèles de Référence</div>
-        <div class="grid" id="templateGrid"></div>
-
-        <div class="section-title">🚀 Sessions Actives (Chronologique)</div>
         <div class="grid" id="activeGrid"></div>
+    </div>
+
+    <div id="templatesListView" class="hidden">
+        <header>
+            <div style="display:flex; align-items:center; gap:15px">
+                <button class="btn-secondary" onclick="showView('formationsView')">← Retour</button>
+                <h1>📂 Bibliothèque de Modèles</h1>
+            </div>
+            <button class="btn btn-model" onclick="prepareModal(true)">+ Nouveau Modèle</button>
+        </header>
+        <div class="grid" id="templateGrid"></div>
     </div>
 
     <div id="blocsView" class="hidden">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid var(--bg3); padding-bottom:10px;">
             <div style="display:flex; align-items:center; gap:15px">
-                <button class="btn-secondary" onclick="showView('formationsView')">← Retour</button>
+                <button id="backFromBlocs" class="btn-secondary">← Retour</button>
                 <h2 id="formationTitle" style="font-size: 1.1rem; color: var(--primary);"></h2>
             </div>
             <button class="btn" onclick="openModal('blocModal')">+ Bloc</button>
         </div>
         <div class="grid" id="blocsGrid"></div>
     </div>
+
 </div>
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3 id="modalTitle">Nouvelle Formation</h3>
+        <h3 id="modalTitle">Configuration</h3>
         <input type="hidden" id="formIsTemplate">
-        
         <label>Nom</label><input id="formName" placeholder="Nom de la formation">
-        
         <label>Corps</label>
         <select id="formType">
             <option value="apm">APM</option>
             <option value="polcant">PolCant</option>
             <option value="asp">ASP</option>
         </select>
-        
         <div id="dateSection">
             <div style="display:flex; gap:10px">
                 <div style="flex:1"><label>Date début</label><input id="formStart" type="date"></div>
                 <div style="flex:1"><label>Date fin</label><input id="formEnd" type="date"></div>
             </div>
         </div>
-
         <div style="display:flex; gap:10px; margin-top:15px">
             <button class="btn-secondary" style="flex:1" onclick="closeModal('formationModal')">Annuler</button>
             <button class="btn" style="flex:1" onclick="saveFormation()">Enregistrer</button>
@@ -129,7 +128,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    let state = { formations: [], blocs: [], currentFormationId: null, currentView: 'formationsView' };
+    let state = { formations: [], blocs: [], currentFormationId: null, currentView: 'formationsView', lastParentView: 'formationsView' };
 
     onSnapshot(doc(db, "data", "appState"), (docSnap) => {
         if (docSnap.exists()) {
@@ -143,10 +142,9 @@
     async function save() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs }); }
 
     function refreshUI() {
-        if(state.currentView === 'formationsView') {
-            renderList("templateGrid", state.formations.filter(f => f.isTemplate === true));
-            renderList("activeGrid", state.formations.filter(f => f.isTemplate === false));
-        } else if(state.currentView === 'blocsView') renderBlocs();
+        if(state.currentView === 'formationsView') renderList("activeGrid", state.formations.filter(f => !f.isTemplate));
+        else if(state.currentView === 'templatesListView') renderList("templateGrid", state.formations.filter(f => f.isTemplate));
+        else if(state.currentView === 'blocsView') renderBlocs();
     }
 
     window.renderList = (containerId, list) => {
@@ -154,16 +152,15 @@
         const sorted = containerId === "activeGrid" ? list.sort((a,b) => new Date(a.start) - new Date(b.start)) : list;
         
         grid.innerHTML = sorted.map(f => {
-            const isTpl = f.isTemplate === true;
             const corpsDisplay = f.type === 'apm' ? 'APM' : (f.type === 'polcant' ? 'PolCant' : 'ASP');
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
                     <h3>${f.name}</h3>
                     <p style="font-size:0.8rem; font-weight:bold; opacity:0.9; margin-top:2px;">${corpsDisplay}</p>
-                    ${!isTpl ? `<small>📅 ${new Date(f.start).toLocaleDateString()} - ${new Date(f.end).toLocaleDateString()}</small>` : '<small>📑 Fiche modèle</small>'}
+                    ${!f.isTemplate ? `<small>📅 ${new Date(f.start).toLocaleDateString()}</small>` : '<small>📑 Modèle de référence</small>'}
                     <div class="card-actions">
                         <button class="btn-icon" onclick="deleteFormation(event, ${f.id})">🗑️</button>
-                        ${isTpl ? `<button class="btn-secondary" onclick="deploySession(event, ${f.id})">⚡ Déployer</button>` : ''}
+                        ${f.isTemplate ? `<button class="btn-secondary" onclick="deploySession(event, ${f.id})">⚡ Déployer</button>` : ''}
                     </div>
                 </div>
             `;
@@ -179,30 +176,28 @@
 
     window.saveFormation = () => {
         const isTpl = document.getElementById("formIsTemplate").value === "true";
-        const data = {
+        state.formations.push({
             id: Date.now(),
             name: document.getElementById("formName").value,
             type: document.getElementById("formType").value,
             isTemplate: isTpl,
             start: isTpl ? "" : document.getElementById("formStart").value,
             end: isTpl ? "" : document.getElementById("formEnd").value
-        };
-        state.formations.push(data);
-        save();
-        closeModal('formationModal');
+        });
+        save(); closeModal('formationModal');
     }
 
     window.deploySession = (e, id) => {
         e.stopPropagation();
         const tpl = state.formations.find(f => f.id === id);
-        const newDate = prompt("Date de début de la session (AAAA-MM-JJ) ?");
-        if(newDate) {
+        const date = prompt("Date de début (AAAA-MM-JJ) ?");
+        if(date) {
             const newFid = Date.now();
-            state.formations.push({ ...tpl, id: newFid, name: tpl.name + " (Active)", isTemplate: false, start: newDate });
+            state.formations.push({ ...tpl, id: newFid, name: tpl.name + " (Copie)", isTemplate: false, start: date });
             state.blocs.filter(b => b.formationId === id).forEach(b => {
                 state.blocs.push({ ...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
             });
-            save();
+            save(); showView('formationsView');
         }
     }
 
@@ -216,6 +211,7 @@
     }
 
     window.showView = (id) => { 
+        if (id !== 'blocsView') state.lastParentView = id;
         state.currentView = id; 
         document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); 
         document.getElementById(id).classList.remove('hidden'); 
@@ -227,6 +223,8 @@
         document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name;
         showView("blocsView"); 
     };
+
+    document.getElementById('backFromBlocs').onclick = () => showView(state.lastParentView);
 
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
     window.closeModal = (id) => {
