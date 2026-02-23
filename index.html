@@ -3,47 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion FOI - Modèles & Historique</title>
+    <title>Gestion FOI - Modèles et Actifs</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
             --text1:#f1f5f9; --text2:#cbd5e1; 
-            --success:#059669; --danger:#dc2626; --archive:#64748b;
+            --success:#059669; --danger:#dc2626;
             --polcant-blue: #334b7a; --apm-gray: #334155; --asp-light: #94a3b8;
+            --flag-red: #e11d48; --flag-yellow: #fbbf24;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: sans-serif; background:var(--bg1); color:var(--text1); padding: 10px 20px; }
         .app { max-width:1200px; margin:auto; }
         
-        header, .mini-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-        header { background:var(--bg2); padding:15px 20px; border-radius:12px; border: 1px solid var(--bg3); }
-        
-        .section-title { margin: 30px 0 15px 0; font-size: 1.2rem; border-left: 4px solid var(--primary); padding-left: 10px; display: flex; justify-content: space-between; align-items: center; }
+        /* HEADER PRINCIPAL */
+        header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
+        .mini-header { padding: 10px 0; margin-bottom: 15px; border-bottom: 1px solid var(--bg3); display: flex; align-items: center; justify-content: space-between; }
+
+        .section-title { margin: 25px 0 15px 0; font-size: 1.1rem; color: var(--primary); display: flex; align-items: center; gap: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .section-title::after { content: ""; flex: 1; height: 1px; background: var(--bg3); }
 
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:15px; }
 
-        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 150px; }
+        /* CARDS */
+        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; transition:.2s; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 140px; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
-        /* Styles spécifiques */
-        .card.style-apm { background: var(--apm-gray); border-top: 4px solid var(--flag-yellow); }
+        .card.style-apm { background: var(--apm-gray); padding-top: 22px; }
+        .card.style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:3px; background: var(--flag-yellow); }
+        .card.style-apm::after { content:''; position:absolute; top:3px; left:0; width:100%; height:3px; background: var(--flag-red); }
+        
         .card.style-polcant { background: var(--polcant-blue); }
         .card.style-asp { background: var(--asp-light); color: #0f172a; }
         .card.style-asp h3, .card.style-asp p, .card.style-asp small { color: #0f172a; }
+
+        .btn { background:var(--primary); color: white; border:none; padding:8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .btn-secondary { background:var(--bg3); color:var(--text1); padding: 6px 12px; font-size: 0.8rem; border: none; border-radius: 6px; cursor: pointer; }
+        .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; padding: 5px; font-size: 1.1rem; }
+        .card.style-asp .btn-icon { color: #0f172a; }
+
+        .card-actions { margin-top: auto; display: flex; justify-content: space-between; align-items: center; padding-top: 10px; }
         
-        /* Badge Modèle */
-        .template-badge { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; }
-
         .prog-bg { background: rgba(0,0,0,0.2); height: 6px; border-radius: 3px; margin: 10px 0; overflow: hidden; }
-        .prog-fill { height: 100%; transition: 0.6s; background: var(--success); }
+        .prog-fill { height: 100%; background: var(--success); transition: 0.5s; }
 
-        .btn { background:var(--primary); color: white; border:none; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:bold; font-size: 0.85rem; }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; margin-top: 10px; }
-        .btn-icon { background: none; border: none; color: var(--text2); cursor: pointer; padding: 5px; }
-
-        .card-actions { margin-top: auto; display: flex; gap: 8px; padding-top: 10px; }
         .hidden { display:none !important; }
-
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 500px; border: 1px solid var(--bg3); }
         input, select { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
@@ -55,58 +59,51 @@
     <div id="formationsView">
         <header>
             <h1>📋 Gestion FOI</h1>
-            <button class="btn" onclick="openModal('formationModal')">+ Nouveau Modèle/Session</button>
+            <button class="btn" onclick="openModal('formationModal')">+ Ajouter</button>
         </header>
+
+        <div class="section-title">📂 Modèles (Templates)</div>
+        <div class="grid" id="templateGrid"></div>
 
         <div class="section-title">🚀 Sessions Actives</div>
         <div class="grid" id="activeGrid"></div>
-
-        <div class="section-title">📂 Modèles de Référence</div>
-        <div class="grid" id="templateGrid"></div>
     </div>
 
     <div id="blocsView" class="hidden">
-        <div class="mini-header" style="margin-top:20px;">
-            <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h2 id="formationTitle"></h2>
+        <div class="mini-header">
+            <div style="display:flex; align-items:center; gap:15px">
+                <button class="btn-secondary" onclick="showView('formationsView')">← Retour</button>
+                <h2 id="formationTitle" style="font-size: 1.1rem;"></h2>
+            </div>
             <button class="btn" onclick="openModal('blocModal')">+ Bloc</button>
         </div>
         <div class="grid" id="blocsGrid"></div>
-    </div>
-
-    <div id="tasksView" class="hidden">
-        <div class="mini-header" style="margin-top:20px;">
-            <button class="btn" style="background:var(--bg3)" onclick="showView('blocsView')">← Retour</button>
-            <h2 id="blocTitle"></h2>
-            <button class="btn" onclick="openModal('taskModal')">+ Tâche</button>
-        </div>
-        <div id="tasksList"></div>
     </div>
 </div>
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3 id="formModalTitle">Configuration Formation</h3>
-        <label>Nom</label><input id="formName" placeholder="Ex: FOI 2026-1">
+        <h3>Nouvelle Formation</h3>
+        <label>Nom</label><input id="formName" placeholder="Ex: FOI Standard ou FOI 2026-1">
         <label>Corps</label>
         <select id="formType">
             <option value="pm">APM</option>
             <option value="pc">PolCant</option>
             <option value="asp">ASP</option>
         </select>
-        <label>Type de fiche</label>
-        <select id="formIsTemplate">
-            <option value="false">Session Active (avec dates)</option>
-            <option value="true">Modèle de base (réutilisable)</option>
+        <label>Catégorie</label>
+        <select id="formIsTemplate" onchange="toggleDateFields()">
+            <option value="true">Modèle de base (Référence)</option>
+            <option value="false">Session Active (Dates réelles)</option>
         </select>
-        <div id="dateFields">
+        <div id="dateFields" style="display:none;">
             <div style="display:flex; gap:10px">
                 <div style="flex:1"><label>Début</label><input id="formStart" type="date"></div>
                 <div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div>
             </div>
         </div>
         <div style="display:flex; gap:10px; margin-top:15px">
-            <button class="btn" style="background:var(--bg3); flex:1" onclick="closeModal('formationModal')">Annuler</button>
+            <button class="btn-secondary" style="flex:1" onclick="closeModal('formationModal')">Annuler</button>
             <button class="btn" style="flex:1" onclick="saveFormation()">Enregistrer</button>
         </div>
     </div>
@@ -142,28 +139,25 @@
 
     function refreshUI() {
         if(state.currentView === 'formationsView') {
-            renderGrid("activeGrid", state.formations.filter(f => f.isTemplate === false || f.isTemplate === "false"));
-            renderGrid("templateGrid", state.formations.filter(f => f.isTemplate === true || f.isTemplate === "true"));
+            renderList("templateGrid", state.formations.filter(f => f.isTemplate === "true" || f.isTemplate === true));
+            renderList("activeGrid", state.formations.filter(f => f.isTemplate === "false" || f.isTemplate === false));
         } else if(state.currentView === 'blocsView') renderBlocs();
     }
 
-    window.renderGrid = (containerId, list) => {
+    window.renderList = (containerId, list) => {
         const grid = document.getElementById(containerId);
-        // Tri chronologique pour les actives
-        const items = containerId === "activeGrid" ? list.sort((a,b) => new Date(a.start) - new Date(b.start)) : list;
+        const sorted = containerId === "activeGrid" ? list.sort((a,b) => new Date(a.start) - new Date(b.start)) : list;
         
-        grid.innerHTML = items.map(f => {
-            const isTpl = f.isTemplate === true || f.isTemplate === "true";
+        grid.innerHTML = sorted.map(f => {
+            const isTpl = f.isTemplate === "true" || f.isTemplate === true;
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    ${isTpl ? '<span class="template-badge">Modèle</span>' : ''}
                     <h3>${f.name}</h3>
-                    <p style="font-size:0.8rem; opacity:0.8">${f.type.toUpperCase()}</p>
-                    ${!isTpl ? `<small>📅 ${new Date(f.start).toLocaleDateString()} - ${new Date(f.end).toLocaleDateString()}</small>` : '<small>Prêt à l\'emploi</small>'}
-                    
+                    <p style="font-size:0.8rem; opacity:0.8; margin-bottom:5px;">${f.type.toUpperCase()}</p>
+                    ${!isTpl ? `<small>📅 ${new Date(f.start).toLocaleDateString()} - ${new Date(f.end).toLocaleDateString()}</small>` : '<small>📑 Fiche de référence</small>'}
                     <div class="card-actions">
                         <button class="btn-icon" onclick="deleteFormation(event, ${f.id})">🗑️</button>
-                        ${isTpl ? `<button class="btn-outline" onclick="instantiateTemplate(event, ${f.id})">⚡ Créer Session</button>` : ''}
+                        ${isTpl ? `<button class="btn-secondary" onclick="useTemplate(event, ${f.id})">⚡ Déployer</button>` : ''}
                     </div>
                 </div>
             `;
@@ -185,19 +179,17 @@
         closeModal('formationModal');
     }
 
-    window.instantiateTemplate = (e, id) => {
+    window.useTemplate = (e, id) => {
         e.stopPropagation();
         const tpl = state.formations.find(f => f.id === id);
-        const newName = prompt("Nom de la nouvelle session ?", tpl.name + " - " + new Date().getFullYear());
-        const newDate = prompt("Date de début (AAAA-MM-JJ) ?");
+        const newName = prompt("Nom de la session active ?", tpl.name + " " + new Date().getFullYear());
+        const newDate = prompt("Date de début prévue (AAAA-MM-JJ) ?");
         
-        if(newName && newDate) {
-            const newId = Date.now();
-            // Création formation
-            state.formations.push({ ...tpl, id: newId, name: newName, isTemplate: false, start: newDate, end: "" });
-            // Duplication blocs
+        if(newName && newDate && confirm(`Déployer une session active à partir du modèle "${tpl.name}" ?`)) {
+            const newFid = Date.now();
+            state.formations.push({ ...tpl, id: newFid, name: newName, isTemplate: false, start: newDate });
             state.blocs.filter(b => b.formationId === id).forEach(b => {
-                state.blocs.push({ ...b, id: Math.random(), formationId: newId, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
+                state.blocs.push({ ...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
             });
             save();
         }
@@ -205,33 +197,37 @@
 
     window.deleteFormation = (e, id) => {
         e.stopPropagation();
-        if(confirm("Supprimer définitivement ?")) {
+        if(confirm("Supprimer définitivement cet élément ?")) {
             state.formations = state.formations.filter(f => f.id !== id);
             state.blocs = state.blocs.filter(b => b.formationId !== id);
             save();
         }
     }
 
-    // Navigation de base
+    window.toggleDateFields = () => {
+        const val = document.getElementById("formIsTemplate").value;
+        document.getElementById("dateFields").style.display = (val === "false") ? "block" : "none";
+    }
+
     window.showView = (id) => { 
         state.currentView = id; 
         document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); 
         document.getElementById(id).classList.remove('hidden'); 
         refreshUI(); 
     };
+
     window.enterFormation = (id) => { 
         state.currentFormationId = id; 
         const f = state.formations.find(x => x.id === id);
         document.getElementById("formationTitle").textContent = f.name;
         showView("blocsView"); 
     };
+
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
-    
-    // Gestion affichage dynamique modal
-    document.getElementById("formIsTemplate")?.addEventListener('change', (e) => {
-        document.getElementById("dateFields").style.display = e.target.value === "true" ? "none" : "block";
-    });
+    window.closeModal = (id) => {
+        document.getElementById(id).classList.add("hidden");
+        document.querySelectorAll(`#${id} input`).forEach(i => i.value = "");
+    }
 </script>
 </body>
 </html>
