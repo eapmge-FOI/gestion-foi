@@ -162,8 +162,8 @@
       <option value="asp">ASP</option>
     </select>
     <div id="dateFields">
-      <label>Début</label><input id="formStart" type="date" />
-      <label>Fin</label><input id="formEnd" type="date" />
+      <input id="formStart" placeholder="JJ.MM.AAAA">
+<input id="formEnd" placeholder="JJ.MM.AAAA">
     </div>
     <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
     <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('formationModal')">Annuler</button>
@@ -271,6 +271,32 @@
   function escId(v) {
     return String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   }
+  
+  // ----- Date helpers (EU format JJ.MM.AAAA <-> ISO YYYY-MM-DD)
+
+function isoToEU(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return "";
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+  return `${day}.${month}.${year}`;
+}
+
+function euToISO(eu) {
+  if (!eu) return "";
+  const parts = eu.split(".");
+  if (parts.length !== 3) return "";
+  const [day, month, year] = parts;
+  return `${year}-${month}-${day}`;
+}
+
+function isValidEUDate(eu) {
+  const iso = euToISO(eu);
+  const d = new Date(iso);
+  return !isNaN(d.getTime());
+}
 
   // ---------- AUTH ----------
   window.handleLogin = () => {
@@ -359,8 +385,8 @@
     return {
       ...info,
       id: status,
-      startStr: start ? start.toLocaleDateString("fr-FR") : "---",
-      endStr: end ? end.toLocaleDateString("fr-FR") : "---",
+      startStr: start ? isoToEU(start.toISOString().split("T")[0]) : "---",
+endStr: end ? isoToEU(end.toISOString().split("T")[0]) : "---",
     };
   }
 
@@ -506,7 +532,7 @@ window.renderGlobalOrSessions = () => {
             ${hasAlert && !isArchive ? '<span class="alert-badge">RAPPEL</span>' : ''}
           </div>
           <p style="font-size:0.8rem; margin-top:5px; opacity:0.8">
-            📅 ${f.start ? new Date(f.start).toLocaleDateString('fr-FR') : (f.isTemplate ? 'Modèle' : '?')}
+            📅 ${f.start ? isoToEU(f.start) : (f.isTemplate ? 'Modèle' : '?')}
           </p>
           <div class="prog-container">
             <div class="prog-bar" style="width:${prog}%; background:${prog >= 100 ? 'var(--st-done)' : 'var(--primary)'}"></div>
@@ -562,7 +588,7 @@ window.renderGlobalOrSessions = () => {
             <h3>${b.name}</h3>
             ${hasAlert ? '<span class="alert-badge">!</span>' : ''}
           </div>
-          <p>📅 ${b.date ? new Date(b.date).toLocaleDateString('fr-FR') : 'Non définie'}</p>
+          <p>📅 ${b.date ? isoToEU(b.date) : 'Non définie'}</p>
           <div class="prog-container">
             <div class="prog-bar" style="width:${prog}%; background:${prog >= 100 ? 'var(--st-done)' : 'var(--primary)'}"></div>
           </div>
@@ -747,8 +773,18 @@ window.renderGlobalOrSessions = () => {
       name: document.getElementById("formName").value || "Sans nom",
       type: document.getElementById("formType").value || "apm",
       isTemplate: isTpl,
-      start: isTpl ? "" : (document.getElementById("formStart").value || ""),
-      end: isTpl ? "" : (document.getElementById("formEnd").value || "")
+      const startEU = document.getElementById("formStart").value;
+const endEU = document.getElementById("formEnd").value;
+
+if (!isTpl) {
+  if (!isValidEUDate(startEU) || !isValidEUDate(endEU)) {
+    alert("Dates invalides. Format attendu : JJ.MM.AAAA");
+    return;
+  }
+}
+
+start: isTpl ? "" : euToISO(startEU),
+end: isTpl ? "" : euToISO(endEU),
     };
     if (state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
     else state.formations.push(d);
@@ -885,11 +921,25 @@ window.deployTemplate = (tplId) => {
   const name = prompt("Nom de la nouvelle session ?", tpl.name);
   if (!name || !name.trim()) return;
 
-  // Dates : format ISO simple
-  const start = prompt("Date de début (YYYY-MM-DD) ?", "");
-  if (!start) return;
-  const end = prompt("Date de fin (YYYY-MM-DD) ?", "");
-  if (!end) return;
+const startEU = prompt("Date de début (JJ.MM.AAAA) ?", "");
+if (!startEU || !isValidEUDate(startEU)) {
+  alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 15.03.2026)");
+  return;
+}
+
+const endEU = prompt("Date de fin (JJ.MM.AAAA) ?", "");
+if (!endEU || !isValidEUDate(endEU)) {
+  alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 30.06.2026)");
+  return;
+}
+
+const start = euToISO(startEU);
+const end = euToISO(endEU);
+
+if (new Date(end) < new Date(start)) {
+  alert("La date de fin ne peut pas être avant la date de début.");
+  return;
+}
 
   // validation simple
   const startDate = new Date(start);
