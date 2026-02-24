@@ -630,10 +630,22 @@ window.renderGlobalOrSessions = () => {
           <div id="desc-${t.id}" class="task-desc-area">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
               <div><strong>Instructions :</strong><br>${t.desc || "Aucune."}</div>
-              <div style="border-left:1px solid rgba(255,255,255,.1); padding-left:20px">
-                <strong>Remarques / Suivi :</strong><br>
-                <span style="color:var(--primary)">${t.remarque || "Pas de remarque."}</span>
-              </div>
+<div style="border-left:1px solid rgba(255,255,255,.1); padding-left:20px">
+  <strong>Remarques / Suivi :</strong><br>
+  <textarea
+    style="height:80px; margin-top:8px"
+    placeholder="Écrire ici les remarques d'avancement..."
+    onclick="event.stopPropagation()"
+    oninput="updateTaskRemark('${escId(t.id)}', this.value)"
+  >${t.remarque || ""}</textarea>
+
+  <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px">
+    <button class="btn" style="padding:6px 10px; font-size:0.8rem"
+      onclick="event.stopPropagation(); saveTaskRemarkNow('${escId(t.id)}')">
+      Enregistrer
+    </button>
+  </div>
+</div>
             </div>
             <div style="margin-top:10px; text-align:right">
               <button class="btn" style="background:#e11d48; padding:4px 8px; font-size:0.7rem" onclick="deleteTask('${escId(t.id)}')">Supprimer</button>
@@ -801,6 +813,33 @@ window.renderGlobalOrSessions = () => {
     const t = (b.tasks || []).find(x => x.id === tId);
     if (t) { t.status = newStat; push(); }
   };
+  
+  // ----- Inline remark editing (suivi terrain dans la tâche dépliée)
+let remarkTimers = {};
+
+window.updateTaskRemark = (taskId, value) => {
+  const b = state.blocs.find(x => x.id === state.currentBlocId);
+  if (!b || !b.tasks) return;
+  const t = b.tasks.find(x => x.id === taskId);
+  if (!t) return;
+
+  t.remarque = value;
+
+  // debounce : push 500ms après la dernière frappe
+  if (remarkTimers[taskId]) clearTimeout(remarkTimers[taskId]);
+  remarkTimers[taskId] = setTimeout(() => {
+    push();
+    delete remarkTimers[taskId];
+  }, 500);
+};
+
+window.saveTaskRemarkNow = (taskId) => {
+  const b = state.blocs.find(x => x.id === state.currentBlocId);
+  if (!b || !b.tasks) return;
+  const t = b.tasks.find(x => x.id === taskId);
+  if (!t) return;
+  push();
+};
 
   window.toggleDesc = (id) => {
     const el = document.getElementById(`desc-${id}`);
@@ -838,33 +877,74 @@ window.renderGlobalOrSessions = () => {
   };
 
   // ---------- TEMPLATE DEPLOY ----------
-  window.deployTemplate = (tplId) => {
-    const tpl = state.formations.find(f => f.id === tplId);
-    if (!tpl) return alert("Modèle introuvable");
-    const name = prompt("Nom de la nouvelle session ?", tpl.name + " - " + new Date().getFullYear());
-    if (!name) return;
+window.deployTemplate = (tplId) => {
+  const tpl = state.formations.find(f => f.id === tplId);
+  if (!tpl) return alert("Modèle introuvable");
 
-    const newFormId = generateId();
-    const newForm = { ...tpl, id: newFormId, name, isTemplate: false, start: "", end: "" };
-    state.formations.push(newForm);
+  // Nom : par défaut le nom du modèle (sans ajout d'année)
+  const name = prompt("Nom de la nouvelle session ?", tpl.name);
+  if (!name || !name.trim()) return;
 
-    const tplModules = state.modules.filter(m => m.formationId === tplId);
-    tplModules.forEach(m => {
-      const newMId = generateId();
-      state.modules.push({ ...m, id: newMId, formationId: newFormId });
+  // Dates : format ISO simple
+  const start = prompt("Date de début (YYYY-MM-DD) ?", "");
+  if (!start) return;
+  const end = prompt("Date de fin (YYYY-MM-DD) ?", "");
+  if (!end) return;
 
-      const tplBlocs = state.blocs.filter(b => b.moduleId === m.id);
-      tplBlocs.forEach(b => {
-        const newBlocId = generateId();
-        const newTasks = (b.tasks || []).map(t => ({ ...t, id: generateId(), status: "todo", remarque: "" }));
-        state.blocs.push({ ...b, id: newBlocId, moduleId: newMId, date: "", tasks: newTasks });
+  // validation simple
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    alert("Dates invalides. Utilise le format YYYY-MM-DD (ex: 2026-03-15).");
+    return;
+  }
+  if (endDate < startDate) {
+    alert("La date de fin ne peut pas être avant la date de début.");
+    return;
+  }
+
+  const newFormId = generateId();
+  const newForm = {
+    ...tpl,
+    id: newFormId,
+    name: name.trim(),
+    isTemplate: false,
+    start,
+    end
+  };
+  state.formations.push(newForm);
+
+  // Dupliquer modules + blocs + tâches
+  const tplModules = state.modules.filter(m => m.formationId === tplId);
+
+  tplModules.forEach(m => {
+    const newMId = generateId();
+    state.modules.push({ ...m, id: newMId, formationId: newFormId });
+
+    const tplBlocs = state.blocs.filter(b => b.moduleId === m.id);
+    tplBlocs.forEach(b => {
+      const newBlocId = generateId();
+      const newTasks = (b.tasks || []).map(t => ({
+        ...t,
+        id: generateId(),
+        status: "todo",
+        remarque: ""
+      }));
+
+      state.blocs.push({
+        ...b,
+        id: newBlocId,
+        moduleId: newMId,
+        date: "",
+        tasks: newTasks
       });
     });
+  });
 
-    push();
-    alert("Session déployée ! Pensez à régler les dates et responsables.");
-    showView("formationsView");
-  };
+  push();
+  showView("formationsView");
+  alert("Session déployée ✅");
+};
 
   // ---------- NAV ----------
   window.showView = (id) => {
