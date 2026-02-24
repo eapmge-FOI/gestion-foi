@@ -55,7 +55,7 @@
         .task-desc-area.open { padding: 15px; max-height: 500px; border-top: 1px solid rgba(255,255,255,0.1); }
 
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; }
+        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; overflow-y: auto; max-height: 90vh; }
         input, select, textarea { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
         .hidden { display:none !important; }
     </style>
@@ -157,14 +157,34 @@
 
 <div id="taskModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Tâche</h3>
+        <h3>Réglages Tâche</h3>
         <label>Titre</label><input id="taskTitle">
         <label>Responsable</label><input id="taskResp">
-        <label>Descriptif</label><textarea id="taskDesc" style="width:100%; height:80px; background:var(--bg1); color:white; border:1px solid var(--bg3); border-radius:6px; padding:10px"></textarea>
+        <label>Instructions</label><textarea id="taskDesc" style="width:100%; height:80px; background:var(--bg1); color:white; border:1px solid var(--bg3); border-radius:6px; padding:10px"></textarea>
+        
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-top:10px">
-            <div><small>DÉBUT (-)</small><input type="number" id="taskStartVal" value="4"><select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
-            <div><small>FIN (-)</small><input type="number" id="taskEndVal" value="2"><select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
+            <div>
+                <small>DÉBUT (Temps avant bloc)</small>
+                <input type="number" id="taskStartVal" value="4">
+                <select id="taskStartUnit">
+                    <option value="days">Jours</option>
+                    <option value="weeks" selected>Semaines</option>
+                    <option value="months">Mois</option>
+                    <option value="years">Années</option>
+                </select>
+            </div>
+            <div>
+                <small>FIN (Temps avant bloc)</small>
+                <input type="number" id="taskEndVal" value="2">
+                <select id="taskEndUnit">
+                    <option value="days">Jours</option>
+                    <option value="weeks" selected>Semaines</option>
+                    <option value="months">Mois</option>
+                    <option value="years">Années</option>
+                </select>
+            </div>
         </div>
+        
         <button class="btn" style="width:100%; margin-top:15px" onclick="saveTask()">Enregistrer</button>
         <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('taskModal')">Annuler</button>
     </div>
@@ -212,6 +232,8 @@
         let d = new Date(base); val = parseInt(val);
         if(unit === 'days') d.setDate(d.getDate() - val);
         else if(unit === 'weeks') d.setDate(d.getDate() - (val * 7));
+        else if(unit === 'months') d.setMonth(d.getMonth() - val);
+        else if(unit === 'years') d.setFullYear(d.getFullYear() - val);
         return d;
     }
 
@@ -220,15 +242,20 @@
         const start = getCalcDate(blocDate, task.sVal, task.sUnit);
         const end = getCalcDate(blocDate, task.eVal, task.eUnit);
         let status = task.status || 'todo';
-        if (status !== 'done' && status !== 'progress') {
+        
+        // Logique de couleur "À faire" (Jaune) si on est dans la période
+        if (status === 'todo' || status === 'not_started') {
             if (start && today < start) status = 'not_started';
             else if (start && today >= start && (!end || today < end)) status = 'todo';
         }
-        if (status !== 'done') {
+
+        // Alerte si on dépasse la fin ou qu'on est à -7j de la fin
+        if (status !== 'done' && status !== 'progress') {
             const sevenDays = 7 * 24 * 60 * 60 * 1000;
             if (end && today >= end) status = 'alert';
-            else if (end && (end - today) <= sevenDays && status !== 'progress') status = 'alert';
+            else if (end && (end - today) <= sevenDays) status = 'alert';
         }
+
         const map = {
             'alert': { rank: 1, color: 'var(--st-alert)', dark: false },
             'todo': { rank: 2, color: 'var(--st-todo)', dark: true },
@@ -237,7 +264,12 @@
             'done': { rank: 5, color: 'var(--st-done)', dark: false }
         };
         const info = map[status];
-        return { ...info, id: status, endStr: end ? end.toLocaleDateString('fr-FR') : '---' };
+        return { 
+            ...info, 
+            id: status, 
+            startStr: start ? start.toLocaleDateString('fr-FR') : '---',
+            endStr: end ? end.toLocaleDateString('fr-FR') : '---' 
+        };
     }
 
     // UI RENDERERS
@@ -250,9 +282,7 @@
     };
 
     function renderMainGrid(id, list, isArchive = false) {
-        // TRI FORMATIONS PAR DATE
         const sorted = [...list].sort((a,b) => new Date(a.start || 0) - new Date(b.start || 0));
-        
         document.getElementById(id).innerHTML = sorted.map(f => {
             const fBlocs = state.blocs.filter(b => b.formationId === f.id);
             const allT = fBlocs.flatMap(b => b.tasks || []);
@@ -273,9 +303,7 @@
 
     function renderBlocs() {
         const list = state.blocs.filter(b => b.formationId === state.currentFormationId);
-        // TRI BLOCS PAR DATE CHRONOLOGIQUE
         const sorted = [...list].sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
-
         document.getElementById("blocsGrid").innerHTML = sorted.map(b => {
             const hasAlert = (b.tasks || []).some(t => getTaskStatusInfo(t, b.date).id === 'alert');
             const prog = (b.tasks || []).length ? (b.tasks.filter(t => t.status === 'done').length / b.tasks.length)*100 : 0;
@@ -306,28 +334,26 @@
     window.renderTasks = () => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
         if(!b || !b.tasks) return;
-        
         const filterResp = document.getElementById("respFilter").value;
         const filterStatus = document.getElementById("statusFilter").value;
 
-        // TRI DES TÂCHES PAR PRIORITÉ (RANK)
         const tasksToRender = b.tasks
             .filter(t => {
                 const info = getTaskStatusInfo(t, b.date);
                 return (filterResp === 'all' || t.resp === filterResp) && (filterStatus === 'all' || info.id === filterStatus);
             })
-            .sort((a, b) => {
-                const infoA = getTaskStatusInfo(a, b.date);
-                const infoB = getTaskStatusInfo(b, b.date);
-                return infoA.rank - infoB.rank;
-            });
+            .sort((a, b) => getTaskStatusInfo(a, b.date).rank - getTaskStatusInfo(b, b.date).rank);
 
         document.getElementById("tasksList").innerHTML = tasksToRender.map(t => {
             const info = getTaskStatusInfo(t, b.date);
             return `
                 <div class="task-container">
                     <div class="task-bandeau ${info.dark ? 'text-dark' : ''}" style="background: ${info.color}" onclick="toggleDesc(${t.id})">
-                        <div><div>${t.title}</div><div style="font-size: 0.75rem; opacity: 0.8">Resp: ${t.resp || '?'}</div></div>
+                        <div>
+                            <div style="font-size: 1.1rem">${t.title}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${t.resp || '?'}</div>
+                            <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">Début : ${info.startStr}</div>
+                        </div>
                         <div style="padding: 0 10px">
                             <select class="status-select-large" onclick="event.stopPropagation()" onchange="updateTaskStatus(${t.id}, this.value)">
                                 <option value="not_started" ${info.id==='not_started'?'selected':''}>Pas commencé</option>
@@ -355,10 +381,14 @@
     window.saveTask = () => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
         const t = { 
-            id: state.editingId || (Date.now() + Math.floor(Math.random()*100)), title: document.getElementById("taskTitle").value, 
-            resp: document.getElementById("taskResp").value, desc: document.getElementById("taskDesc").value,
-            sVal: document.getElementById("taskStartVal").value, sUnit: document.getElementById("taskStartUnit").value,
-            eVal: document.getElementById("taskEndVal").value, eUnit: document.getElementById("taskEndUnit").value,
+            id: state.editingId || (Date.now() + Math.floor(Math.random()*100)), 
+            title: document.getElementById("taskTitle").value, 
+            resp: document.getElementById("taskResp").value, 
+            desc: document.getElementById("taskDesc").value,
+            sVal: document.getElementById("taskStartVal").value, 
+            sUnit: document.getElementById("taskStartUnit").value,
+            eVal: document.getElementById("taskEndVal").value, 
+            eUnit: document.getElementById("taskEndUnit").value,
             status: state.editingId ? b.tasks.find(x => x.id === state.editingId).status : 'todo'
         };
         if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? t : x);
@@ -393,7 +423,9 @@
     window.editTask = (id) => { 
         state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); 
         document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; 
-        document.getElementById("taskDesc").value = t.desc || ""; document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskEndVal").value = t.eVal;
+        document.getElementById("taskDesc").value = t.desc || ""; document.getElementById("taskStartVal").value = t.sVal; 
+        document.getElementById("taskStartUnit").value = t.sUnit; document.getElementById("taskEndVal").value = t.eVal;
+        document.getElementById("taskEndUnit").value = t.eUnit;
         openModal('taskModal'); 
     };
     window.updateTaskStatus = (tId, newStat) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === tId); if(t){ t.status = newStat; push(); } };
