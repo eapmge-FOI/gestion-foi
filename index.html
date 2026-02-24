@@ -2,55 +2,46 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Système Sécurisé</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion FOI - Sécurisé</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js" async></script>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
             --text1:#f1f5f9; --text2:#cbd5e1; --success:#059669; --danger:#e11d48;
-            --polcant-blue: #334b7a; --apm-gray: #334155; --asp-light: #94a3b8;
+            --apm-gray: #334155; --polcant-blue: #334b7a; --asp-light: #94a3b8;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background:var(--bg1); color:var(--text1); line-height: 1.5; }
+        body { font-family: 'Segoe UI', sans-serif; background:var(--bg1); color:var(--text1); min-height: 100vh; }
         
-        /* LOGIN SCREEN */
-        #loginView { height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); }
-        .login-box { background: var(--bg2); padding: 40px; border-radius: 20px; border: 1px solid var(--bg3); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .google-btn { background: white; color: #444; padding: 12px 24px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 12px; margin: 25px auto; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .google-btn:hover { background: #f8fafc; transform: translateY(-2px); }
+        /* LOGIN */
+        #loginView { height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, #1e293b, #0f172a); }
+        .login-box { background: var(--bg2); padding: 40px; border-radius: 20px; border: 1px solid var(--bg3); text-align: center; width: 90%; max-width: 400px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
+        .google-btn { background: white; color: #444; padding: 12px 24px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 12px; margin: 25px auto; transition: 0.2s; width: 100%; justify-content: center; }
+        .google-btn:hover { background: #f8fafc; transform: scale(1.02); }
 
-        /* APP LAYOUT */
+        /* APP */
         .app { max-width:1200px; margin:auto; padding: 20px; }
         header, .mini-header { background:var(--bg2); padding:20px; border-radius:15px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px; }
 
-        /* CARDS */
-        .card { background:var(--bg2); padding:20px; border-radius:15px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 200px; transition: 0.3s; }
-        .card:hover { border-color: var(--primary); transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .card { background:var(--bg2); padding:20px; border-radius:15px; cursor:pointer; border: 1px solid var(--bg3); position: relative; transition: 0.3s; display: flex; flex-direction: column; min-height: 180px; }
+        .card:hover { border-color: var(--primary); transform: translateY(-3px); }
+        .style-apm { border-top: 6px solid #fbbf24; }
+        .style-polcant { border-top: 6px solid #334b7a; }
+        .style-asp { border-top: 6px solid #64748b; background: #e2e8f0 !important; color: #0f172a !important; }
+
+        .prog-container { background: rgba(0,0,0,0.2); height: 8px; border-radius: 4px; margin: 15px 0; overflow: hidden; }
+        .prog-bar { height: 100%; background: var(--success); transition: width 0.5s; }
+
+        .btn { background:var(--primary); color: white; border:none; padding: 10px 18px; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .btn-icon { background: rgba(255,255,255,0.1); border: none; color: inherit; cursor: pointer; padding: 8px; border-radius: 6px; }
         
-        /* CORPS STYLES */
-        .style-apm { border-top: 8px solid #fbbf24; }
-        .style-polcant { border-top: 8px solid #334b7a; }
-        .style-asp { border-top: 8px solid #94a3b8; background: #e2e8f0 !important; color: #0f172a !important; }
-        .style-asp * { color: #0f172a !important; }
-
-        /* PROGRESS & BADGES */
-        .prog-container { background: rgba(0,0,0,0.2); height: 10px; border-radius: 5px; margin: 15px 0; overflow: hidden; }
-        .prog-bar { height: 100%; background: var(--success); transition: width 0.5s ease; }
-        .alert-badge { background: var(--danger); color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-        /* BUTTONS & FORMS */
-        .btn { background:var(--primary); color: white; border:none; padding: 10px 20px; border-radius:10px; cursor:pointer; font-weight:bold; transition: 0.2s; }
-        .btn:hover { opacity: 0.9; filter: brightness(1.1); }
-        .btn-icon { background: rgba(255,255,255,0.05); border: none; color: inherit; cursor: pointer; padding: 10px; border-radius: 8px; font-size: 1.1rem; }
-        .btn-icon:hover { background: rgba(255,255,255,0.15); }
-
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); }
-        .modal-content { background: var(--bg2); padding: 30px; border-radius: 20px; width: 95%; max-width: 500px; border: 1px solid var(--bg3); }
-        input, select { width:100%; margin: 10px 0 20px 0; padding:12px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 8px; font-size: 1rem; }
+        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: var(--bg2); padding: 30px; border-radius: 15px; width: 95%; max-width: 500px; }
+        input, select { width:100%; margin: 10px 0 20px 0; padding:12px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 8px; }
         
-        .member-chip { display: inline-flex; align-items: center; background: var(--bg3); padding: 6px 14px; border-radius: 25px; font-size: 0.85rem; margin: 0 8px 8px 0; border: 1px solid rgba(255,255,255,0.1); }
+        .member-chip { display: inline-flex; align-items: center; background: var(--bg3); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; margin: 0 5px 5px 0; }
         .hidden { display:none !important; }
     </style>
 </head>
@@ -58,83 +49,62 @@
 
 <div id="loginView">
     <div class="login-box">
-        <h2 style="margin-bottom: 10px;">🔐 Gestion FOI</h2>
-        <p style="color: var(--text2); font-size: 0.9rem;">Accès réservé aux mentors autorisés</p>
+        <h2>🚀 Gestion FOI</h2>
+        <p style="color: var(--text2); margin-top: 10px;">Accès sécurisé Mentors</p>
         <button class="google-btn" onclick="handleLogin()">
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_google_color_16dp.svg" width="20">
-            Continuer avec Google
+            Se connecter avec Google
         </button>
-        <div id="loginError" class="hidden" style="color: var(--danger); margin-top: 15px; font-size: 0.85rem; background: rgba(225,29,72,0.1); padding: 10px; border-radius: 8px;"></div>
+        <p id="loginError" style="color: var(--danger); font-size: 0.8rem; margin-top: 10px;"></p>
     </div>
 </div>
 
 <div id="mainApp" class="app hidden">
-    
     <div id="formationsView">
         <header>
             <div>
-                <h1>Sessions Actives</h1>
-                <small id="userDisplay" style="color: var(--primary)"></small>
+                <h1 id="viewTitle">Sessions Actives</h1>
+                <small id="userEmail" style="color: var(--primary)"></small>
             </div>
-            <div style="display:flex; gap:12px">
-                <button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">📂 Configuration</button>
+            <div style="display:flex; gap:10px">
+                <button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">⚙️ Config</button>
                 <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
                 <button class="btn" onclick="openFormModal(false)">+ Session</button>
-                <button class="btn-icon" onclick="handleLogout()" title="Déconnexion">🚪</button>
+                <button class="btn-icon" onclick="handleLogout()">🚪</button>
             </div>
         </header>
         <div id="activeGrid" class="grid"></div>
     </div>
 
     <div id="archivesView" class="hidden">
-        <header>
-            <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h1>📦 Archives</h1>
-            <div></div>
-        </header>
+        <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>Archives</h1><div></div></header>
         <div id="archivesGrid" class="grid"></div>
     </div>
 
     <div id="templatesListView" class="hidden">
-        <header>
-            <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h1>⚙️ Configuration</h1>
-        </header>
-        
-        <div class="mini-header" style="flex-direction: column; align-items: flex-start;">
-            <h3>👥 Équipe (Initiales pour alertes)</h3>
-            <div style="display: flex; gap: 10px; width: 100%; margin-top: 15px;">
+        <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>Configuration</h1></header>
+        <div class="mini-header" style="flex-direction: column; align-items: start;">
+            <h3>Équipe</h3>
+            <div style="display:flex; gap:10px; width:100%; margin-top:10px;">
                 <input id="newMemberName" placeholder="Prénom" style="margin:0">
-                <input id="newMemberInitials" placeholder="Initiales" style="margin:0">
+                <input id="newMemberInitials" placeholder="Init" style="margin:0">
                 <input id="newMemberEmail" placeholder="Email" style="margin:0">
                 <button class="btn" onclick="addMember()">Ajouter</button>
             </div>
-            <div id="membersList" style="margin-top: 15px;"></div>
+            <div id="membersList" style="margin-top:10px"></div>
         </div>
-
-        <div class="mini-header">
-            <h3>📂 Bibliothèque de Modèles</h3>
-            <button class="btn" style="background:#6366f1" onclick="openFormModal(true)">+ Nouveau Modèle</button>
-        </div>
+        <div class="mini-header"><h3>Modèles</h3><button class="btn" onclick="openFormModal(true)">+ Modèle</button></div>
         <div id="templateGrid" class="grid"></div>
     </div>
 
     <div id="blocsView" class="hidden">
-        <div class="mini-header">
-            <button class="btn" style="background:var(--bg3)" id="backBtn">← Retour</button>
-            <h2 id="formationTitle"></h2>
-            <button class="btn" onclick="openModal('blocModal')">+ Ajouter un Bloc</button>
-        </div>
+        <div class="mini-header"><button class="btn" onclick="showView('formationsView')">← Retour</button><h2 id="currentFormTitle"></h2><button class="btn" onclick="openModal('blocModal')">+ Bloc</button></div>
         <div id="blocsGrid" class="grid"></div>
     </div>
 
     <div id="tasksView" class="hidden">
-        <div class="mini-header">
-            <button class="btn" style="background:var(--bg3)" onclick="showView('blocsView')">← Retour</button>
-            <div id="blocHeaderInfo"></div>
-            <button class="btn" onclick="openModal('taskModal')">+ Ajouter une Tâche</button>
-        </div>
-        <div id="tasksList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        <div class="mini-header"><button class="btn" onclick="showView('blocsView')">← Retour</button><h2 id="currentBlocTitle"></h2><button class="btn" onclick="openModal('taskModal')">+ Tâche</button></div>
+        <div id="tasksList" style="display:grid; gap:10px"></div>
     </div>
 </div>
 
@@ -142,18 +112,11 @@
     <div class="modal-content">
         <h3>Nouvelle Session</h3>
         <input type="hidden" id="formIsTemplate">
-        <label>Nom de la formation</label><input id="formName" placeholder="Ex: FOI 2026-1">
-        <label>Corps</label>
-        <select id="formType">
-            <option value="apm">APM</option>
-            <option value="polcant">PolCant</option>
-            <option value="asp">ASP</option>
-        </select>
+        <input id="formName" placeholder="Nom">
+        <select id="formType"><option value="apm">APM</option><option value="polcant">PolCant</option><option value="asp">ASP</option></select>
         <div id="dateSection">
-            <div style="display:flex; gap:15px">
-                <div style="flex:1"><label>Début</label><input id="formStart" type="date"></div>
-                <div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div>
-            </div>
+            <input id="formStart" type="date">
+            <input id="formEnd" type="date">
         </div>
         <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
         <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('formationModal')">Annuler</button>
@@ -163,8 +126,8 @@
 <div id="blocModal" class="modal-overlay hidden">
     <div class="modal-content">
         <h3>Nouveau Bloc</h3>
-        <label>Nom du bloc</label><input id="blocName" placeholder="Ex: Tir, Sport, etc.">
-        <label>Date du bloc</label><input id="blocDate" type="date">
+        <input id="blocName" placeholder="Nom du bloc">
+        <input id="blocDate" type="date">
         <button class="btn" style="width:100%" onclick="saveBloc()">Enregistrer</button>
         <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('blocModal')">Annuler</button>
     </div>
@@ -172,14 +135,14 @@
 
 <div id="taskModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Paramètres de la Tâche</h3>
-        <label>Titre</label><input id="taskTitle">
-        <label>Responsable</label><select id="taskRespSelect"></select>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:12px;">
-            <div><small>ALERTE DÉBUT</small><input type="number" id="taskStartVal" value="4"><select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
-            <div><small>ÉCHÉANCE FIN</small><input type="number" id="taskEndVal" value="2"><select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
+        <h3>Nouvelle Tâche</h3>
+        <input id="taskTitle" placeholder="Titre">
+        <select id="taskRespSelect"></select>
+        <div style="display:flex; gap:10px">
+            <input type="number" id="taskEndVal" value="2">
+            <select id="taskEndUnit"><option value="weeks">Semaines</option><option value="days">Jours</option></select>
         </div>
-        <button class="btn" style="width:100%; margin-top:20px" onclick="saveTask()">Enregistrer</button>
+        <button class="btn" style="width:100%" onclick="saveTask()">Enregistrer</button>
         <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('taskModal')">Annuler</button>
     </div>
 </div>
@@ -187,46 +150,58 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithRedirect, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // CONFIGURATION FIREBASE
-    const firebaseConfig = { apiKey: "AIzaSyAfwt7M5vjzo1H4jw8EQ6auENy8LxXMQhE", authDomain: "gestion-des-taches-foi.firebaseapp.com", projectId: "gestion-des-taches-foi", storageBucket: "gestion-des-taches-foi.firebasestorage.app", messagingSenderId: "538286716668", appId: "1:538286716668:web:b86f8d5f606c78494f4979" };
+    const firebaseConfig = { 
+        apiKey: "AIzaSyAfwt7M5vjzo1H4jw8EQ6auENy8LxXMQhE", 
+        authDomain: "gestion-des-taches-foi.firebaseapp.com", 
+        projectId: "gestion-des-taches-foi", 
+        storageBucket: "gestion-des-taches-foi.firebasestorage.app", 
+        messagingSenderId: "538286716668", 
+        appId: "1:538286716668:web:b86f8d5f606c78494f4979" 
+    };
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
 
-    // EMAILS AUTORISÉS
     const ALLOWED_EMAILS = ["eapmge@gmail.com", "mentors.foi@gmail.com"];
+    let state = { formations: [], blocs: [], members: [], currentFormationId: null, currentBlocId: null, currentView: 'formationsView' };
 
-    let state = { formations: [], blocs: [], members: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView' };
+    // --- AUTH ---
+    window.handleLogin = async () => {
+        try { await signInWithPopup(auth, provider); } 
+        catch (e) { document.getElementById("loginError").textContent = "Erreur: " + e.message; }
+    };
 
-    // --- AUTHENTIFICATION ---
-    window.handleLogin = () => signInWithRedirect(auth, new GoogleAuthProvider());
     window.handleLogout = () => signOut(auth);
 
     onAuthStateChanged(auth, (user) => {
-        if (user && ALLOWED_EMAILS.includes(user.email)) {
-            document.getElementById("loginView").classList.add("hidden");
-            document.getElementById("mainApp").classList.remove("hidden");
-            document.getElementById("userDisplay").textContent = user.email;
-            startSync();
-        } else if (user) {
-            alert("Accès non autorisé.");
-            signOut(auth);
+        if (user) {
+            if (ALLOWED_EMAILS.includes(user.email)) {
+                document.getElementById("loginView").classList.add("hidden");
+                document.getElementById("mainApp").classList.remove("hidden");
+                document.getElementById("userEmail").textContent = user.email;
+                startSync();
+            } else {
+                alert("Accès non autorisé.");
+                signOut(auth);
+            }
         } else {
             document.getElementById("loginView").classList.remove("hidden");
             document.getElementById("mainApp").classList.add("hidden");
         }
     });
 
-    // --- SYNCHRONISATION ---
+    // --- DATA ---
     function startSync() {
         onSnapshot(doc(db, "data", "appState"), (snap) => {
             if (snap.exists()) {
-                const d = snap.data();
-                state.formations = d.formations || [];
-                state.blocs = d.blocs || [];
-                state.members = d.members || [];
+                const data = snap.data();
+                state.formations = data.formations || [];
+                state.blocs = data.blocs || [];
+                state.members = data.members || [];
                 refreshUI();
             }
         });
@@ -236,193 +211,96 @@
         await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs, members: state.members });
     }
 
-    // --- LOGIQUE EMAILS (EmailJS) ---
-    async function sendMail(task, member, type) {
-        // emailjs.init("YOUR_PUBLIC_KEY");
-        const params = {
-            to_email: member.email,
-            to_name: member.name || member.initials,
-            task_name: task.title,
-            type: type === 'new' ? "Assignation" : "⚠️ RETARD"
-        };
-        console.log("Simul. Email à " + member.email + " pour: " + task.title);
-        // emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", params);
-    }
-
-    // --- GESTION ÉQUIPE ---
-    window.addMember = () => {
-        const name = document.getElementById("newMemberName").value;
-        const init = document.getElementById("newMemberInitials").value.toUpperCase();
-        const mail = document.getElementById("newMemberEmail").value;
-        if(init && mail) {
-            state.members.push({ name, initials: init, email: mail });
-            push();
-            document.getElementById("newMemberName").value = "";
-            document.getElementById("newMemberInitials").value = "";
-            document.getElementById("newMemberEmail").value = "";
-        }
-    };
-    window.removeMember = (init) => { state.members = state.members.filter(m => m.initials !== init); push(); };
-
-    // --- FONCTIONS DATE ---
-    function getDeadline(base, val, unit) {
-        if(!base) return null;
-        let d = new Date(base);
-        if(unit === 'days') d.setDate(d.getDate() - val);
-        else d.setDate(d.getDate() - (val * 7));
-        return d;
-    }
-
-    function isOverdue(blocDate, val, unit, status) {
-        if(status === 'done' || !blocDate) return false;
-        return getDeadline(blocDate, val, unit) < new Date();
-    }
-
-    function isArchived(f) {
-        if (f.isTemplate || !f.end) return false;
-        return new Date(f.end) < new Date().setHours(0,0,0,0);
-    }
-
-    // --- UI RENDERING ---
+    // --- LOGIQUE UI ---
     window.refreshUI = () => {
-        // Update selects
-        document.getElementById("taskRespSelect").innerHTML = '<option value="">Choisir...</option>' + state.members.map(m => `<option value="${m.initials}">${m.initials} - ${m.name}</option>`).join("");
-        
-        // Update member chips
-        document.getElementById("membersList").innerHTML = state.members.map(m => `
-            <span class="member-chip">${m.initials} (${m.email}) <button onclick="removeMember('${m.initials}')" style="background:none;border:none;color:var(--danger);cursor:pointer;margin-left:5px">×</button></span>
-        `).join("");
+        document.getElementById("membersList").innerHTML = state.members.map(m => `<span class="member-chip">${m.initials} <button onclick="removeMember('${m.initials}')" style="background:none; border:none; color:red; cursor:pointer">×</button></span>`).join("");
+        document.getElementById("taskRespSelect").innerHTML = '<option value="">Responsable...</option>' + state.members.map(m => `<option value="${m.initials}">${m.initials}</option>`).join("");
 
-        if(state.currentView === 'formationsView') renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
-        else if(state.currentView === 'archivesView') renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
-        else if(state.currentView === 'templatesListView') renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
-        else if(state.currentView === 'blocsView') renderBlocs();
-        else if(state.currentView === 'tasksView') renderTasks();
+        if(state.currentView === 'formationsView') renderGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
+        if(state.currentView === 'archivesView') renderGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)));
+        if(state.currentView === 'templatesListView') renderGrid("templateGrid", state.formations.filter(f => f.isTemplate));
+        if(state.currentView === 'blocsView') renderBlocs();
+        if(state.currentView === 'tasksView') renderTasks();
     };
 
-    function renderMainGrid(containerId, list, isArchive = false) {
-        document.getElementById(containerId).innerHTML = list.map(f => {
+    function renderGrid(id, list) {
+        document.getElementById(id).innerHTML = list.map(f => {
             const fBlocs = state.blocs.filter(b => b.formationId === f.id);
             const allTasks = fBlocs.flatMap(b => b.tasks);
-            const doneTasks = allTasks.filter(t => t.status === 'done');
-            const hasDelay = fBlocs.some(b => b.tasks.some(t => isOverdue(b.date, t.eVal, t.eUnit, t.status)));
-            const prog = allTasks.length ? (doneTasks.length / allTasks.length) * 100 : 0;
-            
+            const done = allTasks.filter(t => t.status === 'done').length;
+            const prog = allTasks.length ? (done / allTasks.length) * 100 : 0;
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    <div style="display:flex; justify-content:space-between; align-items:start">
-                        <h3>${f.name}</h3>
-                        ${hasDelay && !isArchive ? '<span class="alert-badge">RETARD</span>' : ''}
-                    </div>
-                    ${f.start ? `<p style="font-size:0.8rem; margin-top:10px">📅 ${new Date(f.start).toLocaleDateString()} - ${new Date(f.end).toLocaleDateString()}</p>` : ''}
+                    <h3>${f.name}</h3>
                     <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
-                    <div style="margin-top:auto; display:flex; gap:10px">
+                    <div style="margin-top:auto">
                         <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
-                        ${f.isTemplate ? `<button class="btn" style="padding:5px 10px;font-size:0.7rem" onclick="event.stopPropagation(); deploy(${f.id})">DÉPLOYER</button>` : ''}
+                        ${f.isTemplate ? `<button class="btn" style="font-size:0.7rem" onclick="event.stopPropagation(); deploy(${f.id})">DÉPLOYER</button>` : ''}
                     </div>
                 </div>`;
         }).join("");
     }
 
     function renderBlocs() {
-        const list = state.blocs.filter(b => b.formationId === state.currentFormationId).sort((a,b) => new Date(a.date) - new Date(b.date));
-        document.getElementById("blocsGrid").innerHTML = list.map(b => {
-            const prog = b.tasks.length ? (b.tasks.filter(t => t.status === 'done').length / b.tasks.length) * 100 : 0;
-            return `
-                <div class="card" onclick="enterBloc(${b.id})">
-                    <h3>${b.name}</h3>
-                    <p>🗓️ ${b.date ? new Date(b.date).toLocaleDateString() : 'Sans date'}</p>
-                    <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
-                    <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc(${b.id})">🗑️</button>
-                </div>`;
-        }).join("");
+        const list = state.blocs.filter(b => b.formationId === state.currentFormationId);
+        document.getElementById("blocsGrid").innerHTML = list.map(b => `
+            <div class="card" onclick="enterBloc(${b.id})">
+                <h3>${b.name}</h3>
+                <p>${b.date ? new Date(b.date).toLocaleDateString() : 'Sans date'}</p>
+                <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc(${b.id})">🗑️</button>
+            </div>`).join("");
     }
 
     function renderTasks() {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
-        document.getElementById("tasksList").innerHTML = b.tasks.map(t => {
-            const delay = isOverdue(b.date, t.eVal, t.eUnit, t.status);
-            return `
-                <div class="card" style="min-height:auto; flex-direction:row; justify-content:space-between; align-items:center; padding:15px; ${delay?'border-left:5px solid var(--danger)':''}" onclick="toggleTask(${t.id})">
-                    <div>
-                        <span style="margin-right:15px">${t.status==='done'?'✅':'⭕'}</span>
-                        <strong>${t.title}</strong>
-                        <span style="margin-left:15px; padding:2px 8px; background:var(--bg3); border-radius:4px; font-size:0.8rem">${t.resp || '?'}</span>
-                    </div>
-                    <button class="btn-icon" onclick="event.stopPropagation(); deleteTask(${t.id})">🗑️</button>
-                </div>`;
-        }).join("");
+        document.getElementById("tasksList").innerHTML = b.tasks.map(t => `
+            <div class="card" style="min-height:auto; flex-direction:row; justify-content:space-between; align-items:center; padding:10px" onclick="toggleTask(${t.id})">
+                <span>${t.status === 'done' ? '✅' : '⭕'} <strong>${t.title}</strong> (${t.resp})</span>
+                <button class="btn-icon" onclick="event.stopPropagation(); deleteTask(${t.id})">🗑️</button>
+            </div>`).join("");
     }
 
-    // --- CRUD ---
+    // --- ACTIONS ---
+    window.showView = (id) => { state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
+    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("currentFormTitle").textContent = state.formations.find(f => f.id === id).name; showView('blocsView'); };
+    window.enterBloc = (id) => { state.currentBlocId = id; document.getElementById("currentBlocTitle").textContent = state.blocs.find(b => b.id === id).name; showView('tasksView'); };
+    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
+    window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
+    window.openFormModal = (tpl) => { document.getElementById("formIsTemplate").value = tpl; document.getElementById("dateSection").classList.toggle("hidden", tpl); openModal('formationModal'); };
+    
     window.saveFormation = () => {
-        const id = Date.now();
-        const f = { 
-            id, 
-            name: document.getElementById("formName").value, 
-            type: document.getElementById("formType").value, 
-            isTemplate: document.getElementById("formIsTemplate").value === 'true',
-            start: document.getElementById("formStart").value,
-            end: document.getElementById("formEnd").value
-        };
-        state.formations.push(f); push(); closeModal('formationModal');
+        state.formations.push({ id: Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === 'true', start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value });
+        push(); closeModal('formationModal');
     };
 
     window.saveBloc = () => {
-        const b = { id: Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, tasks: [] };
-        state.blocs.push(b); push(); closeModal('blocModal');
+        state.blocs.push({ id: Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, tasks: [] });
+        push(); closeModal('blocModal');
     };
 
     window.saveTask = () => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
-        const t = {
-            id: Date.now(),
-            title: document.getElementById("taskTitle").value,
-            resp: document.getElementById("taskRespSelect").value,
-            sVal: document.getElementById("taskStartVal").value, sUnit: document.getElementById("taskStartUnit").value,
-            eVal: document.getElementById("taskEndVal").value, eUnit: document.getElementById("taskEndUnit").value,
-            status: 'todo'
-        };
-        b.tasks.push(t);
-        if(t.resp) {
-            const m = state.members.find(mem => mem.initials === t.resp);
-            if(m) sendMail(t, m, 'new');
-        }
+        b.tasks.push({ id: Date.now(), title: document.getElementById("taskTitle").value, resp: document.getElementById("taskRespSelect").value, eVal: document.getElementById("taskEndVal").value, eUnit: document.getElementById("taskEndUnit").value, status: 'todo' });
         push(); closeModal('taskModal');
     };
 
-    window.deploy = (id) => {
-        const tpl = state.formations.find(f => f.id === id);
-        const name = prompt("Nom de la nouvelle session ?", tpl.name);
-        const start = prompt("Date de début (AAAA-MM-JJ) ?");
-        const end = prompt("Date de fin (AAAA-MM-JJ) ?");
-        if(!name || !start) return;
-        const newFid = Date.now();
-        state.formations.push({...tpl, id: newFid, name, isTemplate: false, start, end});
-        state.blocs.filter(b => b.formationId === id).forEach(b => {
-            state.blocs.push({...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'}))});
-        });
-        push(); showView('formationsView');
+    window.toggleTask = (id) => {
+        const b = state.blocs.find(x => x.id === state.currentBlocId);
+        const t = b.tasks.find(x => x.id === id);
+        t.status = t.status === 'done' ? 'todo' : 'done';
+        push();
     };
 
-    // --- NAVIGATION ---
-    window.showView = (id) => { 
-        state.currentView = id; 
-        document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); 
-        document.getElementById(id).classList.remove('hidden'); 
-        refreshUI(); 
+    window.addMember = () => {
+        const i = document.getElementById("newMemberInitials").value.toUpperCase();
+        if(i) { state.members.push({ name: document.getElementById("newMemberName").value, initials: i, email: document.getElementById("newMemberEmail").value }); push(); }
     };
-    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
-    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2>`; showView('tasksView'); };
-    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
-    window.openFormModal = (tpl) => { document.getElementById("formIsTemplate").value = tpl; document.getElementById("dateSection").style.display = tpl ? "none" : "block"; openModal('formationModal'); };
-    window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
-    window.deleteForm = (id) => { if(confirm("Supprimer la session et ses blocs ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
-    window.deleteBloc = (id) => { if(confirm("Supprimer ce bloc ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
+    window.removeMember = (init) => { state.members = state.members.filter(m => m.initials !== init); push(); };
+    window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
+    window.deleteBloc = (id) => { if(confirm("Supprimer ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
     window.deleteTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); };
-    document.getElementById("backBtn").onclick = () => showView(isArchived(state.formations.find(f => f.id === state.currentFormationId)) ? 'archivesView' : 'formationsView');
-
+    
+    function isArchived(f) { return f.end && new Date(f.end) < new Date(); }
 </script>
 </body>
 </html>
