@@ -13,12 +13,15 @@
     }
     *{margin:0;padding:0;box-sizing:border-box;}
     body{font-family:sans-serif;background:var(--bg1);color:var(--text1);padding:20px;}
+
     #loginView{height:calc(100vh - 40px);display:flex;align-items:center;justify-content:center;}
     .login-box{background:var(--bg2);padding:40px;border-radius:12px;border:1px solid var(--bg3);text-align:center;width:100%;max-width:420px;}
     .google-btn{background:#fff;color:#444;padding:12px 24px;border-radius:8px;border:none;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin:25px auto;width:100%;}
+
     .app{max-width:1100px;margin:auto;}
     header,.mini-header{background:var(--bg2);padding:15px 20px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--bg3);}
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:15px;}
+
     .card{background:var(--bg2);padding:18px;border-radius:12px;cursor:pointer;border:1px solid var(--bg3);position:relative;display:flex;flex-direction:column;min-height:150px;transition:.2s;overflow:hidden;}
     .card:hover{border-color:var(--primary);}
     .style-apm{background:var(--apm-gray)!important;padding-top:25px;}
@@ -27,24 +30,31 @@
     .style-polcant{background:var(--polcant-blue)!important;border-top:5px solid rgba(255,255,255,.2);}
     .style-asp{background:var(--asp-light)!important;color:#0f172a;border-top:5px solid #64748b;}
     .style-asp *{color:#0f172a!important;}
+
     .alert-badge{background:var(--st-alert);color:#fff;padding:4px 10px;border-radius:6px;font-size:.75rem;font-weight:bold;animation:pulse 1.5s infinite;}
     @keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.05);opacity:.8;}100%{transform:scale(1);}}
+
     .prog-container{background:rgba(0,0,0,.3);height:10px;border-radius:5px;margin:12px 0;overflow:hidden;border:1px solid rgba(255,255,255,.1);}
     .prog-bar{height:100%;transition:width .5s,background-color .5s;}
+
     .btn{background:var(--primary);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold;}
     .btn-icon{background:rgba(0,0,0,.1);border:none;color:inherit;cursor:pointer;padding:7px;border-radius:6px;}
+
     .filter-bar{background:var(--bg2);padding:15px 20px;border-radius:10px;margin-bottom:15px;display:grid;grid-template-columns:1fr 1fr;gap:20px;border:1px solid var(--bg3);}
     .filter-group{display:flex;flex-direction:column;gap:5px;}
     .filter-group label{font-size:.75rem;text-transform:uppercase;opacity:.7;font-weight:bold;}
+
     .task-container{margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid var(--bg3);}
     .task-bandeau{display:grid;grid-template-columns:1.6fr 1fr .9fr 80px;align-items:center;padding:15px;cursor:pointer;color:#fff;font-weight:bold;}
     .text-dark{color:#1e293b!important;}
     .status-select-large{width:100%;padding:10px;border-radius:8px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.9);color:#000;font-weight:bold;cursor:pointer;font-size:.9rem;}
     .task-desc-area{background:var(--bg3);color:var(--text2);padding:0;max-height:0;overflow:hidden;transition:all .3s ease;}
-    .task-desc-area.open{padding:15px;max-height:800px;border-top:1px solid rgba(255,255,255,.1);}
+    .task-desc-area.open{padding:15px;max-height:900px;border-top:1px solid rgba(255,255,255,.1);}
+
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:100;}
     .modal-content{background:var(--bg2);padding:25px;border-radius:12px;width:95%;max-width:550px;overflow-y:auto;max-height:90vh;}
     input,select,textarea{width:100%;margin:8px 0 15px 0;padding:10px;background:var(--bg1);border:1px solid var(--bg3);color:#fff;border-radius:6px;}
+
     .hidden{display:none!important;}
   </style>
 </head>
@@ -68,27 +78,6 @@
         <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
       </div>
     </header>
-<div class="filter-bar" style="margin-bottom:15px">
-  <div class="filter-group">
-    <label>Responsable (global)</label>
-    <select id="globalRespFilter" onchange="renderGlobalOrSessions()">
-      <option value="all">Tous</option>
-    </select>
-  </div>
-  <div class="filter-group">
-    <label>État (global)</label>
-    <select id="globalStatusFilter" onchange="renderGlobalOrSessions()">
-      <option value="all">Tous</option>
-      <option value="alert">⚠️ RAPPELS</option>
-      <option value="not_started">Pas commencé</option>
-      <option value="todo">À faire</option>
-      <option value="progress">En cours</option>
-      <option value="done">Terminé</option>
-    </select>
-  </div>
-</div>
-
-<div id="globalTasksList" class="hidden"></div>
     <div class="grid" id="activeGrid"></div>
   </div>
 
@@ -161,10 +150,13 @@
       <option value="polcant">PolCant</option>
       <option value="asp">ASP</option>
     </select>
+
+    <!-- EU date format inputs -->
     <div id="dateFields">
-      <input id="formStart" placeholder="JJ.MM.AAAA">
-<input id="formEnd" placeholder="JJ.MM.AAAA">
+      <label>Début (JJ.MM.AAAA)</label><input id="formStart" placeholder="JJ.MM.AAAA" />
+      <label>Fin (JJ.MM.AAAA)</label><input id="formEnd" placeholder="JJ.MM.AAAA" />
     </div>
+
     <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
     <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('formationModal')">Annuler</button>
   </div>
@@ -184,7 +176,7 @@
   <div class="modal-content">
     <h3>Bloc</h3>
     <label>Nom</label><input id="blocName" />
-    <label>Date</label><input id="blocDate" type="date" />
+    <label>Date de référence (JJ.MM.AAAA)</label><input id="blocDate" placeholder="JJ.MM.AAAA" />
     <div style="display:flex; gap:10px">
       <input id="blocR1" placeholder="Resp 1" />
       <input id="blocR2" placeholder="Resp 2" />
@@ -200,7 +192,8 @@
     <label>Titre</label><input id="taskTitle" />
     <label>Responsable</label><input id="taskResp" />
     <label>Instructions (Modèle)</label><textarea id="taskDesc" style="height:60px"></textarea>
-    <label>Remarques (Suivi terrain)</label><textarea id="taskRemarque" style="height:60px" placeholder="Écrire ici les remarques d'avancement..."></textarea>
+
+    <!-- Remarque removed from modal (now inline) -->
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-top:10px">
       <div>
@@ -267,36 +260,40 @@
     catch (e) { return Date.now().toString(36) + Math.floor(Math.random()*100000).toString(36); }
   }
 
-  // Important: safe embedding of IDs in onclick using single quotes
+  // Safe embedding IDs into onclick with single quotes
   function escId(v) {
     return String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   }
-  
-  // ----- Date helpers (EU format JJ.MM.AAAA <-> ISO YYYY-MM-DD)
 
-function isoToEU(iso) {
-  if (!iso) return "";
-  const d = new Date(iso);
-  if (isNaN(d)) return "";
-  const day = String(d.getDate()).padStart(2, "0");
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const year = d.getFullYear();
-  return `${day}.${month}.${year}`;
-}
+  // ---------- DATE HELPERS (EU) ----------
+  function isoToEU(iso) {
+    if (!iso) return "";
+    const d = new Date(iso);
+    if (isNaN(d)) return "";
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
 
-function euToISO(eu) {
-  if (!eu) return "";
-  const parts = eu.split(".");
-  if (parts.length !== 3) return "";
-  const [day, month, year] = parts;
-  return `${year}-${month}-${day}`;
-}
+  function euToISO(eu) {
+    if (!eu) return "";
+    const parts = eu.split(".");
+    if (parts.length !== 3) return "";
+    const [dd, mm, yyyy] = parts.map(x => x.trim());
+    if (!dd || !mm || !yyyy) return "";
+    return `${yyyy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`;
+  }
 
-function isValidEUDate(eu) {
-  const iso = euToISO(eu);
-  const d = new Date(iso);
-  return !isNaN(d.getTime());
-}
+  function isValidEUDate(eu) {
+    const iso = euToISO(eu);
+    if (!iso) return false;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return false;
+    // strict check to avoid 32.13.2026 -> auto-rollover
+    const [yyyy, mm, dd] = iso.split("-").map(n => parseInt(n, 10));
+    return d.getFullYear() === yyyy && (d.getMonth() + 1) === mm && d.getDate() === dd;
+  }
 
   // ---------- AUTH ----------
   window.handleLogin = () => {
@@ -346,9 +343,9 @@ function isValidEUDate(eu) {
   }
 
   // ---------- DATE CALCS & STATUS ----------
-  function getCalcDate(base, val, unit) {
-    if (!base) return null;
-    let d = new Date(base);
+  function getCalcDate(baseISO, val, unit) {
+    if (!baseISO) return null;
+    let d = new Date(baseISO);
     val = parseInt(val) || 0;
     if (unit === "days") d.setDate(d.getDate() - val);
     else if (unit === "weeks") d.setDate(d.getDate() - val * 7);
@@ -358,16 +355,19 @@ function isValidEUDate(eu) {
     return d;
   }
 
-  function getTaskStatusInfo(task, blocDate) {
+  function getTaskStatusInfo(task, blocDateISO) {
     const today = new Date(); today.setHours(0,0,0,0);
-    const start = getCalcDate(blocDate, task.sVal, task.sUnit);
-    const end = getCalcDate(blocDate, task.eVal, task.eUnit);
+
+    const start = getCalcDate(blocDateISO, task.sVal, task.sUnit);
+    const end = getCalcDate(blocDateISO, task.eVal, task.eUnit);
+
     let status = task.status || "todo";
 
     if (status === "todo" || status === "not_started") {
       if (start && today < start) status = "not_started";
       else if (start && today >= start && (!end || today < end)) status = "todo";
     }
+
     if (status !== "done" && status !== "progress") {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if (end && today >= end) status = "alert";
@@ -382,11 +382,15 @@ function isValidEUDate(eu) {
       done: { rank: 5, color: "var(--st-done)", dark: false },
     };
     const info = map[status] || map.todo;
+
+    const startISO = start ? start.toISOString().split("T")[0] : "";
+    const endISO = end ? end.toISOString().split("T")[0] : "";
+
     return {
       ...info,
       id: status,
-      startStr: start ? isoToEU(start.toISOString().split("T")[0]) : "---",
-endStr: end ? isoToEU(end.toISOString().split("T")[0]) : "---",
+      startStr: start ? isoToEU(startISO) : "---",
+      endStr: end ? isoToEU(endISO) : "---",
     };
   }
 
@@ -403,112 +407,10 @@ endStr: end ? isoToEU(end.toISOString().split("T")[0]) : "---",
   function isArchived(f) {
     return f.end && new Date(f.end) < new Date();
   }
-function getBlocContext(bloc) {
-  const mod = state.modules.find(m => m.id === bloc.moduleId);
-  const form = mod ? state.formations.find(f => f.id === mod.formationId) : null;
-  return { module: mod, formation: form };
-}
-
-function updateGlobalFilterList() {
-  const select = document.getElementById("globalRespFilter");
-  if (!select) return;
-
-  const currentVal = select.value || "all";
-  const names = new Set();
-
-  state.blocs.forEach(b => {
-    (b.tasks || []).forEach(t => {
-      if (t.resp && String(t.resp).trim() !== "") names.add(String(t.resp).trim());
-    });
-  });
-
-  const sorted = [...names].sort((a,b) => a.localeCompare(b, 'fr'));
-  select.innerHTML = `<option value="all">Tous</option>` + sorted.map(n =>
-    `<option value="${n}" ${currentVal === n ? "selected" : ""}>${n}</option>`
-  ).join("");
-}
-
-window.renderGlobalOrSessions = () => {
-  const resp = document.getElementById("globalRespFilter")?.value || "all";
-  const stat = document.getElementById("globalStatusFilter")?.value || "all";
-  const wantsGlobal = (resp !== "all" || stat !== "all");
-
-  const globalBox = document.getElementById("globalTasksList");
-  const grid = document.getElementById("activeGrid");
-  if (!globalBox || !grid) return;
-
-  if (!wantsGlobal) {
-    globalBox.classList.add("hidden");
-    grid.classList.remove("hidden");
-    // re-render sessions grid
-    renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
-    return;
-  }
-
-  // Build global list
-  const rows = [];
-  state.blocs.forEach(b => {
-    const ctx = getBlocContext(b);
-    const blocDate = b.date;
-
-    (b.tasks || []).forEach(t => {
-      const info = getTaskStatusInfo(t, blocDate);
-      if (resp !== "all" && (t.resp || "") !== resp) return;
-      if (stat !== "all" && info.id !== stat) return;
-
-      rows.push({
-        rank: info.rank,
-        color: info.color,
-        dark: info.dark,
-        status: info.id,
-        startStr: info.startStr,
-        endStr: info.endStr,
-        title: t.title || "Sans titre",
-        resp: t.resp || "?",
-        formation: ctx.formation?.name || "—",
-        module: ctx.module?.name || "—",
-        bloc: b.name || "—",
-      });
-    });
-  });
-
-  rows.sort((a,b) => a.rank - b.rank);
-
-  // Render
-  grid.classList.add("hidden");
-  globalBox.classList.remove("hidden");
-
-  globalBox.innerHTML = rows.length ? rows.map(r => `
-    <div class="task-container">
-      <div class="task-bandeau ${r.dark ? "text-dark" : ""}" style="background:${r.color}">
-        <div>
-          <div style="font-size: 1.05rem">${r.title}</div>
-          <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${r.resp}</div>
-          <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">
-            ${r.formation} → ${r.module} → ${r.bloc}
-          </div>
-        </div>
-        <div style="font-size:0.85rem">
-          Début: <b>${r.startStr}</b>
-        </div>
-        <div style="font-size:0.85rem; text-align:center">
-          Échéance:<br><b>${r.endStr}</b>
-        </div>
-        <div style="text-align:right; opacity:0.9">
-          ${r.status === "alert" ? "⚠️" : ""}
-        </div>
-      </div>
-    </div>
-  `).join("") : `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche pour ces filtres</div>`;
-};
-
 
   // ---------- UI / RENDER ----------
   window.refreshUI = () => {
-    if(state.currentView === "formationsView") {
-  updateGlobalFilterList();
-  renderGlobalOrSessions(); // affichera soit la grille soit la liste globale
-}
+    if (state.currentView === "formationsView") renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
     if (state.currentView === "archivesView") renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
     if (state.currentView === "templatesListView") renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
     if (state.currentView === "modulesView") renderModules();
@@ -612,6 +514,32 @@ window.renderGlobalOrSessions = () => {
     select.innerHTML = html;
   }
 
+  // Inline remark debounce
+  let remarkTimers = {};
+
+  window.updateTaskRemark = (taskId, value) => {
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b || !b.tasks) return;
+    const t = b.tasks.find(x => x.id === taskId);
+    if (!t) return;
+
+    t.remarque = value;
+
+    if (remarkTimers[taskId]) clearTimeout(remarkTimers[taskId]);
+    remarkTimers[taskId] = setTimeout(() => {
+      push();
+      delete remarkTimers[taskId];
+    }, 500);
+  };
+
+  window.saveTaskRemarkNow = (taskId) => {
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b || !b.tasks) return;
+    const t = b.tasks.find(x => x.id === taskId);
+    if (!t) return;
+    push();
+  };
+
   window.renderTasks = () => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b) {
@@ -653,26 +581,29 @@ window.renderGlobalOrSessions = () => {
               <button class="btn-icon" onclick="event.stopPropagation(); editTask('${escId(t.id)}')">✏️</button>
             </div>
           </div>
+
           <div id="desc-${t.id}" class="task-desc-area">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
               <div><strong>Instructions :</strong><br>${t.desc || "Aucune."}</div>
-<div style="border-left:1px solid rgba(255,255,255,.1); padding-left:20px">
-  <strong>Remarques / Suivi :</strong><br>
-  <textarea
-    style="height:80px; margin-top:8px"
-    placeholder="Écrire ici les remarques d'avancement..."
-    onclick="event.stopPropagation()"
-    oninput="updateTaskRemark('${escId(t.id)}', this.value)"
-  >${t.remarque || ""}</textarea>
 
-  <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px">
-    <button class="btn" style="padding:6px 10px; font-size:0.8rem"
-      onclick="event.stopPropagation(); saveTaskRemarkNow('${escId(t.id)}')">
-      Enregistrer
-    </button>
-  </div>
-</div>
+              <div style="border-left:1px solid rgba(255,255,255,.1); padding-left:20px">
+                <strong>Remarques / Suivi :</strong><br>
+                <textarea
+                  style="height:80px; margin-top:8px"
+                  placeholder="Écrire ici les remarques d'avancement..."
+                  onclick="event.stopPropagation()"
+                  oninput="updateTaskRemark('${escId(t.id)}', this.value)"
+                >${t.remarque || ""}</textarea>
+
+                <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px">
+                  <button class="btn" style="padding:6px 10px; font-size:0.8rem"
+                    onclick="event.stopPropagation(); saveTaskRemarkNow('${escId(t.id)}')">
+                    Enregistrer
+                  </button>
+                </div>
+              </div>
             </div>
+
             <div style="margin-top:10px; text-align:right">
               <button class="btn" style="background:#e11d48; padding:4px 8px; font-size:0.7rem" onclick="deleteTask('${escId(t.id)}')">Supprimer</button>
             </div>
@@ -705,7 +636,6 @@ window.renderGlobalOrSessions = () => {
     document.getElementById("taskTitle").value = "";
     document.getElementById("taskResp").value = "";
     document.getElementById("taskDesc").value = "";
-    document.getElementById("taskRemarque").value = "";
     document.getElementById("taskStartVal").value = 4;
     document.getElementById("taskStartUnit").value = "weeks";
     document.getElementById("taskEndVal").value = 2;
@@ -718,11 +648,14 @@ window.renderGlobalOrSessions = () => {
     state.editingId = id;
     const f = state.formations.find(x => x.id === id);
     if (!f) return alert("Session/Modèle introuvable");
+
     document.getElementById("formIsTemplate").value = f.isTemplate ? "true" : "false";
     document.getElementById("formName").value = f.name || "";
     document.getElementById("formType").value = f.type || "apm";
-    document.getElementById("formStart").value = f.start || "";
-    document.getElementById("formEnd").value = f.end || "";
+
+    document.getElementById("formStart").value = f.start ? isoToEU(f.start) : "";
+    document.getElementById("formEnd").value = f.end ? isoToEU(f.end) : "";
+
     document.getElementById("dateFields").style.display = f.isTemplate ? "none" : "block";
     document.getElementById("formModalTitle").textContent = f.isTemplate ? "Modifier Modèle" : "Modifier Session";
     openModal("formationModal");
@@ -742,7 +675,7 @@ window.renderGlobalOrSessions = () => {
     const b = state.blocs.find(x => x.id === id);
     if (!b) return alert("Bloc introuvable");
     document.getElementById("blocName").value = b.name || "";
-    document.getElementById("blocDate").value = b.date || "";
+    document.getElementById("blocDate").value = b.date ? isoToEU(b.date) : "";
     document.getElementById("blocR1").value = b.r1 || "";
     document.getElementById("blocR2").value = b.r2 || "";
     openModal("blocModal");
@@ -754,41 +687,55 @@ window.renderGlobalOrSessions = () => {
     if (!b) return alert("Bloc introuvable");
     const t = (b.tasks || []).find(x => x.id === id);
     if (!t) return alert("Tâche introuvable");
+
     document.getElementById("taskTitle").value = t.title || "";
     document.getElementById("taskResp").value = t.resp || "";
     document.getElementById("taskDesc").value = t.desc || "";
-    document.getElementById("taskRemarque").value = t.remarque || "";
     document.getElementById("taskStartVal").value = t.sVal ?? 4;
     document.getElementById("taskStartUnit").value = t.sUnit || "weeks";
     document.getElementById("taskEndVal").value = t.eVal ?? 2;
     document.getElementById("taskEndUnit").value = t.eUnit || "weeks";
+
     openModal("taskModal");
   };
 
   // ---------- SAVE ----------
   window.saveFormation = () => {
     const isTpl = document.getElementById("formIsTemplate").value === "true";
+
+    const name = document.getElementById("formName").value || "Sans nom";
+    const type = document.getElementById("formType").value || "apm";
+
+    const startEU = document.getElementById("formStart").value || "";
+    const endEU = document.getElementById("formEnd").value || "";
+
+    if (!isTpl) {
+      if (!isValidEUDate(startEU) || !isValidEUDate(endEU)) {
+        alert("Dates invalides. Format attendu : JJ.MM.AAAA");
+        return;
+      }
+      const startISO = euToISO(startEU);
+      const endISO = euToISO(endEU);
+      if (new Date(endISO) < new Date(startISO)) {
+        alert("La date de fin ne peut pas être avant la date de début.");
+        return;
+      }
+    }
+
     const d = {
       id: state.editingId || generateId(),
-      name: document.getElementById("formName").value || "Sans nom",
-      type: document.getElementById("formType").value || "apm",
+      name,
+      type,
       isTemplate: isTpl,
-      const startEU = document.getElementById("formStart").value;
-const endEU = document.getElementById("formEnd").value;
-
-if (!isTpl) {
-  if (!isValidEUDate(startEU) || !isValidEUDate(endEU)) {
-    alert("Dates invalides. Format attendu : JJ.MM.AAAA");
-    return;
-  }
-}
-
-start: isTpl ? "" : euToISO(startEU),
-end: isTpl ? "" : euToISO(endEU),
+      start: isTpl ? "" : euToISO(startEU),
+      end: isTpl ? "" : euToISO(endEU)
     };
+
     if (state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
     else state.formations.push(d);
-    push(); closeModal("formationModal");
+
+    push();
+    closeModal("formationModal");
   };
 
   window.saveModule = () => {
@@ -806,40 +753,118 @@ end: isTpl ? "" : euToISO(endEU),
 
   window.saveBloc = () => {
     if (!state.currentModuleId) return alert("Sélectionner un module avant de créer un bloc.");
+
+    const name = document.getElementById("blocName").value || "Sans nom";
+    const dateEU = document.getElementById("blocDate").value || "";
+    if (dateEU && !isValidEUDate(dateEU)) {
+      alert("Date de bloc invalide. Format attendu : JJ.MM.AAAA");
+      return;
+    }
+
     const old = state.editingId ? state.blocs.find(x => x.id === state.editingId) : { tasks: [] };
     const d = {
       id: state.editingId || generateId(),
       moduleId: state.currentModuleId,
-      name: document.getElementById("blocName").value || "Sans nom",
-      date: document.getElementById("blocDate").value || "",
+      name,
+      date: dateEU ? euToISO(dateEU) : "",
       r1: document.getElementById("blocR1").value || "",
       r2: document.getElementById("blocR2").value || "",
       tasks: [...(old.tasks || [])]
     };
+
     if (state.editingId) state.blocs = state.blocs.map(b => b.id === state.editingId ? d : b);
     else state.blocs.push(d);
-    push(); closeModal("blocModal");
+
+    push();
+    closeModal("blocModal");
   };
 
   window.saveTask = () => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b) return alert("Sélectionner un bloc avant de créer une tâche.");
+
     const existing = state.editingId ? (b.tasks || []).find(x => x.id === state.editingId) : null;
+
     const t = {
       id: state.editingId || generateId(),
       title: document.getElementById("taskTitle").value || "Sans titre",
       resp: document.getElementById("taskResp").value || "",
       desc: document.getElementById("taskDesc").value || "",
-      remarque: document.getElementById("taskRemarque").value || "",
+      // remarque is now inline; keep existing if editing, else empty
+      remarque: existing ? (existing.remarque || "") : "",
       sVal: document.getElementById("taskStartVal").value || 0,
       sUnit: document.getElementById("taskStartUnit").value || "weeks",
       eVal: document.getElementById("taskEndVal").value || 0,
       eUnit: document.getElementById("taskEndUnit").value || "weeks",
       status: existing ? (existing.status || "todo") : "todo"
     };
+
     if (state.editingId) b.tasks = (b.tasks || []).map(x => x.id === state.editingId ? t : x);
     else { if (!b.tasks) b.tasks = []; b.tasks.push(t); }
-    push(); closeModal("taskModal");
+
+    push();
+    closeModal("taskModal");
+  };
+
+  // ---------- TEMPLATE DEPLOY (EU dates) ----------
+  window.deployTemplate = (tplId) => {
+    const tpl = state.formations.find(f => f.id === tplId);
+    if (!tpl) return alert("Modèle introuvable");
+
+    const name = prompt("Nom de la nouvelle session ?", tpl.name);
+    if (!name || !name.trim()) return;
+
+    const startEU = prompt("Date de début (JJ.MM.AAAA) ?", "");
+    if (!startEU || !isValidEUDate(startEU)) {
+      alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 15.03.2026)");
+      return;
+    }
+
+    const endEU = prompt("Date de fin (JJ.MM.AAAA) ?", "");
+    if (!endEU || !isValidEUDate(endEU)) {
+      alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 30.06.2026)");
+      return;
+    }
+
+    const start = euToISO(startEU);
+    const end = euToISO(endEU);
+    if (new Date(end) < new Date(start)) {
+      alert("La date de fin ne peut pas être avant la date de début.");
+      return;
+    }
+
+    const newFormId = generateId();
+    const newForm = { ...tpl, id: newFormId, name: name.trim(), isTemplate: false, start, end };
+    state.formations.push(newForm);
+
+    const tplModules = state.modules.filter(m => m.formationId === tplId);
+    tplModules.forEach(m => {
+      const newMId = generateId();
+      state.modules.push({ ...m, id: newMId, formationId: newFormId });
+
+      const tplBlocs = state.blocs.filter(b => b.moduleId === m.id);
+      tplBlocs.forEach(b => {
+        const newBlocId = generateId();
+        const newTasks = (b.tasks || []).map(t => ({
+          ...t,
+          id: generateId(),
+          status: "todo",
+          remarque: ""
+        }));
+
+        state.blocs.push({
+          ...b,
+          id: newBlocId,
+          moduleId: newMId,
+          date: "", // à régler ensuite si besoin
+          tasks: newTasks
+        });
+      });
+    });
+
+    push();
+    showView("formationsView");
+    alert("Session déployée ✅");
   };
 
   // ---------- STATUS / TOGGLE / DELETE ----------
@@ -849,33 +874,6 @@ end: isTpl ? "" : euToISO(endEU),
     const t = (b.tasks || []).find(x => x.id === tId);
     if (t) { t.status = newStat; push(); }
   };
-  
-  // ----- Inline remark editing (suivi terrain dans la tâche dépliée)
-let remarkTimers = {};
-
-window.updateTaskRemark = (taskId, value) => {
-  const b = state.blocs.find(x => x.id === state.currentBlocId);
-  if (!b || !b.tasks) return;
-  const t = b.tasks.find(x => x.id === taskId);
-  if (!t) return;
-
-  t.remarque = value;
-
-  // debounce : push 500ms après la dernière frappe
-  if (remarkTimers[taskId]) clearTimeout(remarkTimers[taskId]);
-  remarkTimers[taskId] = setTimeout(() => {
-    push();
-    delete remarkTimers[taskId];
-  }, 500);
-};
-
-window.saveTaskRemarkNow = (taskId) => {
-  const b = state.blocs.find(x => x.id === state.currentBlocId);
-  if (!b || !b.tasks) return;
-  const t = b.tasks.find(x => x.id === taskId);
-  if (!t) return;
-  push();
-};
 
   window.toggleDesc = (id) => {
     const el = document.getElementById(`desc-${id}`);
@@ -912,90 +910,6 @@ window.saveTaskRemarkNow = (taskId) => {
     push();
   };
 
-  // ---------- TEMPLATE DEPLOY ----------
-window.deployTemplate = (tplId) => {
-  const tpl = state.formations.find(f => f.id === tplId);
-  if (!tpl) return alert("Modèle introuvable");
-
-  // Nom : par défaut le nom du modèle (sans ajout d'année)
-  const name = prompt("Nom de la nouvelle session ?", tpl.name);
-  if (!name || !name.trim()) return;
-
-const startEU = prompt("Date de début (JJ.MM.AAAA) ?", "");
-if (!startEU || !isValidEUDate(startEU)) {
-  alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 15.03.2026)");
-  return;
-}
-
-const endEU = prompt("Date de fin (JJ.MM.AAAA) ?", "");
-if (!endEU || !isValidEUDate(endEU)) {
-  alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 30.06.2026)");
-  return;
-}
-
-const start = euToISO(startEU);
-const end = euToISO(endEU);
-
-if (new Date(end) < new Date(start)) {
-  alert("La date de fin ne peut pas être avant la date de début.");
-  return;
-}
-
-  // validation simple
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    alert("Dates invalides. Utilise le format YYYY-MM-DD (ex: 2026-03-15).");
-    return;
-  }
-  if (endDate < startDate) {
-    alert("La date de fin ne peut pas être avant la date de début.");
-    return;
-  }
-
-  const newFormId = generateId();
-  const newForm = {
-    ...tpl,
-    id: newFormId,
-    name: name.trim(),
-    isTemplate: false,
-    start,
-    end
-  };
-  state.formations.push(newForm);
-
-  // Dupliquer modules + blocs + tâches
-  const tplModules = state.modules.filter(m => m.formationId === tplId);
-
-  tplModules.forEach(m => {
-    const newMId = generateId();
-    state.modules.push({ ...m, id: newMId, formationId: newFormId });
-
-    const tplBlocs = state.blocs.filter(b => b.moduleId === m.id);
-    tplBlocs.forEach(b => {
-      const newBlocId = generateId();
-      const newTasks = (b.tasks || []).map(t => ({
-        ...t,
-        id: generateId(),
-        status: "todo",
-        remarque: ""
-      }));
-
-      state.blocs.push({
-        ...b,
-        id: newBlocId,
-        moduleId: newMId,
-        date: "",
-        tasks: newTasks
-      });
-    });
-  });
-
-  push();
-  showView("formationsView");
-  alert("Session déployée ✅");
-};
-
   // ---------- NAV ----------
   window.showView = (id) => {
     if (["formationsView","templatesListView","archivesView"].includes(id)) state.lastParentView = id;
@@ -1023,11 +937,12 @@ if (new Date(end) < new Date(start)) {
   window.enterBloc = (id) => {
     state.currentBlocId = id;
     const b = state.blocs.find(x => x.id === id);
-    document.getElementById("blocHeaderInfo").innerHTML = b ? `<h2>${b.name}</h2><div style="opacity:0.8">Date: ${b.date || "—"}</div>` : "";
+    document.getElementById("blocHeaderInfo").innerHTML = b ? `<h2>${b.name}</h2><div style="opacity:0.8">Date: ${b.date ? isoToEU(b.date) : "—"}</div>` : "";
     showView("tasksView");
   };
 
-  document.getElementById("backBtn").onclick = () => showView('modulesView');
+  // Fix: back from blocs should go to modules
+  document.getElementById("backBtn").onclick = () => showView("modulesView");
 
   // Initial
   refreshUI();
