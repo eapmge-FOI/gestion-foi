@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -35,7 +36,7 @@
     @keyframes pulse{0%{transform:scale(1);}50%{transform:scale(1.05);opacity:.8;}100%{transform:scale(1);}}
 
     .prog-container{background:rgba(0,0,0,.3);height:10px;border-radius:5px;margin:12px 0;overflow:hidden;border:1px solid rgba(255,255,255,.1);}
-    .prog-bar{height:100%;transition:width .5s,background-color .5s;}
+    .prog-bar{height:100%;transition:width .5s, background .5s;}
 
     .btn{background:var(--primary);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold;}
     .btn-icon{background:rgba(0,0,0,.1);border:none;color:inherit;cursor:pointer;padding:7px;border-radius:6px;}
@@ -71,7 +72,7 @@
 <div class="app hidden" id="mainApp">
   <div id="formationsView">
     <header>
-      <h1>🚀 Sessions Actives</h1>
+      <h1>📚 Sessions Actives</h1>
       <div style="display:flex; gap:10px">
         <button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">📂 Modèles</button>
         <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
@@ -151,7 +152,6 @@
       <option value="asp">ASP</option>
     </select>
 
-    <!-- EU date format inputs -->
     <div id="dateFields">
       <label>Début (JJ.MM.AAAA)</label><input id="formStart" placeholder="JJ.MM.AAAA" />
       <label>Fin (JJ.MM.AAAA)</label><input id="formEnd" placeholder="JJ.MM.AAAA" />
@@ -192,8 +192,6 @@
     <label>Titre</label><input id="taskTitle" />
     <label>Responsable</label><input id="taskResp" />
     <label>Instructions (Modèle)</label><textarea id="taskDesc" style="height:60px"></textarea>
-
-    <!-- Remarque removed from modal (now inline) -->
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-top:10px">
       <div>
@@ -259,11 +257,7 @@
     try { return crypto.randomUUID(); }
     catch (e) { return Date.now().toString(36) + Math.floor(Math.random()*100000).toString(36); }
   }
-
-  // Safe embedding IDs into onclick with single quotes
-  function escId(v) {
-    return String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-  }
+  function escId(v) { return String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
 
   // ---------- DATE HELPERS (EU) ----------
   function isoToEU(iso) {
@@ -275,7 +269,6 @@
     const year = d.getFullYear();
     return `${day}.${month}.${year}`;
   }
-
   function euToISO(eu) {
     if (!eu) return "";
     const parts = eu.split(".");
@@ -284,15 +277,23 @@
     if (!dd || !mm || !yyyy) return "";
     return `${yyyy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`;
   }
-
   function isValidEUDate(eu) {
     const iso = euToISO(eu);
     if (!iso) return false;
     const d = new Date(iso);
     if (isNaN(d.getTime())) return false;
-    // strict check to avoid 32.13.2026 -> auto-rollover
     const [yyyy, mm, dd] = iso.split("-").map(n => parseInt(n, 10));
     return d.getFullYear() === yyyy && (d.getMonth() + 1) === mm && d.getDate() === dd;
+  }
+
+  // ---------- PROGRESS COLOR (gradient red->orange->green) ----------
+  function progressGradient(p) {
+    const clamped = Math.max(0, Math.min(100, Number(p) || 0));
+    // multi-stop gradient; the visible fill will still be a gradient
+    return `linear-gradient(90deg,
+      #ef4444 0%,
+      #f97316 50%,
+      #22c55e 100%)`;
   }
 
   // ---------- AUTH ----------
@@ -333,7 +334,6 @@
       }
     }, (err) => console.error("snapshot error", err));
   }
-
   async function push() {
     await setDoc(doc(db, "data", "appState"), {
       formations: state.formations,
@@ -357,17 +357,14 @@
 
   function getTaskStatusInfo(task, blocDateISO) {
     const today = new Date(); today.setHours(0,0,0,0);
-
     const start = getCalcDate(blocDateISO, task.sVal, task.sUnit);
     const end = getCalcDate(blocDateISO, task.eVal, task.eUnit);
-
     let status = task.status || "todo";
 
     if (status === "todo" || status === "not_started") {
       if (start && today < start) status = "not_started";
       else if (start && today >= start && (!end || today < end)) status = "todo";
     }
-
     if (status !== "done" && status !== "progress") {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
       if (end && today >= end) status = "alert";
@@ -395,18 +392,10 @@
   }
 
   // ---------- RELATION HELPERS (4 layers) ----------
-  function formationModules(formationId) {
-    return state.modules.filter(m => m.formationId === formationId);
-  }
-  function moduleBlocs(moduleId) {
-    return state.blocs.filter(b => b.moduleId === moduleId);
-  }
-  function formationAllBlocs(formationId) {
-    return formationModules(formationId).flatMap(m => moduleBlocs(m.id));
-  }
-  function isArchived(f) {
-    return f.end && new Date(f.end) < new Date();
-  }
+  function formationModules(formationId) { return state.modules.filter(m => m.formationId === formationId); }
+  function moduleBlocs(moduleId) { return state.blocs.filter(b => b.moduleId === moduleId); }
+  function formationAllBlocs(formationId) { return formationModules(formationId).flatMap(m => moduleBlocs(m.id)); }
+  function isArchived(f) { return f.end && new Date(f.end) < new Date(); }
 
   // ---------- UI / RENDER ----------
   window.refreshUI = () => {
@@ -437,7 +426,7 @@
             📅 ${f.start ? isoToEU(f.start) : (f.isTemplate ? 'Modèle' : '?')}
           </p>
           <div class="prog-container">
-            <div class="prog-bar" style="width:${prog}%; background:${prog >= 100 ? 'var(--st-done)' : 'var(--primary)'}"></div>
+            <div class="prog-bar" style="width:${prog}%; background:${progressGradient(prog)}"></div>
           </div>
           <div style="display:flex; gap:5px; margin-top:auto">
             ${f.isTemplate ? `<button class="btn" style="background:var(--st-done); font-size:0.7rem" onclick="event.stopPropagation(); deployTemplate('${escId(f.id)}')">🚀 Déployer</button>` : ''}
@@ -466,10 +455,11 @@
           </div>
           <p style="opacity:0.8">👤 Resp: ${m.resp || '?'}</p>
           <div class="prog-container">
-            <div class="prog-bar" style="width:${prog}%; background:${prog >= 100 ? 'var(--st-done)' : 'var(--primary)'}"></div>
+            <div class="prog-bar" style="width:${prog}%; background:${progressGradient(prog)}"></div>
           </div>
           <div style="display:flex; gap:5px; margin-top:auto">
             <button class="btn-icon" onclick="event.stopPropagation(); editModule('${escId(m.id)}')">✏️</button>
+            <button class="btn-icon" onclick="event.stopPropagation(); cloneModule('${escId(m.id)}')">📄</button>
             <button class="btn-icon" onclick="event.stopPropagation(); deleteModule('${escId(m.id)}')">🗑️</button>
           </div>
         </div>
@@ -492,10 +482,11 @@
           </div>
           <p>📅 ${b.date ? isoToEU(b.date) : 'Non définie'}</p>
           <div class="prog-container">
-            <div class="prog-bar" style="width:${prog}%; background:${prog >= 100 ? 'var(--st-done)' : 'var(--primary)'}"></div>
+            <div class="prog-bar" style="width:${prog}%; background:${progressGradient(prog)}"></div>
           </div>
           <div style="display:flex; gap:5px; margin-top:auto">
             <button class="btn-icon" onclick="event.stopPropagation(); editBloc('${escId(b.id)}')">✏️</button>
+            <button class="btn-icon" onclick="event.stopPropagation(); cloneBloc('${escId(b.id)}')">📄</button>
             <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc('${escId(b.id)}')">🗑️</button>
           </div>
         </div>
@@ -516,22 +507,18 @@
 
   // Inline remark debounce
   let remarkTimers = {};
-
   window.updateTaskRemark = (taskId, value) => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b || !b.tasks) return;
     const t = b.tasks.find(x => x.id === taskId);
     if (!t) return;
-
     t.remarque = value;
-
     if (remarkTimers[taskId]) clearTimeout(remarkTimers[taskId]);
     remarkTimers[taskId] = setTimeout(() => {
       push();
       delete remarkTimers[taskId];
     }, 500);
   };
-
   window.saveTaskRemarkNow = (taskId) => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b || !b.tasks) return;
@@ -648,14 +635,11 @@
     state.editingId = id;
     const f = state.formations.find(x => x.id === id);
     if (!f) return alert("Session/Modèle introuvable");
-
     document.getElementById("formIsTemplate").value = f.isTemplate ? "true" : "false";
     document.getElementById("formName").value = f.name || "";
     document.getElementById("formType").value = f.type || "apm";
-
     document.getElementById("formStart").value = f.start ? isoToEU(f.start) : "";
     document.getElementById("formEnd").value = f.end ? isoToEU(f.end) : "";
-
     document.getElementById("dateFields").style.display = f.isTemplate ? "none" : "block";
     document.getElementById("formModalTitle").textContent = f.isTemplate ? "Modifier Modèle" : "Modifier Session";
     openModal("formationModal");
@@ -687,7 +671,6 @@
     if (!b) return alert("Bloc introuvable");
     const t = (b.tasks || []).find(x => x.id === id);
     if (!t) return alert("Tâche introuvable");
-
     document.getElementById("taskTitle").value = t.title || "";
     document.getElementById("taskResp").value = t.resp || "";
     document.getElementById("taskDesc").value = t.desc || "";
@@ -695,17 +678,14 @@
     document.getElementById("taskStartUnit").value = t.sUnit || "weeks";
     document.getElementById("taskEndVal").value = t.eVal ?? 2;
     document.getElementById("taskEndUnit").value = t.eUnit || "weeks";
-
     openModal("taskModal");
   };
 
   // ---------- SAVE ----------
   window.saveFormation = () => {
     const isTpl = document.getElementById("formIsTemplate").value === "true";
-
     const name = document.getElementById("formName").value || "Sans nom";
     const type = document.getElementById("formType").value || "apm";
-
     const startEU = document.getElementById("formStart").value || "";
     const endEU = document.getElementById("formEnd").value || "";
 
@@ -790,7 +770,6 @@
       title: document.getElementById("taskTitle").value || "Sans titre",
       resp: document.getElementById("taskResp").value || "",
       desc: document.getElementById("taskDesc").value || "",
-      // remarque is now inline; keep existing if editing, else empty
       remarque: existing ? (existing.remarque || "") : "",
       sVal: document.getElementById("taskStartVal").value || 0,
       sUnit: document.getElementById("taskStartUnit").value || "weeks",
@@ -845,26 +824,53 @@
       const tplBlocs = state.blocs.filter(b => b.moduleId === m.id);
       tplBlocs.forEach(b => {
         const newBlocId = generateId();
-        const newTasks = (b.tasks || []).map(t => ({
-          ...t,
-          id: generateId(),
-          status: "todo",
-          remarque: ""
-        }));
-
-        state.blocs.push({
-          ...b,
-          id: newBlocId,
-          moduleId: newMId,
-          date: "", // à régler ensuite si besoin
-          tasks: newTasks
-        });
+        const newTasks = (b.tasks || []).map(t => ({ ...t, id: generateId(), status: "todo", remarque: "" }));
+        state.blocs.push({ ...b, id: newBlocId, moduleId: newMId, date: "", tasks: newTasks });
       });
     });
 
     push();
     showView("formationsView");
     alert("Session déployée ✅");
+  };
+
+  // ---------- DUPLICATION (templates helper) ----------
+  // Duplicates a module (and all its blocs + tasks) inside the same formation
+  window.cloneModule = (moduleId) => {
+    const m = state.modules.find(x => x.id === moduleId);
+    if (!m) return alert("Module introuvable");
+
+    const newName = prompt("Nom du module dupliqué ?", (m.name || "Module") + " (copie)");
+    if (!newName) return;
+
+    const newMId = generateId();
+    state.modules.push({ ...m, id: newMId, name: newName });
+
+    const blocs = state.blocs.filter(b => b.moduleId === moduleId);
+    blocs.forEach(b => {
+      const newBId = generateId();
+      const newTasks = (b.tasks || []).map(t => ({ ...t, id: generateId() }));
+      state.blocs.push({ ...b, id: newBId, moduleId: newMId, name: b.name + " (copie)", tasks: newTasks });
+    });
+
+    push();
+    refreshUI();
+  };
+
+  // Duplicates a bloc (and tasks) inside the same module
+  window.cloneBloc = (blocId) => {
+    const b = state.blocs.find(x => x.id === blocId);
+    if (!b) return alert("Bloc introuvable");
+
+    const newName = prompt("Nom du bloc dupliqué ?", (b.name || "Bloc") + " (copie)");
+    if (!newName) return;
+
+    const newBId = generateId();
+    const newTasks = (b.tasks || []).map(t => ({ ...t, id: generateId() }));
+    state.blocs.push({ ...b, id: newBId, name: newName, tasks: newTasks });
+
+    push();
+    refreshUI();
   };
 
   // ---------- STATUS / TOGGLE / DELETE ----------
@@ -949,3 +955,4 @@
 </script>
 </body>
 </html>
+```
