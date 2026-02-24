@@ -40,10 +40,12 @@
         .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
         .btn-icon { background: rgba(0,0,0,0.1); border: none; color: inherit; cursor: pointer; padding: 7px; border-radius: 6px; }
 
-        /* NOUVEAU STYLE TÂCHES */
+        /* TÂCHES STYLE HAUTE VISIBILITÉ */
+        .filter-bar { background: var(--bg2); padding: 12px 20px; border-radius: 10px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--bg3); }
+        .filter-bar select { width: auto; margin: 0; min-width: 200px; }
+
         .task-container { margin-bottom: 10px; border-radius: 10px; overflow: hidden; border: 1px solid var(--bg3); }
         .task-bandeau { display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 80px; align-items: center; padding: 15px; cursor: pointer; color: #fff; font-weight: bold; }
-        /* Couleurs pour texte noir sur fond clair (jaune/gris) */
         .text-dark { color: #1e293b !important; }
         
         .status-select-large { 
@@ -88,7 +90,6 @@
         <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>📦 Archives</h1><div></div></header>
         <div class="grid" id="archivesGrid"></div>
     </div>
-
     <div id="templatesListView" class="hidden">
         <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>📂 Modèles</h1><button class="btn" onclick="openFormModal(true)">+ Nouveau</button></header>
         <div class="grid" id="templateGrid"></div>
@@ -109,6 +110,14 @@
             <div id="blocHeaderInfo"></div>
             <button class="btn" id="addTaskBtn" onclick="openModal('taskModal')">+ Tâche</button>
         </div>
+        
+        <div class="filter-bar">
+            <span>Filtrer par Responsable :</span>
+            <select id="respFilter" onchange="renderTasks()">
+                <option value="all">Tous les intervenants</option>
+            </select>
+        </div>
+
         <div id="tasksList"></div>
     </div>
 </div>
@@ -138,10 +147,10 @@
 
 <div id="taskModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Tâche</h3>
+        <h3>Configuration Tâche</h3>
         <label>Titre</label><input id="taskTitle">
         <label>Responsable</label><input id="taskResp">
-        <label>Descriptif</label><textarea id="taskDesc" placeholder="Détails de la mission..."></textarea>
+        <label>Descriptif</label><textarea id="taskDesc" placeholder="Instructions détaillées..."></textarea>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px;">
             <div><small>DÉBUT (Avant bloc)</small><input type="number" id="taskStartVal" value="4">
                 <select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option><option value="months">Mois</option><option value="years">Années</option></select>
@@ -243,7 +252,7 @@
         if(state.currentView === 'archivesView') renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
         if(state.currentView === 'templatesListView') renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
         if(state.currentView === 'blocsView') renderBlocs();
-        if(state.currentView === 'tasksView') renderTasks();
+        if(state.currentView === 'tasksView') { updateFilterList(); renderTasks(); }
     };
 
     function renderMainGrid(id, list, isArchive = false) {
@@ -254,10 +263,7 @@
             const prog = allT.length ? (allT.filter(t => t.status === 'done').length / allT.length)*100 : 0;
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    <div style="display:flex; justify-content:space-between">
-                        <h3>${f.name}</h3>
-                        ${hasAlert && !isArchive ? '<span class="alert-badge">RAPPEL</span>' : ''}
-                    </div>
+                    <div style="display:flex; justify-content:space-between"><h3>${f.name}</h3>${hasAlert && !isArchive ? '<span class="alert-badge">RAPPEL</span>' : ''}</div>
                     <div class="prog-container"><div class="prog-bar" style="width:${prog}%; background:${getProgStyle(prog)}"></div></div>
                     <div style="display:flex; gap:5px; margin-top:auto">
                         <button class="btn-icon" onclick="event.stopPropagation(); editForm(${f.id})">✏️</button>
@@ -274,10 +280,7 @@
             const prog = b.tasks.length ? (b.tasks.filter(t => t.status === 'done').length / b.tasks.length)*100 : 0;
             return `
                 <div class="card" onclick="enterBloc(${b.id})">
-                    <div style="display:flex; justify-content:space-between">
-                        <h3>${b.name}</h3>
-                        ${hasAlert ? '<span class="alert-badge">!</span>' : ''}
-                    </div>
+                    <div style="display:flex; justify-content:space-between"><h3>${b.name}</h3>${hasAlert ? '<span class="alert-badge">!</span>' : ''}</div>
                     <p>📅 ${b.date || 'Non définie'}</p>
                     <div class="prog-container"><div class="prog-bar" style="width:${prog}%; background:${getProgStyle(prog)}"></div></div>
                     <div style="display:flex; gap:5px; margin-top:auto">
@@ -288,10 +291,27 @@
         }).join("");
     }
 
+    // GESTION DU FILTRE
+    function updateFilterList() {
+        const b = state.blocs.find(x => x.id === state.currentBlocId);
+        if(!b) return;
+        const select = document.getElementById("respFilter");
+        const currentVal = select.value;
+        const names = [...new Set(b.tasks.map(t => t.resp).filter(n => n && n.trim() !== ""))].sort();
+        
+        let html = '<option value="all">Tous les intervenants</option>';
+        names.forEach(n => { html += `<option value="${n}" ${currentVal === n ? 'selected' : ''}>${n}</option>`; });
+        select.innerHTML = html;
+    }
+
     window.renderTasks = () => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
         if(!b) return;
-        document.getElementById("tasksList").innerHTML = b.tasks.map(t => {
+        
+        const filterVal = document.getElementById("respFilter").value;
+        const tasksToRender = b.tasks.filter(t => filterVal === 'all' || t.resp === filterVal);
+
+        document.getElementById("tasksList").innerHTML = tasksToRender.map(t => {
             const info = getTaskStatusInfo(t, b.date);
             return `
                 <div class="task-container">
@@ -379,14 +399,9 @@
     window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; openModal('formationModal'); };
     window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; openModal('blocModal'); };
     window.editTask = (id) => { 
-        state.editingId = id; 
-        const b = state.blocs.find(x => x.id === state.currentBlocId); 
-        const t = b.tasks.find(x => x.id === id); 
-        document.getElementById("taskTitle").value = t.title; 
-        document.getElementById("taskResp").value = t.resp; 
-        document.getElementById("taskDesc").value = t.desc || "";
-        document.getElementById("taskStartVal").value = t.sVal;
-        document.getElementById("taskEndVal").value = t.eVal;
+        state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); 
+        document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; 
+        document.getElementById("taskDesc").value = t.desc || ""; document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskEndVal").value = t.eVal;
         openModal('taskModal'); 
     };
     window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); push(); } };
