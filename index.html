@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -69,6 +68,27 @@
         <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
       </div>
     </header>
+<div class="filter-bar" style="margin-bottom:15px">
+  <div class="filter-group">
+    <label>Responsable (global)</label>
+    <select id="globalRespFilter" onchange="renderGlobalOrSessions()">
+      <option value="all">Tous</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>État (global)</label>
+    <select id="globalStatusFilter" onchange="renderGlobalOrSessions()">
+      <option value="all">Tous</option>
+      <option value="alert">⚠️ RAPPELS</option>
+      <option value="not_started">Pas commencé</option>
+      <option value="todo">À faire</option>
+      <option value="progress">En cours</option>
+      <option value="done">Terminé</option>
+    </select>
+  </div>
+</div>
+
+<div id="globalTasksList" class="hidden"></div>
     <div class="grid" id="activeGrid"></div>
   </div>
 
@@ -357,10 +377,112 @@
   function isArchived(f) {
     return f.end && new Date(f.end) < new Date();
   }
+function getBlocContext(bloc) {
+  const mod = state.modules.find(m => m.id === bloc.moduleId);
+  const form = mod ? state.formations.find(f => f.id === mod.formationId) : null;
+  return { module: mod, formation: form };
+}
+
+function updateGlobalFilterList() {
+  const select = document.getElementById("globalRespFilter");
+  if (!select) return;
+
+  const currentVal = select.value || "all";
+  const names = new Set();
+
+  state.blocs.forEach(b => {
+    (b.tasks || []).forEach(t => {
+      if (t.resp && String(t.resp).trim() !== "") names.add(String(t.resp).trim());
+    });
+  });
+
+  const sorted = [...names].sort((a,b) => a.localeCompare(b, 'fr'));
+  select.innerHTML = `<option value="all">Tous</option>` + sorted.map(n =>
+    `<option value="${n}" ${currentVal === n ? "selected" : ""}>${n}</option>`
+  ).join("");
+}
+
+window.renderGlobalOrSessions = () => {
+  const resp = document.getElementById("globalRespFilter")?.value || "all";
+  const stat = document.getElementById("globalStatusFilter")?.value || "all";
+  const wantsGlobal = (resp !== "all" || stat !== "all");
+
+  const globalBox = document.getElementById("globalTasksList");
+  const grid = document.getElementById("activeGrid");
+  if (!globalBox || !grid) return;
+
+  if (!wantsGlobal) {
+    globalBox.classList.add("hidden");
+    grid.classList.remove("hidden");
+    // re-render sessions grid
+    renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
+    return;
+  }
+
+  // Build global list
+  const rows = [];
+  state.blocs.forEach(b => {
+    const ctx = getBlocContext(b);
+    const blocDate = b.date;
+
+    (b.tasks || []).forEach(t => {
+      const info = getTaskStatusInfo(t, blocDate);
+      if (resp !== "all" && (t.resp || "") !== resp) return;
+      if (stat !== "all" && info.id !== stat) return;
+
+      rows.push({
+        rank: info.rank,
+        color: info.color,
+        dark: info.dark,
+        status: info.id,
+        startStr: info.startStr,
+        endStr: info.endStr,
+        title: t.title || "Sans titre",
+        resp: t.resp || "?",
+        formation: ctx.formation?.name || "—",
+        module: ctx.module?.name || "—",
+        bloc: b.name || "—",
+      });
+    });
+  });
+
+  rows.sort((a,b) => a.rank - b.rank);
+
+  // Render
+  grid.classList.add("hidden");
+  globalBox.classList.remove("hidden");
+
+  globalBox.innerHTML = rows.length ? rows.map(r => `
+    <div class="task-container">
+      <div class="task-bandeau ${r.dark ? "text-dark" : ""}" style="background:${r.color}">
+        <div>
+          <div style="font-size: 1.05rem">${r.title}</div>
+          <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${r.resp}</div>
+          <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">
+            ${r.formation} → ${r.module} → ${r.bloc}
+          </div>
+        </div>
+        <div style="font-size:0.85rem">
+          Début: <b>${r.startStr}</b>
+        </div>
+        <div style="font-size:0.85rem; text-align:center">
+          Échéance:<br><b>${r.endStr}</b>
+        </div>
+        <div style="text-align:right; opacity:0.9">
+          ${r.status === "alert" ? "⚠️" : ""}
+        </div>
+      </div>
+    </div>
+  `).join("") : `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche pour ces filtres</div>`;
+};
+
 
   // ---------- UI / RENDER ----------
   window.refreshUI = () => {
-    if (state.currentView === "formationsView") renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
+    if(state.currentView === "formationsView") {
+  updateGlobalFilterList();
+  renderGlobalOrSessions(); // affichera soit la grille soit la liste globale
+}
     if (state.currentView === "archivesView") renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
     if (state.currentView === "templatesListView") renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
     if (state.currentView === "modulesView") renderModules();
@@ -775,11 +897,10 @@
     showView("tasksView");
   };
 
-  document.getElementById("backBtn").onclick = () => showView(state.lastParentView);
+  document.getElementById("backBtn").onclick = () => showView('modulesView');
 
   // Initial
   refreshUI();
 </script>
 </body>
 </html>
-```
