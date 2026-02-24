@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Pilotage & Archives</title>
+    <title>Gestion FOI - Pilotage & Archives Dynamiques</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
@@ -21,13 +21,16 @@
         .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 180px; transition: 0.2s; overflow: hidden; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
+        /* STYLE APM : Lignes jaune et rouge parfaitement collées */
         .style-apm { background: var(--apm-gray) !important; padding-top: 25px; }
         .style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background: var(--flag-yellow); z-index: 2; }
         .style-apm::after { content:''; position:absolute; top:4px; left:0; width:100%; height:4px; background: var(--flag-red); z-index: 2; }
+
         .style-polcant { background: var(--polcant-blue) !important; border-top: 5px solid rgba(255,255,255,0.2); }
         .style-asp { background: var(--asp-light) !important; color: #0f172a; border-top: 5px solid #64748b; }
         .style-asp h3, .style-asp p, .style-asp small, .style-asp .date-info { color: #0f172a !important; }
 
+        /* ALERTES & PROGRESSION */
         .alert-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
@@ -37,14 +40,17 @@
         .date-info { font-size: 0.85rem; margin-top: 5px; font-weight: 500; }
         .card-actions { margin-top: auto; display: flex; gap: 8px; align-items: center; padding-top: 10px; }
         
-        .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; transition: 0.2s; }
+        .btn:hover { opacity: 0.9; transform: scale(1.02); }
         .btn-icon { background: rgba(255,255,255,0.1); border: none; color: inherit; cursor: pointer; padding: 7px; border-radius: 6px; }
 
+        /* TÂCHES */
         .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); padding: 15px; }
         .task-overdue { border-left: 4px solid var(--danger) !important; background: rgba(225, 29, 72, 0.05) !important; }
         .resp-tag { background: var(--bg3); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 10px; }
         .style-asp .resp-tag { background: #0f172a; color: white; }
 
+        /* MODALS */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
         input, select, textarea { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
@@ -69,7 +75,7 @@
     <div id="archivesView" class="hidden">
         <header>
             <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h1>📦 Archives (Sessions Terminées)</h1>
+            <h1>📦 Archives</h1>
             <div></div>
         </header>
         <div class="grid" id="archivesGrid"></div>
@@ -187,14 +193,11 @@
 
     function isArchived(formation) {
         if (formation.isTemplate || !formation.end) return false;
-        const today = new Date();
-        today.setHours(0,0,0,0);
+        const today = new Date(); today.setHours(0,0,0,0);
         return new Date(formation.end) < today;
     }
 
     window.refreshUI = () => {
-        const today = new Date(); today.setHours(0,0,0,0);
-
         if(state.currentView === 'formationsView') {
             const list = state.formations.filter(f => !f.isTemplate && !isArchived(f)).sort((a,b) => new Date(a.start) - new Date(b.start));
             renderMainGrid("activeGrid", list);
@@ -271,13 +274,14 @@
                         ${!isArchiveView ? `<button class="btn-icon" onclick="event.stopPropagation(); editForm(${f.id})">✏️</button>` : ''}
                         <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
                         ${f.isTemplate ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem" onclick="event.stopPropagation(); deploy(${f.id})">⚡ Déployer</button>` : ''}
+                        ${isArchiveView ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:var(--success)" onclick="event.stopPropagation(); restoreForm(${f.id})">🔄 Restaurer</button>` : ''}
                     </div>
                 </div>
             `;
         }).join("");
     }
 
-    // --- ACTIONS DÉPLOYER & CRUD ---
+    // --- ACTIONS DÉPLOYER & RESTAURER ---
     window.deploy = (id) => {
         const tpl = state.formations.find(f => f.id === id);
         const newName = prompt("Nom de la nouvelle session ?", tpl.name); if(!newName) return;
@@ -291,6 +295,18 @@
         push(); showView('formationsView');
     };
 
+    window.restoreForm = (id) => {
+        const f = state.formations.find(x => x.id === id);
+        const newEnd = prompt("Pour restaurer, saisissez une nouvelle date de fin (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
+        if(newEnd) {
+            f.end = newEnd;
+            push();
+            alert("La formation a été restaurée dans les sessions actives.");
+            showView('formationsView');
+        }
+    };
+
+    // --- CRUD ---
     window.saveFormation = () => {
         const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === "true", start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
         if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
@@ -314,21 +330,22 @@
         push(); closeModal('taskModal');
     };
 
-    window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; document.getElementById("formStart").value = f.start || ""; document.getElementById("formEnd").value = f.end || ""; document.getElementById("formIsTemplate").value = f.isTemplate; openModal('formationModal'); };
-    window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; document.getElementById("blocR1").value = b.r1 || ""; document.getElementById("blocR2").value = b.r2 || ""; openModal('blocModal'); };
-    window.editTask = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskStartUnit").value = t.sUnit; document.getElementById("taskEndVal").value = t.eVal; document.getElementById("taskEndUnit").value = t.eUnit; openModal('taskModal'); };
-    
-    window.deleteForm = (id) => { if(confirm("Supprimer la formation ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
-    window.deleteBloc = (id) => { if(confirm("Supprimer ce bloc ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
-    window.deleteTask = (id) => { if(confirm("Supprimer cette tâche ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
-    window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
-
-    window.showView = (id) => { if(id === 'formationsView' || id === 'templatesListView' || id === 'archivesView') state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
+    // --- NAVIGATION ET MODALS ---
+    window.showView = (id) => { if(['formationsView','templatesListView','archivesView'].includes(id)) state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
     window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
     window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2><small>Resp: ${b.r1 || '?'}/${b.r2 || '?'}</small>`; showView('tasksView'); };
     window.openFormModal = (tpl) => { state.editingId = null; document.getElementById("formIsTemplate").value = tpl; document.getElementById("dateSection").style.display = tpl ? "none" : "block"; openModal('formationModal'); };
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
     window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
+
+    // --- AUTRES FONCTIONS ---
+    window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; document.getElementById("formStart").value = f.start || ""; document.getElementById("formEnd").value = f.end || ""; document.getElementById("formIsTemplate").value = f.isTemplate; openModal('formationModal'); };
+    window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; document.getElementById("blocR1").value = b.r1 || ""; document.getElementById("blocR2").value = b.r2 || ""; openModal('blocModal'); };
+    window.editTask = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskStartUnit").value = t.sUnit; document.getElementById("taskEndVal").value = t.eVal; document.getElementById("taskEndUnit").value = t.eUnit; openModal('taskModal'); };
+    window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
+    window.deleteBloc = (id) => { if(confirm("Supprimer ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
+    window.deleteTask = (id) => { if(confirm("Supprimer ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
+    window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
     document.getElementById("backBtn").onclick = () => showView(state.lastParentView);
 </script>
 </body>
