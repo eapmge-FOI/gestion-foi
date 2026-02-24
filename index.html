@@ -2,7 +2,8 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Pilotage & Archives Dynamiques</title>
+    <title>Gestion FOI - Pilotage & Alertes</title>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
@@ -17,20 +18,16 @@
         header, .mini-header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:15px; }
 
-        /* CARTES ET STYLES CORPS */
         .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 180px; transition: 0.2s; overflow: hidden; }
         .card:hover { border-color: var(--primary); transform: translateY(-2px); }
         
-        /* STYLE APM : Lignes jaune et rouge parfaitement collées */
         .style-apm { background: var(--apm-gray) !important; padding-top: 25px; }
         .style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background: var(--flag-yellow); z-index: 2; }
         .style-apm::after { content:''; position:absolute; top:4px; left:0; width:100%; height:4px; background: var(--flag-red); z-index: 2; }
-
         .style-polcant { background: var(--polcant-blue) !important; border-top: 5px solid rgba(255,255,255,0.2); }
         .style-asp { background: var(--asp-light) !important; color: #0f172a; border-top: 5px solid #64748b; }
         .style-asp h3, .style-asp p, .style-asp small, .style-asp .date-info { color: #0f172a !important; }
 
-        /* ALERTES & PROGRESSION */
         .alert-badge { background: var(--danger); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: bold; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
 
@@ -44,17 +41,18 @@
         .btn:hover { opacity: 0.9; transform: scale(1.02); }
         .btn-icon { background: rgba(255,255,255,0.1); border: none; color: inherit; cursor: pointer; padding: 7px; border-radius: 6px; }
 
-        /* TÂCHES */
         .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); padding: 15px; }
         .task-overdue { border-left: 4px solid var(--danger) !important; background: rgba(225, 29, 72, 0.05) !important; }
         .resp-tag { background: var(--bg3); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 10px; }
-        .style-asp .resp-tag { background: #0f172a; color: white; }
 
-        /* MODALS */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; max-height: 90vh; overflow-y: auto; }
         input, select, textarea { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
         .hidden { display:none !important; }
+        
+        /* Liste intervenants */
+        .member-chip { display: inline-flex; align-items: center; background: var(--bg3); padding: 5px 10px; border-radius: 20px; font-size: 0.8rem; margin: 0 5px 5px 0; }
+        .member-chip button { background: none; border: none; color: var(--danger); margin-left: 8px; cursor: pointer; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -69,7 +67,7 @@
                 <button class="btn" onclick="openFormModal(false)">+ Session</button>
             </div>
         </header>
-        <div class="grid" id="activeGrid"></div>
+        <div id="activeGrid" class="grid"></div>
     </div>
 
     <div id="archivesView" class="hidden">
@@ -78,16 +76,31 @@
             <h1>📦 Archives</h1>
             <div></div>
         </header>
-        <div class="grid" id="archivesGrid"></div>
+        <div id="archivesGrid" class="grid"></div>
     </div>
 
     <div id="templatesListView" class="hidden">
         <header>
             <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h1>📂 Modèles</h1>
-            <button class="btn" style="background:#6366f1" onclick="openFormModal(true)">+ Nouveau Modèle</button>
+            <h1>📂 Configuration & Modèles</h1>
         </header>
-        <div class="grid" id="templateGrid"></div>
+        
+        <div class="mini-header" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+            <h3>👥 Gestion de l'équipe (Initiales)</h3>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <input id="newMemberName" placeholder="Prénom" style="margin:0">
+                <input id="newMemberInitials" placeholder="Initiales (ex: JD)" style="margin:0">
+                <input id="newMemberEmail" placeholder="Email" style="margin:0">
+                <button class="btn" onclick="addMember()">Ajouter</button>
+            </div>
+            <div id="membersList" style="margin-top: 10px;"></div>
+        </div>
+
+        <div class="mini-header">
+            <h3>📂 Bibliothèque de Modèles</h3>
+            <button class="btn" style="background:#6366f1" onclick="openFormModal(true)">+ Nouveau Modèle</button>
+        </div>
+        <div id="templateGrid" class="grid"></div>
     </div>
 
     <div id="blocsView" class="hidden">
@@ -96,7 +109,7 @@
             <h2 id="formationTitle"></h2>
             <button class="btn" id="addBlocBtn" onclick="openModal('blocModal')">+ Bloc</button>
         </div>
-        <div class="grid" id="blocsGrid"></div>
+        <div id="blocsGrid" class="grid"></div>
     </div>
 
     <div id="tasksView" class="hidden">
@@ -111,15 +124,9 @@
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Configuration Formation</h3>
-        <input type="hidden" id="formIsTemplate">
-        <label>Nom</label><input id="formName">
-        <label>Corps</label>
-        <select id="formType">
-            <option value="apm">APM</option>
-            <option value="polcant">PolCant</option>
-            <option value="asp">ASP</option>
-        </select>
+        <h3>Formation</h3>
+        <input type="hidden" id="formIsTemplate"><label>Nom</label><input id="formName">
+        <label>Corps</label><select id="formType"><option value="apm">APM</option><option value="polcant">PolCant</option><option value="asp">ASP</option></select>
         <div id="dateSection">
             <div style="display:flex; gap:10px">
                 <div style="flex:1"><label>Début</label><input id="formStart" type="date"></div>
@@ -127,19 +134,16 @@
             </div>
         </div>
         <button class="btn" style="width:100%; margin-top:10px" onclick="saveFormation()">Enregistrer</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('formationModal')">Annuler</button>
     </div>
 </div>
 
 <div id="blocModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Configuration Bloc</h3>
-        <label>Nom du bloc</label><input id="blocName">
-        <label>Date du Bloc</label><input id="blocDate" type="date">
-        <div style="display:flex; gap:10px">
-            <input id="blocR1" placeholder="Resp 1">
-            <input id="blocR2" placeholder="Resp 2">
-        </div>
-        <button class="btn" style="width:100%; margin-top:10px" onclick="saveBloc()">Enregistrer</button>
+        <h3>Bloc</h3>
+        <label>Nom</label><input id="blocName"><label>Date</label><input id="blocDate" type="date">
+        <div style="display:flex; gap:10px"><input id="blocR1" placeholder="Resp 1"><input id="blocR2" placeholder="Resp 2"></div>
+        <button class="btn" style="width:100%" onclick="saveBloc()">Enregistrer</button>
     </div>
 </div>
 
@@ -147,10 +151,12 @@
     <div class="modal-content">
         <h3>Paramètres Tâche</h3>
         <label>Titre</label><input id="taskTitle">
-        <label>Responsable</label><input id="taskResp">
+        <label>Responsable</label>
+        <select id="taskRespSelect"></select>
+        
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px;">
-            <div><small>DÉBUT (Avant bloc)</small><input type="number" id="taskStartVal" value="4"><select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option><option value="months">Mois</option><option value="years">Années</option></select></div>
-            <div><small>FIN (Avant bloc)</small><input type="number" id="taskEndVal" value="2"><select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option><option value="months">Mois</option><option value="years">Années</option></select></div>
+            <div><small>DÉBUT</small><input type="number" id="taskStartVal" value="4"><select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
+            <div><small>FIN</small><input type="number" id="taskEndVal" value="2"><select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
         </div>
         <button class="btn" style="width:100%; margin-top:15px" onclick="saveTask()">Enregistrer</button>
     </div>
@@ -160,29 +166,96 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // INITIALISATION EMAILJS (À REMPLACER PAR TES CODES)
+    emailjs.init("YOUR_PUBLIC_KEY"); 
+
     const firebaseConfig = { apiKey: "AIzaSyAfwt7M5vjzo1H4jw8EQ6auENy8LxXMQhE", authDomain: "gestion-des-taches-foi.firebaseapp.com", projectId: "gestion-des-taches-foi", storageBucket: "gestion-des-taches-foi.firebasestorage.app", messagingSenderId: "538286716668", appId: "1:538286716668:web:b86f8d5f606c78494f4979" };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    let state = { formations: [], blocs: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView', lastParentView: 'formationsView' };
+    let state = { formations: [], blocs: [], members: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView' };
 
     onSnapshot(doc(db, "data", "appState"), (docSnap) => {
         if (docSnap.exists()) {
             const d = docSnap.data();
             state.formations = d.formations || [];
             state.blocs = d.blocs || [];
+            state.members = d.members || [];
             refreshUI();
+            checkAllOverdueTasks(); // Vérification des retards au chargement
         }
     });
 
-    async function push() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs }); }
+    async function push() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs, members: state.members }); }
 
+    // --- GESTION MEMBRES ---
+    window.addMember = () => {
+        const name = document.getElementById("newMemberName").value;
+        const init = document.getElementById("newMemberInitials").value;
+        const mail = document.getElementById("newMemberEmail").value;
+        if(!init || !mail) return alert("Initiales et Email requis");
+        state.members.push({ name, initials: init.toUpperCase(), email: mail });
+        push();
+        document.getElementById("newMemberName").value = "";
+        document.getElementById("newMemberInitials").value = "";
+        document.getElementById("newMemberEmail").value = "";
+    };
+
+    window.removeMember = (init) => {
+        state.members = state.members.filter(m => m.initials !== init);
+        push();
+    };
+
+    // --- ENVOI EMAILS ---
+    async function sendTaskEmail(task, member, type) {
+        console.log(`Envoi email à ${member.email} pour la tâche: ${task.title} (${type})`);
+        
+        // Structure de données pour EmailJS
+        const templateParams = {
+            to_email: member.email,
+            to_name: member.name || member.initials,
+            task_title: task.title,
+            alert_type: type === 'new' ? "Nouvelle attribution" : "⚠️ RETARD",
+            message: type === 'new' 
+                ? `Une nouvelle tâche vous a été attribuée : "${task.title}"` 
+                : `La tâche "${task.title}" est en retard. Merci de la traiter rapidement.`
+        };
+
+        // Décommenter quand EmailJS sera configuré
+        /*
+        emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams)
+            .then(() => console.log('Email envoyé !'))
+            .catch((err) => console.error('Erreur email:', err));
+        */
+    }
+
+    function checkAllOverdueTasks() {
+        // Cette fonction parcourt les sessions actives pour identifier les retards non traités
+        const today = new Date();
+        state.blocs.forEach(b => {
+            if(!b.date) return;
+            b.tasks.forEach(t => {
+                if(t.status !== 'done') {
+                    const limit = getCalcDate(b.date, t.eVal, t.eUnit);
+                    if(limit < today && !t.lastAlertSent) {
+                        const m = state.members.find(mem => mem.initials === t.resp);
+                        if(m) {
+                            sendTaskEmail(t, m, 'overdue');
+                            t.lastAlertSent = today.toISOString(); // Éviter les doublons
+                            push();
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    // --- CALCULS & DATES ---
     function getCalcDate(base, val, unit) {
         if(!base) return null;
         let d = new Date(base); val = parseInt(val);
         if(unit === 'days') d.setDate(d.getDate() - val);
         else if(unit === 'weeks') d.setDate(d.getDate() - (val * 7));
         else if(unit === 'months') d.setMonth(d.getMonth() - val);
-        else if(unit === 'years') d.setFullYear(d.getFullYear() - val);
         return d;
     }
 
@@ -191,72 +264,65 @@
         return getCalcDate(blocDate, eVal, eUnit) < new Date();
     }
 
-    function isArchived(formation) {
-        if (formation.isTemplate || !formation.end) return false;
+    function isArchived(f) {
+        if (f.isTemplate || !f.end) return false;
         const today = new Date(); today.setHours(0,0,0,0);
-        return new Date(formation.end) < today;
+        return new Date(f.end) < today;
     }
 
+    // --- UI RENDERING ---
     window.refreshUI = () => {
+        // Intervenants dans la bibliothèque
+        document.getElementById("membersList").innerHTML = state.members.map(m => `
+            <span class="member-chip">${m.initials} (${m.email}) <button onclick="removeMember('${m.initials}')">×</button></span>
+        `).join("");
+
+        // Remplir le select de responsable
+        const select = document.getElementById("taskRespSelect");
+        select.innerHTML = '<option value="">Choisir...</option>' + state.members.map(m => `<option value="${m.initials}">${m.initials} - ${m.name || ''}</option>`).join("");
+
         if(state.currentView === 'formationsView') {
-            const list = state.formations.filter(f => !f.isTemplate && !isArchived(f)).sort((a,b) => new Date(a.start) - new Date(b.start));
-            renderMainGrid("activeGrid", list);
+            renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
         } else if(state.currentView === 'archivesView') {
-            const list = state.formations.filter(f => !f.isTemplate && isArchived(f)).sort((a,b) => new Date(b.end) - new Date(a.end));
-            renderMainGrid("archivesGrid", list, true);
+            renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
         } else if(state.currentView === 'templatesListView') {
             renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
         } else if(state.currentView === 'blocsView') {
-            const currentF = state.formations.find(f => f.id === state.currentFormationId);
-            const archived = isArchived(currentF);
-            document.getElementById("addBlocBtn").style.display = archived ? 'none' : 'block';
             const list = state.blocs.filter(b => b.formationId === state.currentFormationId).sort((a,b) => new Date(a.date) - new Date(b.date));
+            const archived = isArchived(state.formations.find(f => f.id === state.currentFormationId));
             document.getElementById("blocsGrid").innerHTML = list.map(b => {
-                const hasDelay = b.tasks.some(t => isOverdue(b.date, t.eVal, t.eUnit, t.status));
                 const prog = b.tasks.length ? (b.tasks.filter(t => t.status === 'done').length / b.tasks.length)*100 : 0;
                 return `
                     <div class="card" onclick="enterBloc(${b.id})">
-                        <div style="display:flex; justify-content:space-between; align-items:start">
-                            <h3>${b.name}</h3>
-                            ${hasDelay && !archived ? '<span class="alert-badge">⚠️ RETARD</span>' : ''}
-                        </div>
-                        <p class="date-info">📅 ${b.date ? new Date(b.date).toLocaleDateString() : 'Pas de date'}</p>
-                        <small>👥 ${b.r1 || '?'}/${b.r2 || '?'}</small>
+                        <h3>${b.name}</h3>
+                        <p class="date-info">📅 ${b.date ? new Date(b.date).toLocaleDateString() : '-'}</p>
                         <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
                         <div class="card-actions">
-                            ${!archived ? `<button class="btn-icon" onclick="event.stopPropagation(); editBloc(${b.id})">✏️</button>` : ''}
                             <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc(${b.id})">🗑️</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join("");
         } else if(state.currentView === 'tasksView') {
             const b = state.blocs.find(x => x.id === state.currentBlocId);
-            const currentF = state.formations.find(f => f.id === state.currentFormationId);
-            const archived = isArchived(currentF);
-            document.getElementById("addTaskBtn").style.display = archived ? 'none' : 'block';
+            const archived = isArchived(state.formations.find(f => f.id === state.currentFormationId));
             document.getElementById("tasksList").innerHTML = b.tasks.map(t => {
                 const overdue = isOverdue(b.date, t.eVal, t.eUnit, t.status);
                 return `
                     <div class="task-item ${overdue && !archived ? 'task-overdue' : ''}">
                         <div style="display:flex; justify-content:space-between; align-items:center">
-                            <div onclick="${archived ? '' : `toggleTask(${t.id})`}" style="cursor:${archived ? 'default' : 'pointer'}; display:flex; align-items:center">
+                            <div onclick="${archived ? '' : `toggleTask(${t.id})`}" style="cursor:pointer">
                                 <span>${t.status==='done'?'✅':'⭕'}</span>
-                                <strong style="margin-left:10px">${t.title}</strong>
-                                <span class="resp-tag">${t.resp || '-'}</span>
+                                <strong>${t.title}</strong>
+                                <span class="resp-tag">${t.resp || '?'}</span>
                             </div>
-                            <div style="display:flex; gap:5px">
-                                ${!archived ? `<button class="btn-icon" onclick="editTask(${t.id})">✏️</button>` : ''}
-                                <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
-                            </div>
+                            <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join("");
         }
     };
 
-    function renderMainGrid(id, list, isArchiveView = false) {
+    function renderMainGrid(id, list, isArchive = false) {
         document.getElementById(id).innerHTML = list.map(f => {
             const fBlocs = state.blocs.filter(b => b.formationId === f.id);
             const allTasks = fBlocs.flatMap(b => b.tasks);
@@ -264,31 +330,53 @@
             const prog = allTasks.length ? (allTasks.filter(t => t.status === 'done').length / allTasks.length)*100 : 0;
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    <div style="display:flex; justify-content:space-between; align-items:start">
-                        <h3>${f.name} ${isArchiveView ? '📦' : ''}</h3>
-                        ${hasDelay && !isArchiveView ? '<span class="alert-badge">⚠️ RETARD</span>' : ''}
+                    <div style="display:flex; justify-content:space-between">
+                        <h3>${f.name}</h3>
+                        ${hasDelay && !isArchive ? '<span class="alert-badge">⚠️ RETARD</span>' : ''}
                     </div>
-                    ${f.start ? `<p class="date-info">⏳ Du ${new Date(f.start).toLocaleDateString()} au ${new Date(f.end).toLocaleDateString()}</p>` : ''}
+                    ${f.start ? `<p class="date-info">⏳ ${new Date(f.start).toLocaleDateString()} -> ${new Date(f.end).toLocaleDateString()}</p>` : ''}
                     <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
                     <div class="card-actions">
-                        ${!isArchiveView ? `<button class="btn-icon" onclick="event.stopPropagation(); editForm(${f.id})">✏️</button>` : ''}
                         <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
-                        ${f.isTemplate ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem" onclick="event.stopPropagation(); deploy(${f.id})">⚡ Déployer</button>` : ''}
-                        ${isArchiveView ? `<button class="btn" style="padding:5px 10px; font-size:0.8rem; background:var(--success)" onclick="event.stopPropagation(); restoreForm(${f.id})">🔄 Restaurer</button>` : ''}
+                        ${f.isTemplate ? `<button class="btn" style="padding:4px 8px;font-size:0.7rem" onclick="event.stopPropagation(); deploy(${f.id})">⚡ Déployer</button>` : ''}
+                        ${isArchive ? `<button class="btn" style="padding:4px 8px;font-size:0.7rem;background:var(--success)" onclick="event.stopPropagation(); restoreForm(${f.id})">🔄 Restaurer</button>` : ''}
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join("");
     }
 
-    // --- ACTIONS DÉPLOYER & RESTAURER ---
+    // --- ACTIONS ---
+    window.saveTask = () => {
+        const b = state.blocs.find(x => x.id === state.currentBlocId);
+        const isNew = !state.editingId;
+        const t = { 
+            id: state.editingId || Date.now(), 
+            title: document.getElementById("taskTitle").value, 
+            resp: document.getElementById("taskRespSelect").value, 
+            sVal: document.getElementById("taskStartVal").value, sUnit: document.getElementById("taskStartUnit").value,
+            eVal: document.getElementById("taskEndVal").value, eUnit: document.getElementById("taskEndUnit").value,
+            status: state.editingId ? b.tasks.find(x => x.id === state.editingId).status : 'todo'
+        };
+
+        if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? t : x);
+        else b.tasks.push(t);
+
+        // Alerte Email si nouvelle attribution
+        if(isNew && t.resp) {
+            const m = state.members.find(mem => mem.initials === t.resp);
+            if(m) sendTaskEmail(t, m, 'new');
+        }
+
+        push(); closeModal('taskModal');
+    };
+
     window.deploy = (id) => {
         const tpl = state.formations.find(f => f.id === id);
-        const newName = prompt("Nom de la nouvelle session ?", tpl.name); if(!newName) return;
-        const start = prompt("Date de début (AAAA-MM-JJ) ?"); if(!start) return;
-        const end = prompt("Date de fin (AAAA-MM-JJ) ?"); if(!end) return;
+        const name = prompt("Nom ?", tpl.name); if(!name) return;
+        const start = prompt("Début (AAAA-MM-JJ) ?"); if(!start) return;
+        const end = prompt("Fin (AAAA-MM-JJ) ?"); if(!end) return;
         const newFid = Date.now();
-        state.formations.push({ ...tpl, id: newFid, name: newName, isTemplate: false, start, end });
+        state.formations.push({ ...tpl, id: newFid, name, isTemplate: false, start, end });
         state.blocs.filter(b => b.formationId === id).forEach(b => {
             state.blocs.push({ ...b, id: Math.random(), formationId: newFid, tasks: b.tasks.map(t => ({...t, id: Math.random(), status: 'todo'})) });
         });
@@ -297,16 +385,10 @@
 
     window.restoreForm = (id) => {
         const f = state.formations.find(x => x.id === id);
-        const newEnd = prompt("Pour restaurer, saisissez une nouvelle date de fin (AAAA-MM-JJ) :", new Date().toISOString().split('T')[0]);
-        if(newEnd) {
-            f.end = newEnd;
-            push();
-            alert("La formation a été restaurée dans les sessions actives.");
-            showView('formationsView');
-        }
+        const newEnd = prompt("Nouvelle date de fin (AAAA-MM-JJ) ?", new Date().toISOString().split('T')[0]);
+        if(newEnd) { f.end = newEnd; push(); showView('formationsView'); }
     };
 
-    // --- CRUD ---
     window.saveFormation = () => {
         const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === "true", start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
         if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
@@ -322,31 +404,18 @@
         push(); closeModal('blocModal');
     };
 
-    window.saveTask = () => {
-        const b = state.blocs.find(x => x.id === state.currentBlocId);
-        const t = { id: state.editingId || Date.now(), title: document.getElementById("taskTitle").value, resp: document.getElementById("taskResp").value, sVal: document.getElementById("taskStartVal").value, sUnit: document.getElementById("taskStartUnit").value, eVal: document.getElementById("taskEndVal").value, eUnit: document.getElementById("taskEndUnit").value, status: state.editingId ? b.tasks.find(x => x.id === state.editingId).status : 'todo' };
-        if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? t : x);
-        else b.tasks.push(t);
-        push(); closeModal('taskModal');
-    };
-
-    // --- NAVIGATION ET MODALS ---
-    window.showView = (id) => { if(['formationsView','templatesListView','archivesView'].includes(id)) state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
+    // --- NAVIGATION ---
+    window.showView = (id) => { state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
     window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
-    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2><small>Resp: ${b.r1 || '?'}/${b.r2 || '?'}</small>`; showView('tasksView'); };
+    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2>`; showView('tasksView'); };
     window.openFormModal = (tpl) => { state.editingId = null; document.getElementById("formIsTemplate").value = tpl; document.getElementById("dateSection").style.display = tpl ? "none" : "block"; openModal('formationModal'); };
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
     window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
-
-    // --- AUTRES FONCTIONS ---
-    window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; document.getElementById("formStart").value = f.start || ""; document.getElementById("formEnd").value = f.end || ""; document.getElementById("formIsTemplate").value = f.isTemplate; openModal('formationModal'); };
-    window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; document.getElementById("blocR1").value = b.r1 || ""; document.getElementById("blocR2").value = b.r2 || ""; openModal('blocModal'); };
-    window.editTask = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskStartUnit").value = t.sUnit; document.getElementById("taskEndVal").value = t.eVal; document.getElementById("taskEndUnit").value = t.eUnit; openModal('taskModal'); };
     window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
     window.deleteBloc = (id) => { if(confirm("Supprimer ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
     window.deleteTask = (id) => { if(confirm("Supprimer ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
     window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
-    document.getElementById("backBtn").onclick = () => showView(state.lastParentView);
+    document.getElementById("backBtn").onclick = () => showView(isArchived(state.formations.find(f => f.id === state.currentFormationId)) ? 'archivesView' : 'formationsView');
 </script>
 </body>
 </html>
