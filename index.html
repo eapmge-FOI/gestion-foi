@@ -2,133 +2,211 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Pilotage Haute Visibilité</title>
+    <title>Gestion FOI - Pilotage Intelligent</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
             --text1:#f1f5f9; --text2:#cbd5e1;
-            /* Couleurs de statut (version pleine pour le texte/bordure, version claire pour le fond) */
-            --st-done: #10b981; --st-progress: #f97316; --st-todo: #fbbf24; --st-none: #64748b; --st-alert: #ef4444;
+            --polcant-blue: #334b7a; --apm-gray: #334155; --asp-light: #94a3b8;
+            --flag-red: #e11d48; --flag-yellow: #fbbf24;
+            /* Statuts */
+            --st-done: #059669; --st-progress: #f97316; --st-todo: #fbbf24; --st-none: #94a3b8; --st-alert: #e11d48;
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background:var(--bg1); color:var(--text1); padding: 20px; }
+        body { font-family: sans-serif; background:var(--bg1); color:var(--text1); padding: 20px; }
         
-        .app { max-width:1200px; margin:auto; }
+        #loginView { height: calc(100vh - 40px); display: flex; align-items: center; justify-content: center; }
+        .login-box { background: var(--bg2); padding: 40px; border-radius: 12px; border: 1px solid var(--bg3); text-align: center; width: 100%; max-width: 400px; }
+        .google-btn { background: white; color: #444; padding: 12px 24px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin: 25px auto; width: 100%; }
+
+        .app { max-width:1100px; margin:auto; }
         header, .mini-header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
         .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:15px; }
 
-        /* Cartes Session / Bloc */
-        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; transition: 0.2s; overflow: hidden; }
-        .prog-container { background: rgba(0,0,0,0.3); height: 8px; border-radius: 4px; margin: 12px 0; overflow: hidden; }
+        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 180px; transition: 0.2s; overflow: hidden; }
+        .style-apm { background: var(--apm-gray) !important; padding-top: 25px; }
+        .style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background: var(--flag-yellow); }
+        .style-apm::after { content:''; position:absolute; top:4px; left:0; width:100%; height:4px; background: var(--flag-red); }
+        .style-polcant { background: var(--polcant-blue) !important; border-top: 5px solid rgba(255,255,255,0.2); }
+        .style-asp { background: var(--asp-light) !important; color: #0f172a; border-top: 5px solid #64748b; }
+        .style-asp * { color: #0f172a !important; }
+
+        .alert-badge { background: var(--st-alert); color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); opacity: 0.8; } 100% { transform: scale(1); } }
+
+        .prog-container { background: rgba(0,0,0,0.3); height: 10px; border-radius: 5px; margin: 12px 0; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
         .prog-bar { height: 100%; transition: width 0.5s, background-color 0.5s; }
 
-        /* TÂCHES - Nouveau Style Bandeau */
-        .task-row { margin-bottom: 8px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: transform 0.1s; }
-        .task-row:hover { transform: translateX(5px); }
+        .btn { background:var(--primary); color: white; border:none; padding: 8px 16px; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .btn-icon { background: rgba(255,255,255,0.1); border: none; color: inherit; cursor: pointer; padding: 7px; border-radius: 6px; }
+
+        .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--st-none); }
+        .status-select { padding: 5px; border-radius: 4px; background: var(--bg1); color: white; border: 1px solid var(--bg3); font-size: 0.8rem; }
         
-        .task-main { display: grid; grid-template-columns: 1.5fr 1fr 1fr 100px; align-items: center; padding: 15px 20px; color: #000; font-weight: 600; }
-        .task-info small { display: block; opacity: 0.8; font-weight: 400; }
-        
-        .status-center { display: flex; justify-content: center; }
-        .status-select-large { padding: 8px 12px; border-radius: 8px; border: 2px solid rgba(0,0,0,0.2); background: rgba(255,255,255,0.9); font-weight: bold; cursor: pointer; font-size: 0.9rem; width: 160px; }
-
-        .task-date-end { text-align: right; font-size: 0.85rem; }
-
-        .task-desc { background: rgba(255,255,255,0.95); color: #1e293b; padding: 0; max-height: 0; overflow: hidden; transition: all 0.3s ease-out; }
-        .task-desc.open { padding: 15px 20px; max-height: 200px; border-top: 1px dashed #ccc; }
-
-        /* Utilitaires */
-        .btn { background:var(--primary); color: white; border:none; padding: 10px 20px; border-radius:8px; cursor:pointer; font-weight:bold; }
-        .btn-icon { background: rgba(0,0,0,0.1); border: none; color: inherit; cursor: pointer; padding: 8px; border-radius: 6px; margin-left: 5px; }
-        .hidden { display:none !important; }
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 600px; color: white; }
-        input, select, textarea { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
-        textarea { height: 80px; resize: none; }
+        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; }
+        input, select { width:100%; margin: 8px 0 15px 0; padding:10px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
+        .hidden { display:none !important; }
     </style>
 </head>
 <body>
 
-<div class="app" id="mainApp">
+<div id="loginView">
+    <div class="login-box">
+        <h2>🔒 Pilotage FOI</h2>
+        <button class="google-btn" onclick="handleLogin()">Se connecter avec Google</button>
+        <p id="loginError" style="color: var(--st-alert); margin-top:10px"></p>
+    </div>
+</div>
+
+<div class="app hidden" id="mainApp">
     <div id="formationsView">
-        <header><h1>🚀 Sessions Actives</h1><button class="btn" onclick="openFormModal(false)">+ Session</button></header>
+        <header>
+            <h1>🚀 Sessions Actives</h1>
+            <div style="display:flex; gap:10px">
+                <button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">📂 Modèles</button>
+                <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
+                <button class="btn" onclick="openFormModal(false)">+ Session</button>
+                <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
+            </div>
+        </header>
         <div class="grid" id="activeGrid"></div>
     </div>
 
+    <div id="archivesView" class="hidden">
+        <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>📦 Archives</h1><div></div></header>
+        <div class="grid" id="archivesGrid"></div>
+    </div>
+
+    <div id="templatesListView" class="hidden">
+        <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>📂 Modèles</h1><button class="btn" onclick="openFormModal(true)">+ Nouveau</button></header>
+        <div class="grid" id="templateGrid"></div>
+    </div>
+
     <div id="blocsView" class="hidden">
-        <div class="mini-header"><button class="btn" id="backToFormations">← Retour</button><h2 id="formationTitle"></h2><button class="btn" onclick="openModal('blocModal')">+ Bloc</button></div>
+        <div class="mini-header">
+            <button class="btn" id="backBtn">← Retour</button>
+            <h2 id="formationTitle"></h2>
+            <button class="btn" id="addBlocBtn" onclick="openModal('blocModal')">+ Bloc</button>
+        </div>
         <div class="grid" id="blocsGrid"></div>
     </div>
 
     <div id="tasksView" class="hidden">
-        <div class="mini-header"><button class="btn" onclick="showView('blocsView')">← Retour</button><div id="blocHeaderInfo"></div><button class="btn" onclick="openModal('taskModal')">+ Tâche</button></div>
+        <div class="mini-header">
+            <button class="btn" onclick="showView('blocsView')">← Retour</button>
+            <div id="blocHeaderInfo"></div>
+            <button class="btn" id="addTaskBtn" onclick="openModal('taskModal')">+ Tâche</button>
+        </div>
         <div id="tasksList"></div>
+    </div>
+</div>
+
+<div id="formationModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3>Session</h3>
+        <input type="hidden" id="formIsTemplate">
+        <label>Nom</label><input id="formName">
+        <label>Corps</label><select id="formType"><option value="apm">APM</option><option value="polcant">PolCant</option><option value="asp">ASP</option></select>
+        <div id="dateSection"><label>Début</label><input id="formStart" type="date"><label>Fin</label><input id="formEnd" type="date"></div>
+        <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('formationModal')">Annuler</button>
+    </div>
+</div>
+
+<div id="blocModal" class="modal-overlay hidden">
+    <div class="modal-content">
+        <h3>Bloc</h3>
+        <label>Nom</label><input id="blocName">
+        <label>Date</label><input id="blocDate" type="date">
+        <div style="display:flex; gap:10px"><input id="blocR1" placeholder="Resp 1"><input id="blocR2" placeholder="Resp 2"></div>
+        <button class="btn" style="width:100%" onclick="saveBloc()">Enregistrer</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('blocModal')">Annuler</button>
     </div>
 </div>
 
 <div id="taskModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Configuration de la Tâche</h3>
+        <h3>Tâche</h3>
         <label>Titre</label><input id="taskTitle">
         <label>Responsable</label><input id="taskResp">
-        <label>Descriptif / Consignes</label><textarea id="taskDescInput" placeholder="Détaillez ici les étapes..."></textarea>
-        
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:10px;">
-            <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
-                <small>DÉBUT (Avant bloc)</small>
-                <div style="display:flex; gap:5px"><input type="number" id="taskStartVal" value="4"><select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Sem.</option><option value="months">Mois</option><option value="years">Années</option></select></div>
-            </div>
-            <div style="background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
-                <small>FIN (Avant bloc)</small>
-                <div style="display:flex; gap:5px"><input type="number" id="taskEndVal" value="2"><select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Sem.</option><option value="months">Mois</option><option value="years">Années</option></select></div>
-            </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px;">
+            <div><small>DÉBUT (Avant bloc)</small><input type="number" id="taskStartVal" value="4"><select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
+            <div><small>FIN (Avant bloc)</small><input type="number" id="taskEndVal" value="2"><select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
         </div>
-        
-        <button class="btn" style="width:100%; margin-top:20px" onclick="saveTask()">Enregistrer la tâche</button>
+        <button class="btn" style="width:100%; margin-top:15px" onclick="saveTask()">Enregistrer</button>
         <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('taskModal')">Annuler</button>
     </div>
 </div>
 
 <script type="module">
-    // Simulation de la base de données (Intégration Firebase identique à l'étape précédente)
-    let state = { 
-        formations: [
-            { id: 1, name: "Promotion FOI 2026", type: "apm", start: "2026-01-01", end: "2026-12-31", isTemplate: false }
-        ], 
-        blocs: [
-            { id: 101, formationId: 1, name: "Bloc Technique 1", date: "2026-06-15", r1: "Jean", r2: "Marc", tasks: [
-                { id: 1001, title: "Réservation des salles", resp: "Alice", desc: "Contacter le service logistique pour les salles A, B et C. Vérifier le matériel audio.", sVal: 2, sUnit: "months", eVal: 1, eUnit: "months", status: "progress" },
-                { id: 1002, title: "Convocation intervenants", resp: "Bob", desc: "Envoyer les mails de confirmation et le planning détaillé.", sVal: 3, sUnit: "weeks", eVal: 2, eUnit: "weeks", status: "todo" }
-            ]}
-        ], 
-        currentFormationId: null, currentBlocId: null, editingId: null 
-    };
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // --- LOGIQUE DE CALCUL DES DATES ---
+    const firebaseConfig = { apiKey: "AIzaSyAfwt7M5vjzo1H4jw8EQ6auENy8LxXMQhE", authDomain: "gestion-des-taches-foi.firebaseapp.com", projectId: "gestion-des-taches-foi", storageBucket: "gestion-des-taches-foi.firebasestorage.app", messagingSenderId: "538286716668", appId: "1:538286716668:web:b86f8d5f606c78494f4979" };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    let state = { formations: [], blocs: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView', lastParentView: 'formationsView' };
+    const ALLOWED = ["eapmge@gmail.com", "mentors.foi@gmail.com"];
+
+    // --- AUTH ---
+    window.handleLogin = () => signInWithPopup(auth, provider).catch(e => document.getElementById("loginError").textContent = e.message);
+    window.handleLogout = () => signOut(auth);
+    onAuthStateChanged(auth, u => {
+        if(u && ALLOWED.includes(u.email)) {
+            document.getElementById("loginView").classList.add("hidden");
+            document.getElementById("mainApp").classList.remove("hidden");
+            startSync();
+        } else {
+            if(u) signOut(auth);
+            document.getElementById("loginView").classList.remove("hidden");
+            document.getElementById("mainApp").classList.add("hidden");
+        }
+    });
+
+    function startSync() {
+        onSnapshot(doc(db, "data", "appState"), s => {
+            if(s.exists()){ 
+                state.formations = s.data().formations || []; 
+                state.blocs = s.data().blocs || []; 
+                refreshUI(); 
+            }
+        });
+    }
+    async function push() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs }); }
+
+    // --- LOGIQUE DE STATUTS ET COULEURS ---
     function getCalcDate(base, val, unit) {
         if(!base) return null;
         let d = new Date(base); val = parseInt(val);
         if(unit === 'days') d.setDate(d.getDate() - val);
         else if(unit === 'weeks') d.setDate(d.getDate() - (val * 7));
-        else if(unit === 'months') d.setMonth(d.getMonth() - val);
-        else if(unit === 'years') d.setFullYear(d.getFullYear() - val);
         return d;
     }
 
+    // Détermine le statut visuel et automatique
     function getTaskStatusInfo(task, blocDate) {
         const today = new Date(); today.setHours(0,0,0,0);
         const start = getCalcDate(blocDate, task.sVal, task.sUnit);
         const end = getCalcDate(blocDate, task.eVal, task.eUnit);
+        
         let status = task.status || 'todo';
-
+        
+        // Logique Automatique
         if (status !== 'done' && status !== 'progress') {
             if (start && today < start) status = 'not_started';
             else if (start && today >= start && (!end || today < end)) status = 'todo';
         }
+
+        // Logique Rappel (Rouge)
         if (status !== 'done') {
             const sevenDaysBeforeEnd = end ? new Date(end.getTime() - (7 * 24 * 60 * 60 * 1000)) : null;
-            if (end && today >= end) status = 'alert';
-            else if (sevenDaysBeforeEnd && today >= sevenDaysBeforeEnd && status !== 'progress') status = 'alert';
+            if (end && today >= end) status = 'alert'; // Date dépassée
+            else if (sevenDaysBeforeEnd && today >= sevenDaysBeforeEnd && status !== 'progress') status = 'alert'; // < 7j et pas en cours
         }
 
         const map = {
@@ -136,25 +214,79 @@
             'progress': { label: 'En cours', color: 'var(--st-progress)' },
             'todo': { label: 'À faire', color: 'var(--st-todo)' },
             'not_started': { label: 'Pas commencé', color: 'var(--st-none)' },
-            'alert': { label: 'RAPPEL ⚠️', color: 'var(--st-alert)' }
+            'alert': { label: 'RAPPEL', color: 'var(--st-alert)' }
         };
-        return { ...map[status], id: status, endDateStr: end ? end.toLocaleDateString('fr-FR') : '---' };
+        return { ...map[status], id: status };
     }
 
-    // --- RENDU UI ---
-    window.renderTasks = () => {
+    function getProgStyle(percent) {
+        if (percent >= 100) return 'var(--st-done)';
+        if (percent >= 50) return 'var(--st-todo)';
+        if (percent > 0) return 'var(--st-progress)';
+        return 'var(--st-none)';
+    }
+
+    // --- UI RENDERING ---
+    window.refreshUI = () => {
+        if(state.currentView === 'formationsView') renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
+        if(state.currentView === 'archivesView') renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
+        if(state.currentView === 'templatesListView') renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
+        if(state.currentView === 'blocsView') renderBlocs();
+        if(state.currentView === 'tasksView') renderTasks();
+    };
+
+    function renderMainGrid(id, list, isArchive = false) {
+        document.getElementById(id).innerHTML = list.map(f => {
+            const fBlocs = state.blocs.filter(b => b.formationId === f.id);
+            const allT = fBlocs.flatMap(b => b.tasks);
+            const hasAlert = fBlocs.some(b => b.tasks.some(t => getTaskStatusInfo(t, b.date).id === 'alert'));
+            const prog = allT.length ? (allT.filter(t => t.status === 'done').length / allT.length)*100 : 0;
+            return `
+                <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
+                    <div style="display:flex; justify-content:space-between">
+                        <h3>${f.name}</h3>
+                        ${hasAlert && !isArchive ? '<span class="alert-badge">RAPPEL</span>' : ''}
+                    </div>
+                    <div class="prog-container"><div class="prog-bar" style="width:${prog}%; background:${getProgStyle(prog)}"></div></div>
+                    <div class="card-actions">
+                        <button class="btn-icon" onclick="event.stopPropagation(); editForm(${f.id})">✏️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
+                    </div>
+                </div>`;
+        }).join("");
+    }
+
+    function renderBlocs() {
+        const list = state.blocs.filter(b => b.formationId === state.currentFormationId);
+        document.getElementById("blocsGrid").innerHTML = list.map(b => {
+            const hasAlert = b.tasks.some(t => getTaskStatusInfo(t, b.date).id === 'alert');
+            const prog = b.tasks.length ? (b.tasks.filter(t => t.status === 'done').length / b.tasks.length)*100 : 0;
+            return `
+                <div class="card" onclick="enterBloc(${b.id})">
+                    <div style="display:flex; justify-content:space-between">
+                        <h3>${b.name}</h3>
+                        ${hasAlert ? '<span class="alert-badge">!</span>' : ''}
+                    </div>
+                    <p>📅 ${b.date || 'Non définie'}</p>
+                    <div class="prog-container"><div class="prog-bar" style="width:${prog}%; background:${getProgStyle(prog)}"></div></div>
+                    <div class="card-actions">
+                        <button class="btn-icon" onclick="event.stopPropagation(); editBloc(${b.id})">✏️</button>
+                        <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc(${b.id})">🗑️</button>
+                    </div>
+                </div>`;
+        }).join("");
+    }
+
+    function renderTasks() {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
         document.getElementById("tasksList").innerHTML = b.tasks.map(t => {
             const info = getTaskStatusInfo(t, b.date);
             return `
-                <div class="task-row">
-                    <div class="task-main" style="background: ${info.color}" onclick="toggleDesc(${t.id})">
-                        <div class="task-info">
-                            <strong>${t.title}</strong>
-                            <small>Responsable : ${t.resp || 'Non assigné'}</small>
-                        </div>
-                        <div class="status-center">
-                            <select class="status-select-large" onclick="event.stopPropagation()" onchange="updateTaskStatus(${t.id}, this.value)">
+                <div class="task-item" style="border-left-color: ${info.color}">
+                    <div>
+                        <strong>${t.title}</strong> <small>(${t.resp || '?'})</small>
+                        <div style="margin-top:5px">
+                            <select class="status-select" onchange="updateTaskStatus(${t.id}, this.value)">
                                 <option value="not_started" ${info.id==='not_started'?'selected':''}>Pas commencé</option>
                                 <option value="todo" ${info.id==='todo'?'selected':''}>À faire</option>
                                 <option value="progress" ${info.id==='progress'?'selected':''}>En cours</option>
@@ -162,77 +294,61 @@
                                 ${info.id==='alert' ? '<option value="alert" selected>⚠️ RAPPEL</option>' : ''}
                             </select>
                         </div>
-                        <div class="task-date-end">
-                            Fin : <b>${info.endDateStr}</b>
-                        </div>
-                        <div style="text-align:right">
-                            <button class="btn-icon" onclick="event.stopPropagation(); editTask(${t.id})">✏️</button>
-                        </div>
                     </div>
-                    <div id="desc-${t.id}" class="task-desc">
-                        <p><strong>Description :</strong></p>
-                        <p>${t.desc || 'Aucun descriptif fourni.'}</p>
+                    <div>
+                        <button class="btn-icon" onclick="editTask(${t.id})">✏️</button>
+                        <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
                     </div>
                 </div>`;
         }).join("");
-    };
-
-    window.toggleDesc = (id) => {
-        const el = document.getElementById(`desc-${id}`);
-        el.classList.toggle('open');
-    };
+    }
 
     window.updateTaskStatus = (tId, newStatus) => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
         const t = b.tasks.find(x => x.id === tId);
         t.status = newStatus;
-        renderTasks(); // Rafraîchissement local
-        // push(); // Activer avec Firebase
+        push();
+    };
+
+    // --- LOGIQUE CRUD (Standard) ---
+    window.saveFormation = () => {
+        const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === "true", start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
+        if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
+        else state.formations.push(d);
+        push(); closeModal('formationModal');
+    };
+
+    window.saveBloc = () => {
+        const old = state.editingId ? state.blocs.find(x => x.id === state.editingId) : {tasks:[]};
+        const d = { id: state.editingId || Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, r1: document.getElementById("blocR1").value, r2: document.getElementById("blocR2").value, tasks: old.tasks };
+        if(state.editingId) state.blocs = state.blocs.map(b => b.id === state.editingId ? d : b);
+        else state.blocs.push(d);
+        push(); closeModal('blocModal');
     };
 
     window.saveTask = () => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
-        const t = { 
-            id: state.editingId || Date.now(), 
-            title: document.getElementById("taskTitle").value, 
-            resp: document.getElementById("taskResp").value, 
-            desc: document.getElementById("taskDescInput").value,
-            sVal: document.getElementById("taskStartVal").value, 
-            sUnit: document.getElementById("taskStartUnit").value, 
-            eVal: document.getElementById("taskEndVal").value, 
-            eUnit: document.getElementById("taskEndUnit").value, 
-            status: state.editingId ? b.tasks.find(x => x.id === state.editingId).status : 'todo' 
-        };
+        const t = { id: state.editingId || Date.now(), title: document.getElementById("taskTitle").value, resp: document.getElementById("taskResp").value, sVal: document.getElementById("taskStartVal").value, sUnit: document.getElementById("taskStartUnit").value, eVal: document.getElementById("taskEndVal").value, eUnit: document.getElementById("taskEndUnit").value, status: state.editingId ? b.tasks.find(x => x.id === state.editingId).status : 'todo' };
         if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? t : x);
         else b.tasks.push(t);
-        closeModal('taskModal');
-        renderTasks();
+        push(); closeModal('taskModal');
     };
 
-    // --- FONCTIONS NAVIGATION STANDARDS ---
-    window.showView = (id) => { 
-        document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); 
-        document.getElementById(id).classList.remove('hidden'); 
-        if(id === 'tasksView') renderTasks();
-    };
+    // --- NAVIGATION ---
+    window.showView = (id) => { if(['formationsView','templatesListView','archivesView'].includes(id)) state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
+    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
+    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2>`; showView('tasksView'); };
+    window.openFormModal = (tpl) => { state.editingId = null; document.getElementById("formIsTemplate").value = tpl; openModal('formationModal'); };
     window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
     window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
-    window.editTask = (id) => {
-        state.editingId = id;
-        const b = state.blocs.find(x => x.id === state.currentBlocId);
-        const t = b.tasks.find(x => x.id === id);
-        document.getElementById("taskTitle").value = t.title;
-        document.getElementById("taskResp").value = t.resp;
-        document.getElementById("taskDescInput").value = t.desc || "";
-        openModal('taskModal');
-    };
-
-    // Init
-    state.currentFormationId = 1;
-    state.currentBlocId = 101;
-    showView('tasksView');
-    document.getElementById("blocHeaderInfo").innerHTML = "<h2>Bloc Technique 1</h2>";
-
+    window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; openModal('formationModal'); };
+    window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; openModal('blocModal'); };
+    window.editTask = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; openModal('taskModal'); };
+    window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); push(); } };
+    window.deleteBloc = (id) => { if(confirm("Supprimer ?")) { state.blocs = state.blocs.filter(b => b.id !== id); push(); } };
+    window.deleteTask = (id) => { if(confirm("Supprimer ?")) { const b = state.blocs.find(x => x.id === state.currentBlocId); b.tasks = b.tasks.filter(t => t.id !== id); push(); } };
+    document.getElementById("backBtn").onclick = () => showView(state.lastParentView);
+    function isArchived(f) { return f.end && new Date(f.end) < new Date(); }
 </script>
 </body>
 </html>
