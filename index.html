@@ -76,7 +76,9 @@
     <header>
       <h1>📚 Sessions Actives</h1>
       <div style="display:flex; gap:10px">
-		<button class="btn" style="background:#10b981" onclick="exportBackupJSON()">💾 Créer BackUp</button>        
+		<button class="btn" style="background:#10b981" onclick="exportBackupJSON()">💾 Créer Backup</button>  
+<button class="btn" style="background:#0ea5e9" onclick="triggerImport()">📥 Import JSON</button>
+<input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackupJSON(this.files[0])">
 		<button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">📂 Modèles</button>
         <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
         <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
@@ -300,6 +302,69 @@
   a.remove();
 
   URL.revokeObjectURL(url);
+};
+
+// -------- IMPORT JSON (DEMO) --------
+window.triggerImport = () => {
+  const input = document.getElementById("importFile");
+  if (!input) return alert("Input fichier introuvable (#importFile).");
+  input.value = ""; // permet de ré-importer le même fichier
+  input.click();
+};
+
+function isValidBackupShape(data) {
+  // On accepte 2 formats:
+  // A) { appState: { formations, modules, blocs } }
+  // B) { formations, modules, blocs }
+  const root = data?.appState ? data.appState : data;
+  return (
+    root &&
+    Array.isArray(root.formations) &&
+    Array.isArray(root.modules) &&
+    Array.isArray(root.blocs)
+  );
+}
+
+window.importBackupJSON = async (file) => {
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!isValidBackupShape(data)) {
+      alert("JSON invalide : il doit contenir formations/modules/blocs (ou appState.formations/modules/blocs).");
+      return;
+    }
+
+    const root = data.appState ? data.appState : data;
+
+    const ok = confirm(
+      "⚠️ Import DEMO : cela va REMPLACER toutes les données actuelles (formations/modules/blocs) dans Firestore. Continuer ?"
+    );
+    if (!ok) return;
+
+    // Remplace l’état local
+    state.formations = root.formations || [];
+    state.modules = root.modules || [];
+    state.blocs = root.blocs || [];
+
+    // Reset navigation au besoin
+    state.currentFormationId = null;
+    state.currentModuleId = null;
+    state.currentBlocId = null;
+    state.editingId = null;
+
+    // Push vers Firestore
+    await push();
+
+    // Retour à la vue principale + rafraîchir
+    showView("formationsView");
+    alert("✅ Import terminé. Données de démo chargées.");
+  } catch (e) {
+    console.error(e);
+    alert("Erreur import : " + (e?.message || e));
+  }
 };
 
   // ---------- STATE ----------
@@ -1112,5 +1177,4 @@
 </script>
 </body>
 </html>
-
 
