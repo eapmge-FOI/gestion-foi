@@ -2,61 +2,62 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Connexion Google</title>
+    <title>Gestion FOI - Accès Restreint</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
             --text1:#f1f5f9; --danger:#e11d48;
         }
-        body { font-family: sans-serif; background:var(--bg1); color:var(--text1); margin:0; }
+        body { font-family: sans-serif; background:var(--bg1); color:var(--text1); margin:0; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
         
-        /* Centrage du bouton Google */
-        #loginView { height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: var(--bg2); padding: 40px; border-radius: 15px; border: 1px solid var(--bg3); text-align: center; }
+        .login-box { background: var(--bg2); padding: 40px; border-radius: 15px; border: 1px solid var(--bg3); text-align: center; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
         
         .google-btn {
             background: white; color: #444; padding: 12px 24px; border-radius: 5px;
-            border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; margin: auto;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;
+            border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; 
+            gap: 10px; margin: 20px auto; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;
         }
         .google-btn:hover { background: #f1f1f1; transform: scale(1.02); }
         
-        .app { max-width:1100px; margin:20px auto; padding: 0 20px; }
+        .app-container { width: 100%; max-width: 1100px; margin: 20px; align-self: flex-start; }
+        header { background: var(--bg2); padding: 20px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--bg3); }
+        
         .hidden { display:none !important; }
-        .btn { background:var(--primary); color: white; border:none; padding: 10px 18px; border-radius:8px; cursor:pointer; font-weight:bold; }
+        .error-msg { color: var(--danger); font-size: 0.85rem; margin-top: 15px; padding: 10px; background: rgba(225, 29, 72, 0.1); border-radius: 5px; }
     </style>
 </head>
 <body>
 
-<div id="loginView">
-    <div class="login-box">
-        <h2 style="margin-bottom: 30px;">🔐 Accès Sécurisé</h2>
-        <button class="google-btn" onclick="handleLogin()">
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_google_color_16dp.svg" alt="Google">
-            Se connecter avec Google
-        </button>
-        <p id="loginError" style="color: var(--danger); margin-top: 15px; font-size: 0.8rem;"></p>
-    </div>
+<div id="loginView" class="login-box">
+    <h2 style="margin: 0 0 10px 0;">🚀 Gestion FOI</h2>
+    <p style="color: var(--text1); opacity: 0.7; margin-bottom: 30px;">Espace sécurisé - Mentors & Admin</p>
+    
+    <button class="google-btn" onclick="handleLogin()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_google_color_16dp.svg" alt="Google">
+        Se connecter avec Google
+    </button>
+    
+    <div id="loginError" class="error-msg hidden"></div>
 </div>
 
-<div id="mainApp" class="app hidden">
-    <header style="display:flex; justify-content:space-between; align-items:center; background:var(--bg2); padding:15px; border-radius:12px;">
-        <h1>🚀 Sessions Actives</h1>
-        <div style="display:flex; gap:10px; align-items:center">
-            <span id="userName" style="font-size: 0.9rem; color: var(--primary);"></span>
-            <button class="btn" style="background:var(--bg3)" onclick="handleLogout()">Déconnexion</button>
+<div id="mainApp" class="app-container hidden">
+    <header>
+        <div>
+            <h1 style="margin:0; font-size: 1.5rem;">Tableau de Bord</h1>
+            <small id="userMail" style="color: var(--primary)"></small>
         </div>
+        <button onclick="handleLogout()" style="background: var(--bg3); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer;">Déconnexion 🚪</button>
     </header>
     
-    <div id="activeGrid" style="margin-top:20px">
-        <p>Chargement des données...</p>
-    </div>
+    <div id="content" style="margin-top: 20px; background: var(--bg2); padding: 30px; border-radius: 12px; border: 1px solid var(--bg3); text-align: center;">
+        <p>✅ Accès autorisé. Chargement de vos sessions en cours...</p>
+        </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = { 
         apiKey: "AIzaSyAfwt7M5vjzo1H4jw8EQ6auENy8LxXMQhE", 
@@ -66,19 +67,26 @@
         messagingSenderId: "538286716668", 
         appId: "1:538286716668:web:b86f8d5f606c78494f4979" 
     };
-    
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
 
-    // --- CONNEXION GOOGLE ---
-    window.handleLogin = async () => {
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- LISTE BLANCHE DES EMAILS ---
+    const ALLOWED_EMAILS = ["eapmge@gmail.com", "mentors.foi@gmail.com"];
+
+    // --- GESTION DES ERREURS ---
+    function showError(msg) {
+        const errEl = document.getElementById("loginError");
+        errEl.textContent = msg;
+        errEl.classList.remove("hidden");
+    }
+
+    // --- ACTIONS AUTH ---
+    window.handleLogin = () => {
         const provider = new GoogleAuthProvider();
-        try {
-            await signInWithPopup(auth, provider);
-        } catch (e) {
-            document.getElementById("loginError").textContent = "Échec de l'authentification.";
-        }
+        // Utilisation de Redirect au lieu de Popup pour éviter les blocages navigateurs
+        signInWithRedirect(auth, provider);
     };
 
     window.handleLogout = () => signOut(auth);
@@ -86,22 +94,30 @@
     // --- SURVEILLANCE DE L'ÉTAT ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
-            document.getElementById("loginView").classList.add("hidden");
-            document.getElementById("mainApp").classList.remove("hidden");
-            document.getElementById("userName").textContent = user.displayName;
-            startSync();
+            // Vérification stricte de l'email
+            if (ALLOWED_EMAILS.includes(user.email)) {
+                document.getElementById("loginView").classList.add("hidden");
+                document.getElementById("mainApp").classList.remove("hidden");
+                document.getElementById("userMail").textContent = user.email;
+                console.log("Accès accordé à : " + user.email);
+                // Charger tes données ici (ex: refreshUI())
+            } else {
+                showError("Accès refusé : '" + user.email + "' n'est pas autorisé.");
+                setTimeout(() => signOut(auth), 3000);
+            }
         } else {
             document.getElementById("loginView").classList.remove("hidden");
             document.getElementById("mainApp").classList.add("hidden");
         }
     });
 
-    function startSync() {
-        // Ici, on remet ta logique de onSnapshot pour récupérer les données
-        // Une fois connecté, les règles Firestore autoriseront la lecture.
-        console.log("Connecté, récupération des données...");
-        // (Appel de tes fonctions refreshUI etc.)
-    }
+    // Gestion du retour de redirection (pour capturer les erreurs éventuelles)
+    getRedirectResult(auth).catch((error) => {
+        if(error.code !== "auth/none") {
+            showError("Erreur d'authentification : " + error.message);
+        }
+    });
 </script>
+
 </body>
 </html>
