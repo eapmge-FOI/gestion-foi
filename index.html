@@ -52,7 +52,7 @@
             background: rgba(255,255,255,0.9); color: #000; font-weight: bold; cursor: pointer; font-size: 0.9rem;
         }
         .task-desc-area { background: var(--bg3); color: var(--text2); padding: 0; max-height: 0; overflow: hidden; transition: all 0.3s ease; }
-        .task-desc-area.open { padding: 15px; max-height: 500px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .task-desc-area.open { padding: 15px; max-height: 800px; border-top: 1px solid rgba(255,255,255,0.1); }
 
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
         .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; overflow-y: auto; max-height: 90vh; }
@@ -77,7 +77,6 @@
             <div style="display:flex; gap:10px">
                 <button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">📂 Modèles</button>
                 <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
-                <button class="btn" onclick="openFormModal(false)">+ Session</button>
                 <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
             </div>
         </header>
@@ -90,7 +89,7 @@
     </div>
 
     <div id="templatesListView" class="hidden">
-        <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>📂 Modèles</h1><button class="btn" onclick="openFormModal(true)">+ Nouveau</button></header>
+        <header><button class="btn" onclick="showView('formationsView')">← Retour</button><h1>📂 Modèles</h1><button class="btn" onclick="openFormModal(true)">+ Nouveau Modèle</button></header>
         <div class="grid" id="templateGrid"></div>
     </div>
 
@@ -112,7 +111,7 @@
         
         <div class="filter-bar">
             <div class="filter-group">
-                <label>Intervenant</label>
+                <label>Responsable</label>
                 <select id="respFilter" onchange="renderTasks()"><option value="all">Tous</option></select>
             </div>
             <div class="filter-group">
@@ -134,11 +133,11 @@
 
 <div id="formationModal" class="modal-overlay hidden">
     <div class="modal-content">
-        <h3>Session</h3>
+        <h3 id="formModalTitle">Session</h3>
         <input type="hidden" id="formIsTemplate">
         <label>Nom</label><input id="formName">
         <label>Corps</label><select id="formType"><option value="apm">APM</option><option value="polcant">PolCant</option><option value="asp">ASP</option></select>
-        <div><label>Début</label><input id="formStart" type="date"><label>Fin</label><input id="formEnd" type="date"></div>
+        <div id="dateFields"><label>Début</label><input id="formStart" type="date"><label>Fin</label><input id="formEnd" type="date"></div>
         <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
         <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('formationModal')">Annuler</button>
     </div>
@@ -160,28 +159,17 @@
         <h3>Réglages Tâche</h3>
         <label>Titre</label><input id="taskTitle">
         <label>Responsable</label><input id="taskResp">
-        <label>Instructions</label><textarea id="taskDesc" style="width:100%; height:80px; background:var(--bg1); color:white; border:1px solid var(--bg3); border-radius:6px; padding:10px"></textarea>
+        <label>Instructions (Modèle)</label><textarea id="taskDesc" style="height:60px"></textarea>
+        <label>Remarques (Suivi terrain)</label><textarea id="taskRemarque" style="height:60px" placeholder="Écrire ici les remarques d'avancement..."></textarea>
         
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-top:10px">
             <div>
-                <small>DÉBUT (Temps avant bloc)</small>
-                <input type="number" id="taskStartVal" value="4">
-                <select id="taskStartUnit">
-                    <option value="days">Jours</option>
-                    <option value="weeks" selected>Semaines</option>
-                    <option value="months">Mois</option>
-                    <option value="years">Années</option>
-                </select>
+                <small>DÉBUT (-)</small><input type="number" id="taskStartVal" value="4">
+                <select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option><option value="months">Mois</option><option value="years">Années</option></select>
             </div>
             <div>
-                <small>FIN (Temps avant bloc)</small>
-                <input type="number" id="taskEndVal" value="2">
-                <select id="taskEndUnit">
-                    <option value="days">Jours</option>
-                    <option value="weeks" selected>Semaines</option>
-                    <option value="months">Mois</option>
-                    <option value="years">Années</option>
-                </select>
+                <small>FIN (-)</small><input type="number" id="taskEndVal" value="2">
+                <select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option><option value="months">Mois</option><option value="years">Années</option></select>
             </div>
         </div>
         
@@ -226,7 +214,7 @@
     }
     async function push() { await setDoc(doc(db, "data", "appState"), { formations: state.formations, blocs: state.blocs }); }
 
-    // CALCULS & STATUTS
+    // CALCULS
     function getCalcDate(base, val, unit) {
         if(!base) return null;
         let d = new Date(base); val = parseInt(val);
@@ -242,20 +230,15 @@
         const start = getCalcDate(blocDate, task.sVal, task.sUnit);
         const end = getCalcDate(blocDate, task.eVal, task.eUnit);
         let status = task.status || 'todo';
-        
-        // Logique de couleur "À faire" (Jaune) si on est dans la période
         if (status === 'todo' || status === 'not_started') {
             if (start && today < start) status = 'not_started';
             else if (start && today >= start && (!end || today < end)) status = 'todo';
         }
-
-        // Alerte si on dépasse la fin ou qu'on est à -7j de la fin
         if (status !== 'done' && status !== 'progress') {
             const sevenDays = 7 * 24 * 60 * 60 * 1000;
             if (end && today >= end) status = 'alert';
             else if (end && (end - today) <= sevenDays) status = 'alert';
         }
-
         const map = {
             'alert': { rank: 1, color: 'var(--st-alert)', dark: false },
             'todo': { rank: 2, color: 'var(--st-todo)', dark: true },
@@ -264,15 +247,10 @@
             'done': { rank: 5, color: 'var(--st-done)', dark: false }
         };
         const info = map[status];
-        return { 
-            ...info, 
-            id: status, 
-            startStr: start ? start.toLocaleDateString('fr-FR') : '---',
-            endStr: end ? end.toLocaleDateString('fr-FR') : '---' 
-        };
+        return { ...info, id: status, startStr: start ? start.toLocaleDateString('fr-FR') : '---', endStr: end ? end.toLocaleDateString('fr-FR') : '---' };
     }
 
-    // UI RENDERERS
+    // UI
     window.refreshUI = () => {
         if(state.currentView === 'formationsView') renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
         if(state.currentView === 'archivesView') renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
@@ -291,9 +269,10 @@
             return `
                 <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
                     <div style="display:flex; justify-content:space-between"><h3>${f.name}</h3>${hasAlert && !isArchive ? '<span class="alert-badge">RAPPEL</span>' : ''}</div>
-                    <p style="font-size:0.8rem; margin-top:5px; opacity:0.8">📅 ${f.start ? new Date(f.start).toLocaleDateString() : '?'}</p>
+                    <p style="font-size:0.8rem; margin-top:5px; opacity:0.8">📅 ${f.start ? new Date(f.start).toLocaleDateString() : (f.isTemplate ? 'Modèle' : '?')}</p>
                     <div class="prog-container"><div class="prog-bar" style="width:${prog}%; background:${prog >= 100 ? 'var(--st-done)' : 'var(--primary)'}"></div></div>
                     <div style="display:flex; gap:5px; margin-top:auto">
+                        ${f.isTemplate ? `<button class="btn" style="background:var(--st-done); font-size:0.7rem" onclick="event.stopPropagation(); deployTemplate(${f.id})">🚀 Déployer</button>` : ''}
                         <button class="btn-icon" onclick="event.stopPropagation(); editForm(${f.id})">✏️</button>
                         <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
                     </div>
@@ -336,13 +315,10 @@
         if(!b || !b.tasks) return;
         const filterResp = document.getElementById("respFilter").value;
         const filterStatus = document.getElementById("statusFilter").value;
-
-        const tasksToRender = b.tasks
-            .filter(t => {
-                const info = getTaskStatusInfo(t, b.date);
-                return (filterResp === 'all' || t.resp === filterResp) && (filterStatus === 'all' || info.id === filterStatus);
-            })
-            .sort((a, b) => getTaskStatusInfo(a, b.date).rank - getTaskStatusInfo(b, b.date).rank);
+        const tasksToRender = b.tasks.filter(t => {
+            const info = getTaskStatusInfo(t, b.date);
+            return (filterResp === 'all' || t.resp === filterResp) && (filterStatus === 'all' || info.id === filterStatus);
+        }).sort((a, b) => getTaskStatusInfo(a, b.date).rank - getTaskStatusInfo(b, b.date).rank);
 
         document.getElementById("tasksList").innerHTML = tasksToRender.map(t => {
             const info = getTaskStatusInfo(t, b.date);
@@ -354,7 +330,7 @@
                             <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${t.resp || '?'}</div>
                             <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">Début : ${info.startStr}</div>
                         </div>
-                        <div style="padding: 0 10px">
+                        <div>
                             <select class="status-select-large" onclick="event.stopPropagation()" onchange="updateTaskStatus(${t.id}, this.value)">
                                 <option value="not_started" ${info.id==='not_started'?'selected':''}>Pas commencé</option>
                                 <option value="todo" ${info.id==='todo'?'selected':''}>À faire</option>
@@ -367,7 +343,13 @@
                         <div style="text-align: right"><button class="btn-icon" onclick="event.stopPropagation(); editTask(${t.id})">✏️</button></div>
                     </div>
                     <div id="desc-${t.id}" class="task-desc-area">
-                        <strong>Instructions :</strong><br>${t.desc ? t.desc.replace(/\n/g, '<br>') : 'Aucune.'}
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px">
+                            <div><strong>Instructions :</strong><br>${t.desc || 'Aucune.'}</div>
+                            <div style="border-left: 1px solid rgba(255,255,255,0.1); padding-left:20px">
+                                <strong>Remarques / Suivi :</strong><br>
+                                <span style="color:var(--primary)">${t.remarque || 'Pas de remarque.'}</span>
+                            </div>
+                        </div>
                         <div style="margin-top:10px; text-align:right"><button class="btn" style="background: #e11d48; padding: 4px 8px; font-size:0.7rem" onclick="deleteTask(${t.id})">Supprimer</button></div>
                     </div>
                 </div>`;
@@ -375,9 +357,24 @@
     }
 
     // ACTIONS
-    window.prepareNewTask = () => { state.editingId = null; document.getElementById("taskTitle").value = ""; document.getElementById("taskResp").value = ""; document.getElementById("taskDesc").value = ""; openModal('taskModal'); };
-    window.prepareNewBloc = () => { state.editingId = null; document.getElementById("blocName").value = ""; document.getElementById("blocDate").value = ""; document.getElementById("blocR1").value = ""; document.getElementById("blocR2").value = ""; openModal('blocModal'); };
-    
+    window.deployTemplate = (tplId) => {
+        const tpl = state.formations.find(f => f.id === tplId);
+        const name = prompt("Nom de la nouvelle session ?", tpl.name + " - " + new Date().getFullYear());
+        if(!name) return;
+        const newFormId = Date.now();
+        const newForm = { ...tpl, id: newFormId, name: name, isTemplate: false, start: "", end: "" };
+        state.formations.push(newForm);
+        const tplBlocs = state.blocs.filter(b => b.formationId === tplId);
+        tplBlocs.forEach(b => {
+            const newBlocId = Date.now() + Math.random();
+            const newBloc = { ...b, id: newBlocId, formationId: newFormId, date: "", tasks: (b.tasks || []).map(t => ({...t, status: 'todo', remarque: ""})) };
+            state.blocs.push(newBloc);
+        });
+        push();
+        alert("Session déployée ! Pensez à régler les dates dans l'édition de la session.");
+        showView('formationsView');
+    };
+
     window.saveTask = () => {
         const b = state.blocs.find(x => x.id === state.currentBlocId);
         const t = { 
@@ -385,10 +382,9 @@
             title: document.getElementById("taskTitle").value, 
             resp: document.getElementById("taskResp").value, 
             desc: document.getElementById("taskDesc").value,
-            sVal: document.getElementById("taskStartVal").value, 
-            sUnit: document.getElementById("taskStartUnit").value,
-            eVal: document.getElementById("taskEndVal").value, 
-            eUnit: document.getElementById("taskEndUnit").value,
+            remarque: document.getElementById("taskRemarque").value,
+            sVal: document.getElementById("taskStartVal").value, sUnit: document.getElementById("taskStartUnit").value,
+            eVal: document.getElementById("taskEndVal").value, eUnit: document.getElementById("taskEndUnit").value,
             status: state.editingId ? b.tasks.find(x => x.id === state.editingId).status : 'todo'
         };
         if(state.editingId) b.tasks = b.tasks.map(x => x.id === state.editingId ? t : x);
@@ -396,37 +392,49 @@
         push(); closeModal('taskModal');
     };
 
+    // NAV
+    window.showView = (id) => { if(['formationsView','templatesListView','archivesView'].includes(id)) state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
+    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
+    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2>`; showView('tasksView'); };
+    window.openFormModal = (tpl) => { 
+        state.editingId = null; 
+        document.getElementById("formIsTemplate").value = tpl; 
+        document.getElementById("dateFields").style.display = tpl ? "none" : "block";
+        document.getElementById("formModalTitle").textContent = tpl ? "Nouveau Modèle" : "Editer Session";
+        openModal('formationModal'); 
+    };
+    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
+    window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
+    window.editForm = (id) => { 
+        state.editingId = id; const f = state.formations.find(x => x.id === id); 
+        document.getElementById("formIsTemplate").value = f.isTemplate;
+        document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type;
+        document.getElementById("formStart").value = f.start || ""; document.getElementById("formEnd").value = f.end || "";
+        document.getElementById("dateFields").style.display = f.isTemplate ? "none" : "block";
+        openModal('formationModal'); 
+    };
+    window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; openModal('blocModal'); };
+    window.editTask = (id) => { 
+        state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); 
+        document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; 
+        document.getElementById("taskDesc").value = t.desc || ""; document.getElementById("taskRemarque").value = t.remarque || "";
+        document.getElementById("taskStartVal").value = t.sVal; document.getElementById("taskStartUnit").value = t.sUnit;
+        document.getElementById("taskEndVal").value = t.eVal; document.getElementById("taskEndUnit").value = t.eUnit;
+        openModal('taskModal'); 
+    };
+    window.saveFormation = () => {
+        const isTpl = document.getElementById("formIsTemplate").value === "true";
+        const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: isTpl, start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
+        if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
+        else state.formations.push(d);
+        push(); closeModal('formationModal');
+    };
     window.saveBloc = () => {
         const old = state.editingId ? state.blocs.find(x => x.id === state.editingId) : {tasks:[]};
         const d = { id: state.editingId || Date.now(), formationId: state.currentFormationId, name: document.getElementById("blocName").value, date: document.getElementById("blocDate").value, r1: document.getElementById("blocR1").value, r2: document.getElementById("blocR2").value, tasks: [...(old.tasks || [])] };
         if(state.editingId) state.blocs = state.blocs.map(b => b.id === state.editingId ? d : b);
         else state.blocs.push(d);
         push(); closeModal('blocModal');
-    };
-
-    window.saveFormation = () => {
-        const d = { id: state.editingId || Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === "true", start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
-        if(state.editingId) state.formations = state.formations.map(f => f.id === state.editingId ? d : f);
-        else state.formations.push(d);
-        push(); closeModal('formationModal');
-    };
-
-    // NAV
-    window.showView = (id) => { if(['formationsView','templatesListView','archivesView'].includes(id)) state.lastParentView = id; state.currentView = id; document.querySelectorAll('.app > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
-    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
-    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2>`; showView('tasksView'); };
-    window.openFormModal = (tpl) => { state.editingId = null; document.getElementById("formIsTemplate").value = tpl; openModal('formationModal'); };
-    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
-    window.editForm = (id) => { state.editingId = id; const f = state.formations.find(x => x.id === id); document.getElementById("formName").value = f.name; document.getElementById("formType").value = f.type; document.getElementById("formStart").value = f.start || ""; document.getElementById("formEnd").value = f.end || ""; openModal('formationModal'); };
-    window.editBloc = (id) => { state.editingId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocName").value = b.name; document.getElementById("blocDate").value = b.date || ""; openModal('blocModal'); };
-    window.editTask = (id) => { 
-        state.editingId = id; const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); 
-        document.getElementById("taskTitle").value = t.title; document.getElementById("taskResp").value = t.resp; 
-        document.getElementById("taskDesc").value = t.desc || ""; document.getElementById("taskStartVal").value = t.sVal; 
-        document.getElementById("taskStartUnit").value = t.sUnit; document.getElementById("taskEndVal").value = t.eVal;
-        document.getElementById("taskEndUnit").value = t.eUnit;
-        openModal('taskModal'); 
     };
     window.updateTaskStatus = (tId, newStat) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === tId); if(t){ t.status = newStat; push(); } };
     window.toggleDesc = (id) => document.getElementById(`desc-${id}`).classList.toggle('open');
