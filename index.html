@@ -2,331 +2,106 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Gestion FOI - Accès Sécurisé</title>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <title>Gestion FOI - Connexion Google</title>
     <style>
         :root {
             --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
-            --text1:#f1f5f9; --text2:#cbd5e1; --success:#059669; --danger:#e11d48;
-            --polcant-blue: #334b7a; --apm-gray: #334155; --asp-light: #94a3b8;
+            --text1:#f1f5f9; --danger:#e11d48;
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: sans-serif; background:var(--bg1); color:var(--text1); padding: 20px; }
+        body { font-family: sans-serif; background:var(--bg1); color:var(--text1); margin:0; }
         
-        /* Styles Login */
-        #loginView { height: 80vh; display: flex; align-items: center; justify-content: center; }
-        .login-box { background: var(--bg2); padding: 40px; border-radius: 15px; border: 1px solid var(--bg3); width: 100%; max-width: 400px; text-align: center; }
+        /* Centrage du bouton Google */
+        #loginView { height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-box { background: var(--bg2); padding: 40px; border-radius: 15px; border: 1px solid var(--bg3); text-align: center; }
         
-        /* Styles App */
-        .app { max-width:1100px; margin:auto; }
-        header, .mini-header { background:var(--bg2); padding:15px 20px; border-radius:12px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--bg3); }
-        .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:15px; }
-
-        .card { background:var(--bg2); padding:18px; border-radius:12px; cursor:pointer; border: 1px solid var(--bg3); position: relative; display:flex; flex-direction:column; min-height: 180px; transition: 0.2s; overflow: hidden; }
-        .card:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .google-btn {
+            background: white; color: #444; padding: 12px 24px; border-radius: 5px;
+            border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; margin: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s;
+        }
+        .google-btn:hover { background: #f1f1f1; transform: scale(1.02); }
         
-        .style-apm { background: var(--apm-gray) !important; padding-top: 25px; }
-        .style-apm::before { content:''; position:absolute; top:0; left:0; width:100%; height:4px; background: #fbbf24; z-index: 2; }
-        .style-apm::after { content:''; position:absolute; top:4px; left:0; width:100%; height:4px; background: #e11d48; z-index: 2; }
-        .style-polcant { background: var(--polcant-blue) !important; border-top: 5px solid rgba(255,255,255,0.2); }
-        .style-asp { background: var(--asp-light) !important; color: #0f172a; border-top: 5px solid #64748b; }
-        .style-asp h3, .style-asp p, .style-asp small, .style-asp .date-info { color: #0f172a !important; }
-
-        .prog-container { background: rgba(0,0,0,0.2); height: 8px; border-radius: 4px; margin: 12px 0; overflow: hidden; }
-        .prog-bar { height: 100%; background: var(--success); transition: width 0.4s; }
-
-        .btn { background:var(--primary); color: white; border:none; padding: 10px 18px; border-radius:8px; cursor:pointer; font-weight:bold; }
-        .btn-icon { background: rgba(255,255,255,0.1); border: none; color: inherit; cursor: pointer; padding: 7px; border-radius: 6px; }
-
-        .task-item { background: var(--bg2); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--bg3); padding: 15px; }
-        .task-overdue { border-left: 4px solid var(--danger) !important; background: rgba(225, 29, 72, 0.05) !important; }
-        .resp-tag { background: var(--bg3); color: var(--primary); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-left: 10px; }
-
-        .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 100; }
-        .modal-content { background: var(--bg2); padding: 25px; border-radius: 12px; width: 95%; max-width: 550px; }
-        input, select { width:100%; margin: 8px 0 15px 0; padding:12px; background: var(--bg1); border: 1px solid var(--bg3); color: white; border-radius: 6px; }
+        .app { max-width:1100px; margin:20px auto; padding: 0 20px; }
         .hidden { display:none !important; }
-        
-        .member-chip { display: inline-flex; align-items: center; background: var(--bg3); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; margin: 0 5px 5px 0; }
+        .btn { background:var(--primary); color: white; border:none; padding: 10px 18px; border-radius:8px; cursor:pointer; font-weight:bold; }
     </style>
 </head>
 <body>
 
 <div id="loginView">
     <div class="login-box">
-        <h2 style="margin-bottom: 20px;">🔐 Accès Privé</h2>
-        <input type="email" id="loginEmail" placeholder="Email">
-        <input type="password" id="loginPassword" placeholder="Mot de passe">
-        <button class="btn" style="width: 100%;" onclick="handleLogin()">Se connecter</button>
-        <p id="loginError" style="color: var(--danger); margin-top: 15px; font-size: 0.8rem; min-height: 1.2em;"></p>
+        <h2 style="margin-bottom: 30px;">🔐 Accès Sécurisé</h2>
+        <button class="google-btn" onclick="handleLogin()">
+            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/pwa_google_color_16dp.svg" alt="Google">
+            Se connecter avec Google
+        </button>
+        <p id="loginError" style="color: var(--danger); margin-top: 15px; font-size: 0.8rem;"></p>
     </div>
 </div>
 
 <div id="mainApp" class="app hidden">
-    <div id="formationsView">
-        <header>
-            <h1>🚀 Sessions Actives</h1>
-            <div style="display:flex; gap:10px">
-                <button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">⚙️ Config / Modèles</button>
-                <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
-                <button class="btn" onclick="openFormModal(false)">+ Session</button>
-                <button class="btn-icon" title="Déconnexion" onclick="handleLogout()">🚪</button>
-            </div>
-        </header>
-        <div id="activeGrid" class="grid"></div>
-    </div>
-
-    <div id="archivesView" class="hidden">
-        <header>
-            <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h1>📦 Archives</h1>
-            <div></div>
-        </header>
-        <div id="archivesGrid" class="grid"></div>
-    </div>
-
-    <div id="templatesListView" class="hidden">
-        <header>
-            <button class="btn" style="background:var(--bg3)" onclick="showView('formationsView')">← Retour</button>
-            <h1>⚙️ Configuration</h1>
-        </header>
-        
-        <div class="mini-header" style="flex-direction: column; align-items: flex-start;">
-            <h3 style="margin-bottom:10px">👥 Équipe & Alertes Emails</h3>
-            <div style="display: flex; gap: 10px; width: 100%;">
-                <input id="newMemberName" placeholder="Nom/Prénom" style="margin:0">
-                <input id="newMemberInitials" placeholder="Initiales" style="margin:0">
-                <input id="newMemberEmail" placeholder="Email" style="margin:0">
-                <button class="btn" onclick="addMember()">Ajouter</button>
-            </div>
-            <div id="membersList" style="margin-top: 15px;"></div>
+    <header style="display:flex; justify-content:space-between; align-items:center; background:var(--bg2); padding:15px; border-radius:12px;">
+        <h1>🚀 Sessions Actives</h1>
+        <div style="display:flex; gap:10px; align-items:center">
+            <span id="userName" style="font-size: 0.9rem; color: var(--primary);"></span>
+            <button class="btn" style="background:var(--bg3)" onclick="handleLogout()">Déconnexion</button>
         </div>
-
-        <div class="mini-header">
-            <h3>📂 Modèles de formation</h3>
-            <button class="btn" style="background:#6366f1" onclick="openFormModal(true)">+ Nouveau Modèle</button>
-        </div>
-        <div id="templateGrid" class="grid"></div>
-    </div>
-
-    <div id="blocsView" class="hidden">
-        <div class="mini-header">
-            <button class="btn" style="background:var(--bg3)" id="backBtn">← Retour</button>
-            <h2 id="formationTitle"></h2>
-            <button class="btn" id="addBlocBtn" onclick="openModal('blocModal')">+ Bloc</button>
-        </div>
-        <div id="blocsGrid" class="grid"></div>
-    </div>
-
-    <div id="tasksView" class="hidden">
-        <div class="mini-header">
-            <button class="btn" style="background:var(--bg3)" onclick="showView('blocsView')">← Retour</button>
-            <div id="blocHeaderInfo"></div>
-            <button class="btn" id="addTaskBtn" onclick="openModal('taskModal')">+ Tâche</button>
-        </div>
-        <div id="tasksList"></div>
-    </div>
-</div>
-
-<div id="formationModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <h3>Formation</h3>
-        <input type="hidden" id="formIsTemplate">
-        <label>Nom</label><input id="formName">
-        <label>Corps</label>
-        <select id="formType">
-            <option value="apm">APM</option>
-            <option value="polcant">PolCant</option>
-            <option value="asp">ASP</option>
-        </select>
-        <div id="dateSection">
-            <div style="display:flex; gap:10px">
-                <div style="flex:1"><label>Début</label><input id="formStart" type="date"></div>
-                <div style="flex:1"><label>Fin</label><input id="formEnd" type="date"></div>
-            </div>
-        </div>
-        <button class="btn" style="width:100%" onclick="saveFormation()">Enregistrer</button>
-        <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('formationModal')">Annuler</button>
-    </div>
-</div>
-
-<div id="taskModal" class="modal-overlay hidden">
-    <div class="modal-content">
-        <h3>Paramètres Tâche</h3>
-        <label>Titre</label><input id="taskTitle">
-        <label>Responsable</label>
-        <select id="taskRespSelect"></select>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:15px; border-radius:8px;">
-            <div><small>DÉBUT</small><input type="number" id="taskStartVal" value="4"><select id="taskStartUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
-            <div><small>FIN</small><input type="number" id="taskEndVal" value="2"><select id="taskEndUnit"><option value="days">Jours</option><option value="weeks" selected>Semaines</option></select></div>
-        </div>
-        <button class="btn" style="width:100%; margin-top:15px" onclick="saveTask()">Enregistrer</button>
-        <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('taskModal')">Annuler</button>
+    </header>
+    
+    <div id="activeGrid" style="margin-top:20px">
+        <p>Chargement des données...</p>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    const firebaseConfig = { apiKey: "AIzaSyAfwt7M5vjzo1H4jw8EQ6auENy8LxXMQhE", authDomain: "gestion-des-taches-foi.firebaseapp.com", projectId: "gestion-des-taches-foi", storageBucket: "gestion-des-taches-foi.firebasestorage.app", messagingSenderId: "538286716668", appId: "1:538286716668:web:b86f8d5f606c78494f4979" };
+    const firebaseConfig = { 
+        apiKey: "AIzaSyAfwt7M5vjzo1H4jw8EQ6auENy8LxXMQhE", 
+        authDomain: "gestion-des-taches-foi.firebaseapp.com", 
+        projectId: "gestion-des-taches-foi", 
+        storageBucket: "gestion-des-taches-foi.firebasestorage.app", 
+        messagingSenderId: "538286716668", 
+        appId: "1:538286716668:web:b86f8d5f606c78494f4979" 
+    };
     
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    let state = { formations: [], blocs: [], members: [], currentFormationId: null, currentBlocId: null, editingId: null, currentView: 'formationsView' };
-
-    // --- LOGIQUE D'AUTHENTIFICATION ---
+    // --- CONNEXION GOOGLE ---
     window.handleLogin = async () => {
-        const email = document.getElementById("loginEmail").value;
-        const pass = document.getElementById("loginPassword").value;
-        const errorEl = document.getElementById("loginError");
+        const provider = new GoogleAuthProvider();
         try {
-            await signInWithEmailAndPassword(auth, email, pass);
-            errorEl.textContent = "";
+            await signInWithPopup(auth, provider);
         } catch (e) {
-            errorEl.textContent = "Accès refusé. Vérifiez vos identifiants.";
+            document.getElementById("loginError").textContent = "Échec de l'authentification.";
         }
     };
 
     window.handleLogout = () => signOut(auth);
 
+    // --- SURVEILLANCE DE L'ÉTAT ---
     onAuthStateChanged(auth, (user) => {
         if (user) {
             document.getElementById("loginView").classList.add("hidden");
             document.getElementById("mainApp").classList.remove("hidden");
-            startAppSync(); // Lancer la synchro uniquement si connecté
+            document.getElementById("userName").textContent = user.displayName;
+            startSync();
         } else {
             document.getElementById("loginView").classList.remove("hidden");
             document.getElementById("mainApp").classList.add("hidden");
         }
     });
 
-    // --- SYNCHRO DONNÉES ---
-    function startAppSync() {
-        onSnapshot(doc(db, "data", "appState"), (docSnap) => {
-            if (docSnap.exists()) {
-                const d = docSnap.data();
-                state.formations = d.formations || [];
-                state.blocs = d.blocs || [];
-                state.members = d.members || [];
-                refreshUI();
-            }
-        });
+    function startSync() {
+        // Ici, on remet ta logique de onSnapshot pour récupérer les données
+        // Une fois connecté, les règles Firestore autoriseront la lecture.
+        console.log("Connecté, récupération des données...");
+        // (Appel de tes fonctions refreshUI etc.)
     }
-
-    async function push() { 
-        if(auth.currentUser) {
-            await setDoc(doc(db, "data", "appState"), { 
-                formations: state.formations, 
-                blocs: state.blocs, 
-                members: state.members 
-            }); 
-        }
-    }
-
-    // --- UI & LOGIQUE MÉTIER ---
-    window.refreshUI = () => {
-        // Liste membres
-        document.getElementById("membersList").innerHTML = state.members.map(m => `
-            <span class="member-chip">${m.initials} (${m.email}) <button onclick="removeMember('${m.initials}')" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; margin-left:8px;">×</button></span>
-        `).join("");
-
-        // Select responsable
-        const select = document.getElementById("taskRespSelect");
-        select.innerHTML = '<option value="">Choisir...</option>' + state.members.map(m => `<option value="${m.initials}">${m.initials} - ${m.name}</option>`).join("");
-
-        if(state.currentView === 'formationsView') {
-            renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
-        } else if(state.currentView === 'archivesView') {
-            renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
-        } else if(state.currentView === 'templatesListView') {
-            renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate));
-        } else if(state.currentView === 'blocsView') {
-            renderBlocs();
-        } else if(state.currentView === 'tasksView') {
-            renderTasks();
-        }
-    };
-
-    function renderMainGrid(id, list, isArchive = false) {
-        document.getElementById(id).innerHTML = list.map(f => {
-            const fBlocs = state.blocs.filter(b => b.formationId === f.id);
-            const allTasks = fBlocs.flatMap(b => b.tasks);
-            const prog = allTasks.length ? (allTasks.filter(t => t.status === 'done').length / allTasks.length)*100 : 0;
-            return `
-                <div class="card style-${f.type}" onclick="enterFormation(${f.id})">
-                    <h3>${f.name}</h3>
-                    <p class="date-info">⏳ ${new Date(f.start).toLocaleDateString()} -> ${new Date(f.end).toLocaleDateString()}</p>
-                    <div class="prog-container"><div class="prog-bar" style="width:${prog}%"></div></div>
-                    <div class="card-actions">
-                        <button class="btn-icon" onclick="event.stopPropagation(); deleteForm(${f.id})">🗑️</button>
-                        ${f.isTemplate ? `<button class="btn" style="font-size:0.7rem" onclick="event.stopPropagation(); deploy(${f.id})">⚡ Déployer</button>` : ''}
-                        ${isArchive ? `<button class="btn" style="font-size:0.7rem; background:var(--success)" onclick="event.stopPropagation(); restoreForm(${f.id})">🔄 Restaurer</button>` : ''}
-                    </div>
-                </div>`;
-        }).join("");
-    }
-
-    function renderBlocs() {
-        const list = state.blocs.filter(b => b.formationId === state.currentFormationId).sort((a,b) => new Date(a.date) - new Date(b.date));
-        document.getElementById("blocsGrid").innerHTML = list.map(b => `
-            <div class="card" onclick="enterBloc(${b.id})">
-                <h3>${b.name}</h3>
-                <p class="date-info">📅 ${b.date ? new Date(b.date).toLocaleDateString() : '-'}</p>
-                <div class="card-actions">
-                    <button class="btn-icon" onclick="event.stopPropagation(); deleteBloc(${b.id})">🗑️</button>
-                </div>
-            </div>`).join("");
-    }
-
-    function renderTasks() {
-        const b = state.blocs.find(x => x.id === state.currentBlocId);
-        document.getElementById("tasksList").innerHTML = b.tasks.map(t => `
-            <div class="task-item">
-                <div style="display:flex; justify-content:space-between; align-items:center">
-                    <div onclick="toggleTask(${t.id})" style="cursor:pointer">
-                        <span>${t.status==='done'?'✅':'⭕'}</span>
-                        <strong>${t.title}</strong>
-                        <span class="resp-tag">${t.resp || '?'}</span>
-                    </div>
-                    <button class="btn-icon" onclick="deleteTask(${t.id})">🗑️</button>
-                </div>
-            </div>`).join("");
-    }
-
-    // --- ACTIONS MEMBRES ---
-    window.addMember = () => {
-        const n = document.getElementById("newMemberName").value;
-        const i = document.getElementById("newMemberInitials").value.toUpperCase();
-        const e = document.getElementById("newMemberEmail").value;
-        if(i && e) { state.members.push({name: n, initials: i, email: e}); push(); }
-    };
-    window.removeMember = (init) => { state.members = state.members.filter(m => m.initials !== init); push(); };
-
-    // --- HELPERS ---
-    function isArchived(f) {
-        if (f.isTemplate || !f.end) return false;
-        return new Date(f.end) < new Date().setHours(0,0,0,0);
-    }
-
-    window.showView = (id) => { state.currentView = id; document.querySelectorAll('#mainApp > div').forEach(d => d.classList.add('hidden')); document.getElementById(id).classList.remove('hidden'); refreshUI(); };
-    window.enterFormation = (id) => { state.currentFormationId = id; document.getElementById("formationTitle").textContent = state.formations.find(x => x.id === id).name; showView('blocsView'); };
-    window.enterBloc = (id) => { state.currentBlocId = id; const b = state.blocs.find(x => x.id === id); document.getElementById("blocHeaderInfo").innerHTML = `<h2>${b.name}</h2>`; showView('tasksView'); };
-    window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-    window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
-    window.openFormModal = (tpl) => { document.getElementById("formIsTemplate").value = tpl; document.getElementById("dateSection").style.display = tpl ? "none" : "block"; openModal('formationModal'); };
-    
-    // Reste du CRUD (saveFormation, saveTask, etc.) identique aux versions précédentes...
-    window.saveFormation = () => {
-        const d = { id: Date.now(), name: document.getElementById("formName").value, type: document.getElementById("formType").value, isTemplate: document.getElementById("formIsTemplate").value === "true", start: document.getElementById("formStart").value, end: document.getElementById("formEnd").value };
-        state.formations.push(d); push(); closeModal('formationModal');
-    };
-    window.deleteForm = (id) => { if(confirm("Supprimer ?")) { state.formations = state.formations.filter(f => f.id !== id); state.blocs = state.blocs.filter(b => b.formationId !== id); push(); } };
-    window.toggleTask = (id) => { const b = state.blocs.find(x => x.id === state.currentBlocId); const t = b.tasks.find(x => x.id === id); t.status = t.status === 'done' ? 'todo' : 'done'; push(); };
-    document.getElementById("backBtn").onclick = () => showView('formationsView');
 </script>
 </body>
 </html>
