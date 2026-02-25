@@ -40,7 +40,7 @@
     .btn{background:var(--primary);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold;}
     .btn-icon{background:rgba(0,0,0,.1);border:none;color:inherit;cursor:pointer;padding:7px;border-radius:6px;}
 
-    .filter-bar{background:var(--bg2);padding:15px 20px;border-radius:10px;margin-bottom:15px;display:grid;grid-template-columns:1fr 1fr;gap:20px;border:1px solid var(--bg3);}
+    .filter-bar{background:var(--bg2);padding:15px 20px;border-radius:10px;margin-bottom:15px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;border:1px solid var(--bg3);}
     .filter-group{display:flex;flex-direction:column;gap:5px;}
     .filter-group label{font-size:.75rem;text-transform:uppercase;opacity:.7;font-weight:bold;}
 
@@ -56,8 +56,6 @@
     input,select,textarea{width:100%;margin:8px 0 15px 0;padding:10px;background:var(--bg1);border:1px solid var(--bg3);color:#fff;border-radius:6px;}
 
     .hidden{display:none!important;}
-
-    /* small helper */
     .muted{opacity:.75;}
   </style>
 </head>
@@ -75,17 +73,31 @@
   <div id="formationsView">
     <header>
       <h1>📚 Sessions Actives</h1>
-      <div style="display:flex; gap:10px">
-		<button class="btn" style="background:#10b981" onclick="exportBackupJSON()">💾 Créer Backup</button>  
-<button class="btn" style="background:#0ea5e9" onclick="triggerImport()">📥 Import JSON</button>
-<input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackupJSON(this.files[0])">
-		<button class="btn" style="background:#6366f1" onclick="showView('templatesListView')">📂 Modèles</button>
+      <div style="display:flex; gap:10px; align-items:center">
+
+        <!-- SETTINGS (⚙️) -->
+        <div style="position:relative;">
+          <button class="btn-icon" id="settingsBtn" title="Réglages" onclick="toggleSettingsMenu(event)">⚙️</button>
+          <div id="settingsMenu" class="hidden" style="
+            position:absolute; right:0; top:42px;
+            background:var(--bg2); border:1px solid var(--bg3);
+            border-radius:10px; padding:10px; width:220px;
+            box-shadow:0 10px 30px rgba(0,0,0,.35);
+            z-index:50;">
+            <button class="btn" style="width:100%; background:#10b981" onclick="exportBackupJSON(); closeSettingsMenu()">💾 Backup JSON</button>
+            <button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9" onclick="triggerImport(); closeSettingsMenu()">📥 Import JSON</button>
+          </div>
+        </div>
+        <input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackupJSON(this.files[0])">
+
+        <!-- Buttons -->
+        <button class="btn" style="background:#475569" onclick="showView('templatesListView')">📂 Modèles</button>
         <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
         <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
       </div>
     </header>
 
-    <!-- GLOBAL FILTERS ON ACTIVE SESSIONS -->
+    <!-- GLOBAL FILTERS -->
     <div class="filter-bar">
       <div class="filter-group">
         <label>Responsable (global)</label>
@@ -102,6 +114,15 @@
           <option value="todo">À faire</option>
           <option value="progress">En cours</option>
           <option value="done">Terminé</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Corps</label>
+        <select id="globalTypeFilter" onchange="renderGlobalOrSessions()">
+          <option value="all">Tous</option>
+          <option value="apm">APM</option>
+          <option value="polcant">PolCant</option>
+          <option value="asp">ASP</option>
         </select>
       </div>
     </div>
@@ -145,7 +166,7 @@
       <button class="btn" onclick="prepareNewTask()">+ Tâche</button>
     </div>
 
-    <div class="filter-bar">
+    <div class="filter-bar" style="grid-template-columns:1fr 1fr;">
       <div class="filter-group">
         <label>Responsable</label>
         <select id="respFilter" onchange="renderTasks()"><option value="all">Tous</option></select>
@@ -267,105 +288,6 @@
   const provider = new GoogleAuthProvider();
 
   const ALLOWED = ["eapmge@gmail.com", "mentors.foi@gmail.com"];
-  
-  window.exportBackupJSON = () => {
-  // 1) Construire l’objet backup
-  const backup = {
-    exportedAt: new Date().toISOString(),
-    version: 1,
-    appState: {
-      formations: state.formations || [],
-      modules: state.modules || [],
-      blocs: state.blocs || []
-    }
-  };
-
-  // 2) Convertir en JSON
-  const json = JSON.stringify(backup, null, 2);
-
-  // 3) Créer un nom de fichier (date au format YYYY-MM-DD)
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const fileName = `backup-foi-${yyyy}-${mm}-${dd}.json`;
-
-  // 4) Télécharger
-  const blob = new Blob([json], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = fileName;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-
-  URL.revokeObjectURL(url);
-};
-
-// -------- IMPORT JSON (DEMO) --------
-window.triggerImport = () => {
-  const input = document.getElementById("importFile");
-  if (!input) return alert("Input fichier introuvable (#importFile).");
-  input.value = ""; // permet de ré-importer le même fichier
-  input.click();
-};
-
-function isValidBackupShape(data) {
-  // On accepte 2 formats:
-  // A) { appState: { formations, modules, blocs } }
-  // B) { formations, modules, blocs }
-  const root = data?.appState ? data.appState : data;
-  return (
-    root &&
-    Array.isArray(root.formations) &&
-    Array.isArray(root.modules) &&
-    Array.isArray(root.blocs)
-  );
-}
-
-window.importBackupJSON = async (file) => {
-  if (!file) return;
-
-  try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-
-    if (!isValidBackupShape(data)) {
-      alert("JSON invalide : il doit contenir formations/modules/blocs (ou appState.formations/modules/blocs).");
-      return;
-    }
-
-    const root = data.appState ? data.appState : data;
-
-    const ok = confirm(
-      "⚠️ Import DEMO : cela va REMPLACER toutes les données actuelles (formations/modules/blocs) dans Firestore. Continuer ?"
-    );
-    if (!ok) return;
-
-    // Remplace l’état local
-    state.formations = root.formations || [];
-    state.modules = root.modules || [];
-    state.blocs = root.blocs || [];
-
-    // Reset navigation au besoin
-    state.currentFormationId = null;
-    state.currentModuleId = null;
-    state.currentBlocId = null;
-    state.editingId = null;
-
-    // Push vers Firestore
-    await push();
-
-    // Retour à la vue principale + rafraîchir
-    showView("formationsView");
-    alert("✅ Import terminé. Données de démo chargées.");
-  } catch (e) {
-    console.error(e);
-    alert("Erreur import : " + (e?.message || e));
-  }
-};
 
   // ---------- STATE ----------
   let state = {
@@ -416,7 +338,6 @@ window.importBackupJSON = async (file) => {
   // ---------- PROGRESS COLOR (uniform color based on %) ----------
   function progressColor(p) {
     const x = Math.max(0, Math.min(100, Number(p) || 0));
-    // Interpolate red(#ef4444) -> orange(#f97316) -> green(#22c55e)
     const c1 = { r: 239, g: 68,  b: 68  };  // red
     const c2 = { r: 249, g: 115, b: 22  };  // orange
     const c3 = { r: 34,  g: 197, b: 94  };  // green
@@ -547,24 +468,35 @@ window.importBackupJSON = async (file) => {
   window.renderGlobalOrSessions = () => {
     const resp = document.getElementById("globalRespFilter")?.value || "all";
     const stat = document.getElementById("globalStatusFilter")?.value || "all";
-    const wantsGlobal = (resp !== "all" || stat !== "all");
+    const typ  = document.getElementById("globalTypeFilter")?.value || "all";
+    const wantsGlobal = (resp !== "all" || stat !== "all"); // global list triggered by resp/status only
 
     const globalBox = document.getElementById("globalTasksList");
     const grid = document.getElementById("activeGrid");
     if (!globalBox || !grid) return;
 
+    // If not global tasks view: show sessions grid filtered by corps
     if (!wantsGlobal) {
       globalBox.classList.add("hidden");
       grid.classList.remove("hidden");
-      renderMainGrid("activeGrid", state.formations.filter(f => !f.isTemplate && !isArchived(f)));
+      renderMainGrid(
+        "activeGrid",
+        state.formations.filter(f =>
+          !f.isTemplate &&
+          !isArchived(f) &&
+          (typ === "all" || f.type === typ)
+        )
+      );
       return;
     }
 
+    // Global tasks list across all active sessions, filtered by corps too
     const rows = [];
     state.blocs.forEach(b => {
       const ctx = getBlocContext(b);
-      if (!ctx.formation || ctx.formation.isTemplate) return; // only active sessions
+      if (!ctx.formation || ctx.formation.isTemplate) return;
       if (isArchived(ctx.formation)) return;
+      if (typ !== "all" && ctx.formation.type !== typ) return;
 
       (b.tasks || []).forEach(t => {
         const info = getTaskStatusInfo(t, b.date);
@@ -616,8 +548,7 @@ window.importBackupJSON = async (file) => {
     if (state.currentView === "tasksView") { updateFilterList(); renderTasks(); }
   };
 
-  // renderMainGrid can optionally force "template mode" buttons
-  function renderMainGrid(elId, list, isArchive = false, isTemplateList = false) {
+  function renderMainGrid(elId, list, isArchive = false) {
     const sorted = [...list].sort((a,b) => new Date(a.start || 0) - new Date(b.start || 0));
     document.getElementById(elId).innerHTML = sorted.map(f => {
       const fBlocs = formationAllBlocs(f.id);
@@ -626,7 +557,6 @@ window.importBackupJSON = async (file) => {
       const doneCount = allT.filter(t => t.status === "done").length;
       const prog = allT.length ? Math.round((doneCount / allT.length) * 100) : 0;
 
-      // no more clone icons here, only in templates area further down (modules/blocs screens when in template formation)
       return `
         <div class="card style-${f.type}" onclick="enterFormation('${escId(f.id)}')">
           <div style="display:flex; justify-content:space-between">
@@ -657,7 +587,7 @@ window.importBackupJSON = async (file) => {
   function renderModules() {
     const list = state.modules.filter(m => m.formationId === state.currentFormationId);
     const sorted = [...list].sort((a,b) => (a.name||"").localeCompare(b.name||""));
-    const showClone = isCurrentFormationTemplate(); // ONLY IN TEMPLATE
+    const showClone = isCurrentFormationTemplate();
     document.getElementById("modulesGrid").innerHTML = sorted.map(m => {
       const mBlocs = moduleBlocs(m.id);
       const allT = mBlocs.flatMap(b => b.tasks || []);
@@ -687,7 +617,7 @@ window.importBackupJSON = async (file) => {
   function renderBlocs() {
     const list = state.blocs.filter(b => b.moduleId === state.currentModuleId);
     const sorted = [...list].sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
-    const showClone = isCurrentFormationTemplate(); // ONLY IN TEMPLATE
+    const showClone = isCurrentFormationTemplate();
     document.getElementById("blocsGrid").innerHTML = sorted.map(b => {
       const hasAlert = (b.tasks || []).some(t => getTaskStatusInfo(t, b.date).id === "alert");
       const prog = (b.tasks || []).length ? Math.round((b.tasks.filter(t => t.status === "done").length / b.tasks.length) * 100) : 0;
@@ -1052,12 +982,10 @@ window.importBackupJSON = async (file) => {
     alert("Session déployée ✅");
   };
 
-  // ---------- DUPLICATION (ONLY useful in templates) ----------
+  // ---------- DUPLICATION (ONLY in templates) ----------
   window.cloneModule = (moduleId) => {
     const m = state.modules.find(x => x.id === moduleId);
     if (!m) return alert("Module introuvable");
-
-    // only allow when current formation is template
     if (!isCurrentFormationTemplate()) return;
 
     const newName = prompt("Nom du module dupliqué ?", (m.name || "Module") + " (copie)");
@@ -1080,8 +1008,6 @@ window.importBackupJSON = async (file) => {
   window.cloneBloc = (blocId) => {
     const b = state.blocs.find(x => x.id === blocId);
     if (!b) return alert("Bloc introuvable");
-
-    // only allow when current formation is template
     if (!isCurrentFormationTemplate()) return;
 
     const newName = prompt("Nom du bloc dupliqué ?", (b.name || "Bloc") + " (copie)");
@@ -1172,9 +1098,112 @@ window.importBackupJSON = async (file) => {
   // Fix: back from blocs should go to modules
   document.getElementById("backBtn").onclick = () => showView("modulesView");
 
+  // ---------- SETTINGS MENU (⚙️) ----------
+  window.toggleSettingsMenu = (ev) => {
+    ev?.stopPropagation?.();
+    const menu = document.getElementById("settingsMenu");
+    if (!menu) return;
+    menu.classList.toggle("hidden");
+  };
+  window.closeSettingsMenu = () => {
+    const menu = document.getElementById("settingsMenu");
+    if (!menu) return;
+    menu.classList.add("hidden");
+  };
+  document.addEventListener("click", () => {
+    const menu = document.getElementById("settingsMenu");
+    if (!menu) return;
+    menu.classList.add("hidden");
+  });
+
+  // ---------- BACKUP JSON ----------
+  window.exportBackupJSON = () => {
+    const backup = {
+      exportedAt: new Date().toISOString(),
+      version: 1,
+      appState: {
+        formations: state.formations || [],
+        modules: state.modules || [],
+        blocs: state.blocs || []
+      }
+    };
+
+    const json = JSON.stringify(backup, null, 2);
+
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const fileName = `backup-foi-${yyyy}-${mm}-${dd}.json`;
+
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    URL.revokeObjectURL(url);
+  };
+
+  // ---------- IMPORT JSON ----------
+  window.triggerImport = () => {
+    const input = document.getElementById("importFile");
+    if (!input) return alert("Input fichier introuvable (#importFile).");
+    input.value = "";
+    input.click();
+  };
+
+  function isValidBackupShape(data) {
+    const root = data?.appState ? data.appState : data;
+    return (
+      root &&
+      Array.isArray(root.formations) &&
+      Array.isArray(root.modules) &&
+      Array.isArray(root.blocs)
+    );
+  }
+
+  window.importBackupJSON = async (file) => {
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!isValidBackupShape(data)) {
+        alert("JSON invalide : il doit contenir formations/modules/blocs (ou appState.formations/modules/blocs).");
+        return;
+      }
+
+      const root = data.appState ? data.appState : data;
+
+      const ok = confirm("⚠️ Import : cela va REMPLACER toutes les données (formations/modules/blocs) dans Firestore. Continuer ?");
+      if (!ok) return;
+
+      state.formations = root.formations || [];
+      state.modules = root.modules || [];
+      state.blocs = root.blocs || [];
+
+      state.currentFormationId = null;
+      state.currentModuleId = null;
+      state.currentBlocId = null;
+      state.editingId = null;
+
+      await push();
+      showView("formationsView");
+      alert("✅ Import terminé.");
+    } catch (e) {
+      console.error(e);
+      alert("Erreur import : " + (e?.message || e));
+    }
+  };
+
   // Initial
   refreshUI();
 </script>
 </body>
 </html>
-
