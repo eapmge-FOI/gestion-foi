@@ -60,7 +60,13 @@
     .task-container{margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid var(--bg3);}
     .task-bandeau{display:grid;grid-template-columns:1.6fr 1fr .9fr 80px;align-items:center;padding:15px;cursor:pointer;color:#fff;font-weight:bold;}
     .text-dark{color:#1e293b!important;}
-    .status-select-large{width:100%;padding:10px;border-radius:8px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.9);color:#000;font-weight:bold;cursor:pointer;font-size:.9rem;}
+
+    /* select: choix autorisés (Auto/En cours/Terminé) mais affichage auto séparé */
+    .status-select-large{
+      width:100%;padding:10px;border-radius:8px;border:2px solid rgba(255,255,255,.3);
+      background:rgba(255,255,255,.9);color:#000;font-weight:bold;cursor:pointer;font-size:.9rem;
+    }
+
     .task-desc-area{background:var(--bg3);color:var(--text2);padding:0;max-height:0;overflow:hidden;transition:all .3s ease;}
     .task-desc-area.open{padding:15px;max-height:900px;border-top:1px solid rgba(255,255,255,.1);}
 
@@ -72,37 +78,23 @@
 
     /* ---------- DASHBOARD RAPPELS (latéral) ---------- */
     .alerts-toggle{
-      position:fixed;
-      top:120px;
-      right:0;
-      background:var(--st-alert);
-      color:#fff;
-      padding:10px 14px;
-      border-radius:10px 0 0 10px;
-      cursor:pointer;
-      font-weight:800;
-      z-index:120;
-      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      position:fixed; top:120px; right:0;
+      background:var(--st-alert); color:#fff;
+      padding:10px 14px; border-radius:10px 0 0 10px;
+      cursor:pointer; font-weight:800;
+      z-index:120; box-shadow:0 10px 30px rgba(0,0,0,.35);
       user-select:none;
     }
     .alerts-drawer{
-      position:fixed;
-      top:0;
-      right:-360px;
-      width:360px;
-      height:100%;
-      background:var(--bg2);
-      border-left:1px solid var(--bg3);
-      z-index:119;
-      padding:18px 16px;
-      transition:right .25s ease;
-      overflow-y:auto;
+      position:fixed; top:0; right:-360px;
+      width:360px; height:100%;
+      background:var(--bg2); border-left:1px solid var(--bg3);
+      z-index:119; padding:18px 16px;
+      transition:right .25s ease; overflow-y:auto;
       box-shadow:-10px 0 30px rgba(0,0,0,.35);
     }
     .alerts-drawer.open{ right:0; }
-    .alerts-header{
-      display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
-    }
+    .alerts-header{ display:flex;justify-content:space-between;align-items:center;margin-bottom:12px; }
     .alerts-item{
       border:1px solid rgba(255,255,255,.08);
       background:rgba(0,0,0,.18);
@@ -115,10 +107,19 @@
       background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);
     }
 
-    .kpi{
-      display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;
-    }
+    .kpi{ display:flex;gap:10px;flex-wrap:wrap;margin-top:6px; }
     .kpi .pill{opacity:.95}
+
+    .status-chip{
+      display:inline-block;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:.78rem;
+      font-weight:900;
+      border:1px solid rgba(255,255,255,.15);
+      background:rgba(0,0,0,.18);
+      margin-top:6px;
+    }
   </style>
 </head>
 
@@ -142,11 +143,12 @@
 </div>
 
 <div class="app hidden" id="mainApp">
+
   <div id="formationsView">
     <header>
       <h1>📚 Sessions Actives</h1>
       <div style="display:flex; gap:10px; align-items:center">
-        <!-- SETTINGS (⚙️) -->
+
         <div style="position:relative;">
           <button class="btn-icon" id="settingsBtn" title="Réglages" onclick="toggleSettingsMenu(event)">⚙️</button>
           <div id="settingsMenu" class="hidden" style="
@@ -221,7 +223,7 @@
         <div id="formationKpis" class="kpi"></div>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
-        <button class="btn" style="background:#475569" onclick="exportPDFSession()">📄 PDF Session</button>
+        <button class="btn" style="background:#475569" onclick="exportPDFFormation()">📄 PDF Session</button>
         <button class="btn" onclick="prepareNewModule()">+ Module</button>
       </div>
     </div>
@@ -231,8 +233,14 @@
   <div id="blocsView" class="hidden">
     <div class="mini-header">
       <button class="btn" id="backBtn">← Retour</button>
-      <h2 id="moduleTitle"></h2>
-      <button class="btn" onclick="prepareNewBloc()">+ Bloc</button>
+      <div>
+        <h2 id="moduleTitle"></h2>
+        <div class="muted" id="moduleSubTitle"></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn" style="background:#475569" onclick="exportPDFModule()">📄 PDF Module</button>
+        <button class="btn" onclick="prepareNewBloc()">+ Bloc</button>
+      </div>
     </div>
     <div class="grid" id="blocsGrid"></div>
   </div>
@@ -242,7 +250,6 @@
       <button class="btn" onclick="showView('blocsView')">← Retour</button>
       <div id="blocHeaderInfo"></div>
       <div style="display:flex; gap:10px; align-items:center;">
-        <button class="btn" style="background:#475569" onclick="exportPDFBloc()">📄 PDF Bloc</button>
         <button class="btn" onclick="prepareNewTask()">+ Tâche</button>
       </div>
     </div>
@@ -432,6 +439,9 @@
     if (dt.getFullYear() !== y || (dt.getMonth()+1) !== mo || dt.getDate() !== d) return null;
     return dt;
   }
+  function formatISO(d){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  }
   function isoToEU(iso) {
     const d = parseISOToLocalDate(iso);
     if (!d) return "";
@@ -509,7 +519,7 @@
     });
   }
 
-  // ------------------ DATE CALCS & STATUS ------------------
+  // ------------------ DATE CALCS ------------------
   function getCalcDate(baseISO, val, unit) {
     const base = parseISOToLocalDate(baseISO);
     if (!base) return null;
@@ -527,73 +537,72 @@
     return d;
   }
 
-  // Règles demandées :
-  // - Sélection manuelle possible uniquement : "" (auto) / progress (en cours) / done (terminé)
-  // - Auto :
-  //   * Avant start => not_started
-  //   * Entre start et (end - 8 jours) => todo
-  //   * À 7 jours avant end (et après) si pas done => alert
+  // ------------------ STATUS (affichage auto + override manuel) ------------------
+  // override possible: "" (auto) / progress / done
+  // affichage dans le bandeau: si override="" => on affiche le statut calculé (pas "Auto")
   function getTaskStatusInfo(task, blocDateISO) {
     const today = todayLocal();
     const start = getCalcDate(blocDateISO, task.sVal, task.sUnit);
     const end = getCalcDate(blocDateISO, task.eVal, task.eUnit);
 
-    const manual = (task.status ?? "").trim(); // "" => auto
+    const override = (task.status ?? "").trim(); // "" => auto
 
-    // Manuel prioritaire
-    if (manual === "done" || manual === "progress") {
-      const mapManual = {
-        progress: { rank: 3, color: "var(--st-progress)", dark: false },
-        done: { rank: 5, color: "var(--st-done)", dark: false },
+    // manuel
+    if (override === "done" || override === "progress") {
+      const map = {
+        progress: { id:"progress", label:"En cours", rank: 3, color: "var(--st-progress)", dark:false },
+        done:     { id:"done",     label:"Terminé", rank: 5, color: "var(--st-done)",     dark:false },
       };
-      const info = mapManual[manual];
+      const info = map[override];
       return {
         ...info,
-        id: manual,
         startStr: start ? isoToEU(formatISO(start)) : "---",
         endStr: end ? isoToEU(formatISO(end)) : "---",
-        endTime: end ? end.getTime() : Number.POSITIVE_INFINITY,
+        endTime: end ? end.getTime() : Number.POSITIVE_INFINITY
       };
     }
 
-    // Auto si pas de date de bloc => on ne peut pas calculer : on met "À faire"
-    const hasBlocDate = !!parseISOToLocalDate(blocDateISO);
+    // auto (si dates manquantes => "À faire")
+    let autoId = "todo";
 
-    let statusAuto = "todo";
-    if (!hasBlocDate || !start || !end) {
-      statusAuto = "todo";
+    if (!start || !end) {
+      autoId = "todo";
     } else {
+      const diff = end.getTime() - today.getTime();
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      const diff = end.getTime() - today.getTime(); // ms
 
-      if (today.getTime() < start.getTime()) statusAuto = "not_started";
-      else if (diff <= sevenDays) statusAuto = "alert"; // 7 jours avant (et après)
-      else statusAuto = "todo"; // jusqu'à 8 jours avant fin (diff >= 8 jours)
+      if (today.getTime() < start.getTime()) autoId = "not_started";
+      else if (diff <= sevenDays) autoId = "alert"; // 7 jours avant fin et après, tant que pas terminé
+      else autoId = "todo"; // entre début et 8 jours avant fin (incl.)
     }
 
-    const map = {
-      alert:      { rank: 1, color: "var(--st-alert)",    dark: false },
-      todo:       { rank: 2, color: "var(--st-todo)",     dark: true  },
-      progress:   { rank: 3, color: "var(--st-progress)", dark: false },
-      not_started:{ rank: 4, color: "var(--st-none)",     dark: true  },
-      done:       { rank: 5, color: "var(--st-done)",     dark: false },
+    const mapAuto = {
+      alert:      { id:"alert",      label:"⚠️ RAPPEL",    rank: 1, color: "var(--st-alert)", dark:false },
+      todo:       { id:"todo",       label:"À faire",      rank: 2, color: "var(--st-todo)",  dark:true  },
+      not_started:{ id:"not_started",label:"Pas commencé", rank: 4, color: "var(--st-none)",  dark:true  },
     };
 
-    const info = map[statusAuto] || map.todo;
+    const info = mapAuto[autoId] || mapAuto.todo;
     return {
       ...info,
-      id: statusAuto,
       startStr: start ? isoToEU(formatISO(start)) : "---",
       endStr: end ? isoToEU(formatISO(end)) : "---",
-      endTime: end ? end.getTime() : Number.POSITIVE_INFINITY,
+      endTime: end ? end.getTime() : Number.POSITIVE_INFINITY
     };
   }
 
-  function formatISO(d){
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  function statusLabel(id) {
+    const map = {
+      alert: "⚠️ RAPPEL",
+      not_started: "Pas commencé",
+      todo: "À faire",
+      progress: "En cours",
+      done: "Terminé"
+    };
+    return map[id] || id;
   }
 
-  // ------------------ RELATION HELPERS ------------------
+  // ------------------ RELATIONS ------------------
   function formationModules(formationId) { return state.modules.filter(m => m.formationId === formationId); }
   function moduleBlocs(moduleId) { return state.blocs.filter(b => b.moduleId === moduleId); }
   function formationAllBlocs(formationId) { return formationModules(formationId).flatMap(m => moduleBlocs(m.id)); }
@@ -619,7 +628,6 @@
       .filter((v, i, a) => a.indexOf(v) === i)
       .sort((a,b) => a.localeCompare(b,'fr'));
   }
-
   function buildRespOptions(selected, allowEmpty = true) {
     const list = Array.isArray(state.settings?.responsibles) ? state.settings.responsibles : [];
     let html = "";
@@ -627,7 +635,6 @@
     html += list.map(r => `<option value="${escapeHtml(r)}" ${selected===r ? "selected":""}>${escapeHtml(r)}</option>`).join("");
     return html;
   }
-
   function refreshRespSelects() {
     const mSel = document.getElementById("moduleRespSelect");
     const b1 = document.getElementById("blocR1Select");
@@ -655,7 +662,7 @@
     refreshUI();
   };
 
-  // ------------------ GLOBAL FILTER LIST ------------------
+  // ------------------ FILTER LISTS ------------------
   function updateGlobalFilterList() {
     const sel = document.getElementById("globalRespFilter");
     if (!sel) return;
@@ -668,12 +675,24 @@
     sel.innerHTML = html;
   }
 
+  function updateTaskRespFilterList() {
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b) return;
+    const select = document.getElementById("respFilter");
+    const currentVal = select.value;
+
+    const fromSettings = new Set(state.settings?.responsibles || []);
+    (b.tasks || []).forEach(t => { if (t.resp) fromSettings.add(String(t.resp).trim().toUpperCase()); });
+
+    const names = [...fromSettings].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));
+
+    let html = '<option value="all">Tous</option>';
+    names.forEach(n => { html += `<option value="${escapeHtml(n)}" ${currentVal === n ? "selected" : ""}>${escapeHtml(n)}</option>`; });
+    select.innerHTML = html;
+  }
+
   // ------------------ ALERTS DRAWER ------------------
-  window.toggleAlertsDrawer = () => {
-    const drawer = document.getElementById("alertsDrawer");
-    if (!drawer) return;
-    drawer.classList.toggle("open");
-  };
+  window.toggleAlertsDrawer = () => document.getElementById("alertsDrawer")?.classList.toggle("open");
 
   function renderAlertsDrawer({ resp, typ }) {
     const toggle = document.getElementById("alertsToggle");
@@ -682,7 +701,6 @@
     if (!toggle || !countEl || !box) return;
 
     const rows = [];
-
     state.blocs.forEach(b => {
       const ctx = getBlocContext(b);
       if (!ctx.formation || ctx.formation.isTemplate) return;
@@ -806,9 +824,10 @@
     `).join("") : `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche pour ces filtres</div>`;
   };
 
-  // ------------------ UI / RENDER ------------------
+  // ------------------ UI REFRESH ------------------
   window.refreshUI = () => {
     refreshRespSelects();
+
     if (state.currentView === "formationsView") {
       updateGlobalFilterList();
       renderGlobalOrSessions();
@@ -817,7 +836,7 @@
     if (state.currentView === "templatesListView") renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate), false);
     if (state.currentView === "modulesView") renderModules();
     if (state.currentView === "blocsView") renderBlocs();
-    if (state.currentView === "tasksView") { updateFilterList(); renderTasks(); }
+    if (state.currentView === "tasksView") { updateTaskRespFilterList(); renderTasks(); }
   };
 
   function computeFormationKpis(formationId) {
@@ -863,7 +882,7 @@
       const prog = allT.length ? Math.round((doneCount / allT.length) * 100) : 0;
 
       return `
-        <div class="card style-${escapeHtml(f.type)}" onclick="enterFormation('${escId(f.id)}')" tabindex="0" role="button">
+        <div class="card style-${escapeHtml(f.type)}" onclick="enterFormation('${escId(f.id)}')">
           <div style="display:flex; justify-content:space-between">
             <h3>${escapeHtml(f.name)}</h3>
             ${hasAlert && !isArchive && !f.isTemplate ? '<span class="alert-badge">RAPPEL</span>' : ''}
@@ -904,7 +923,7 @@
       const prog = allT.length ? Math.round((doneCount / allT.length) * 100) : 0;
 
       return `
-        <div class="card" onclick="enterModule('${escId(m.id)}')" tabindex="0" role="button">
+        <div class="card" onclick="enterModule('${escId(m.id)}')">
           <div style="display:flex; justify-content:space-between">
             <h3>${escapeHtml(m.name)}</h3>
             ${hasAlert ? '<span class="alert-badge">!</span>' : ''}
@@ -938,7 +957,7 @@
       const prog = (b.tasks || []).length ? Math.round((doneCount / b.tasks.length) * 100) : 0;
 
       return `
-        <div class="card" onclick="enterBloc('${escId(b.id)}')" tabindex="0" role="button">
+        <div class="card" onclick="enterBloc('${escId(b.id)}')">
           <div style="display:flex; justify-content:space-between">
             <h3>${escapeHtml(b.name)}</h3>
             ${hasAlert ? '<span class="alert-badge">!</span>' : ''}
@@ -958,31 +977,15 @@
     }).join("");
   }
 
-  function updateFilterList() {
-    const b = state.blocs.find(x => x.id === state.currentBlocId);
-    if (!b) return;
-    const select = document.getElementById("respFilter");
-    const currentVal = select.value;
-
-    const fromSettings = new Set(state.settings?.responsibles || []);
-    (b.tasks || []).forEach(t => { if (t.resp) fromSettings.add(String(t.resp).trim().toUpperCase()); });
-
-    const names = [...fromSettings].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));
-
-    let html = '<option value="all">Tous</option>';
-    names.forEach(n => { html += `<option value="${escapeHtml(n)}" ${currentVal === n ? "selected" : ""}>${escapeHtml(n)}</option>`; });
-    select.innerHTML = html;
-  }
-
-  // ------------------ REMARQUES : modification locale + bouton enregistrer ------------------
+  // ------------------ REMARQUES (brouillon + save bouton) ------------------
   window.updateTaskRemarkDraft = (taskId, value) => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b || !b.tasks) return;
     const t = b.tasks.find(x => x.id === taskId);
     if (!t) return;
 
-    t.remarqueDraft = value;         // brouillon (non enregistré)
-    t.remarqueDirty = true;          // flag UI
+    t.remarqueDraft = value;
+    t.remarqueDirty = true;
     const btn = document.getElementById(`save-remark-${taskId}`);
     if (btn) btn.disabled = false;
   };
@@ -995,9 +998,6 @@
 
     t.remarque = t.remarqueDraft ?? t.remarque ?? "";
     t.remarqueDirty = false;
-
-    // option : on peut supprimer le draft après save
-    // t.remarqueDraft = undefined;
 
     const btn = document.getElementById(`save-remark-${taskId}`);
     if (btn) btn.disabled = true;
@@ -1028,8 +1028,8 @@
       const info = getTaskStatusInfo(t, b.date);
       const isOpen = state.openTaskIds.has(String(t.id));
 
-      const manual = (t.status ?? "").trim(); // ""=auto
-      const selectValue = (manual === "done" || manual === "progress") ? manual : "";
+      const override = (t.status ?? "").trim();
+      const selectValue = (override === "done" || override === "progress") ? override : "";
 
       const remarkValue = (t.remarqueDirty ? (t.remarqueDraft ?? t.remarque ?? "") : (t.remarque ?? ""));
       const remarkDirty = !!t.remarqueDirty;
@@ -1040,16 +1040,20 @@
             <div>
               <div style="font-size: 1.05rem">${escapeHtml(t.title)}</div>
               <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${escapeHtml(t.resp || "—")}</div>
-              <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">Début : ${escapeHtml(info.startStr)}</div>
+              <div class="status-chip">${escapeHtml(info.label)}</div>
+              <div style="font-size: 0.75rem; font-weight: normal; margin-top:6px">Début : ${escapeHtml(info.startStr)}</div>
             </div>
 
             <div>
-              <!-- état : seulement Auto / En cours / Terminé -->
+              <!-- Choix : Auto/En cours/Terminé. Mais l'affichage du statut reste not_started/todo/alert -->
               <select class="status-select-large" onclick="event.stopPropagation()" onchange="updateTaskStatus('${escId(t.id)}', this.value)">
                 <option value="" ${selectValue==="" ? "selected" : ""}>Auto</option>
                 <option value="progress" ${selectValue==="progress" ? "selected" : ""}>En cours</option>
                 <option value="done" ${selectValue==="done" ? "selected" : ""}>Terminé</option>
               </select>
+              <div class="muted" style="font-size:.75rem; margin-top:6px">
+                (Choix manuel = override)
+              </div>
             </div>
 
             <div style="font-size: 0.85rem; text-align: center">Échéance : <br>${escapeHtml(info.endStr)}</div>
@@ -1062,9 +1066,8 @@
           <div id="desc-${escapeHtml(t.id)}" class="task-desc-area ${isOpen ? "open" : ""}">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px">
               <div class="muted" style="font-size:.9rem">
-                Affichage auto : <b>${escapeHtml(statusLabel(info.id))}</b> • Échéance: <b>${escapeHtml(info.endStr)}</b>
+                Affichage : <b>${escapeHtml(info.label)}</b> • Échéance: <b>${escapeHtml(info.endStr)}</b>
               </div>
-              <button class="btn-mini" onclick="event.stopPropagation(); exportPDFTask('${escId(t.id)}')">📄 PDF Tâche</button>
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
@@ -1289,6 +1292,9 @@
 
     const existing = state.editingId ? (b.tasks || []).find(x => x.id === state.editingId) : null;
 
+    const prevStatus = (existing?.status ?? "").trim();
+    const keepStatus = (prevStatus === "progress" || prevStatus === "done") ? prevStatus : "";
+
     const t = {
       id: state.editingId || generateId(),
       title: document.getElementById("taskTitle").value || "Sans titre",
@@ -1301,12 +1307,8 @@
       sUnit: document.getElementById("taskStartUnit").value || "weeks",
       eVal: document.getElementById("taskEndVal").value || 0,
       eUnit: document.getElementById("taskEndUnit").value || "weeks",
-      // état manuel : "" = auto ; seuls progress/done sont permis
-      status: existing ? ((existing.status ?? "").trim()) : ""
+      status: keepStatus
     };
-
-    // si ancien état était autre chose (todo/not_started/alert), on repasse en auto
-    if (t.status !== "progress" && t.status !== "done") t.status = "";
 
     if (state.editingId) b.tasks = (b.tasks || []).map(x => x.id === state.editingId ? t : x);
     else { if (!b.tasks) b.tasks = []; b.tasks.push(t); }
@@ -1348,7 +1350,7 @@
         const newTasks = (b.tasks || []).map(t => ({
           ...t,
           id: generateId(),
-          status: "",
+          status: "",               // auto par défaut
           remarque: "",
           remarqueDraft: "",
           remarqueDirty: false
@@ -1408,7 +1410,6 @@
     const t = (b.tasks || []).find(x => x.id === tId);
     if (!t) return;
 
-    // seuls autorisés : "" / progress / done
     const v = (newStat ?? "").trim();
     if (v === "progress" || v === "done" || v === "") {
       t.status = v;
@@ -1457,7 +1458,6 @@
 
   // ------------------ NAV ------------------
   window.showView = (id) => {
-    if (["formationsView","templatesListView","archivesView"].includes(id)) state.lastParentView = id;
     state.currentView = id;
     document.querySelectorAll(".app > div").forEach(d => d.classList.add("hidden"));
     const el = document.getElementById(id);
@@ -1476,7 +1476,8 @@
   window.enterModule = (id) => {
     state.currentModuleId = id;
     const m = state.modules.find(x => x.id === id);
-    document.getElementById("moduleTitle").textContent = m ? `${m.name || ""} — Resp: ${m.resp||"—"}` : "";
+    document.getElementById("moduleTitle").textContent = m ? (m.name || "") : "";
+    document.getElementById("moduleSubTitle").textContent = m ? `Resp: ${m.resp||"—"}` : "";
     showView("blocsView");
   };
 
@@ -1498,15 +1499,9 @@
   // ------------------ SETTINGS MENU ------------------
   window.toggleSettingsMenu = (ev) => {
     ev?.stopPropagation?.();
-    const menu = document.getElementById("settingsMenu");
-    if (!menu) return;
-    menu.classList.toggle("hidden");
+    document.getElementById("settingsMenu")?.classList.toggle("hidden");
   };
-  window.closeSettingsMenu = () => {
-    const menu = document.getElementById("settingsMenu");
-    if (!menu) return;
-    menu.classList.add("hidden");
-  };
+  window.closeSettingsMenu = () => document.getElementById("settingsMenu")?.classList.add("hidden");
   document.addEventListener("click", () => closeSettingsMenu());
 
   // ------------------ BACKUP JSON ------------------
@@ -1608,19 +1603,8 @@
   function safe(v){ return (v===null || v===undefined) ? "" : String(v); }
   function downloadPDF(doc, filename) { doc.save(filename); }
 
-  function statusLabel(id) {
-    const map = {
-      alert: "⚠️ RAPPEL",
-      not_started: "Pas commencé",
-      todo: "À faire",
-      progress: "En cours",
-      done: "Terminé"
-    };
-    return map[id] || id;
-  }
-
-  // PDF Session (formation)
-  window.exportPDFSession = () => {
+  // PDF Formation : entier d'une formation
+  window.exportPDFFormation = () => {
     const f = state.formations.find(x => x.id === state.currentFormationId);
     if (!f) return alert("Session introuvable");
 
@@ -1648,7 +1632,8 @@
             safe(t.resp || ""),
             statusLabel(info.id),
             info.startStr,
-            info.endStr
+            info.endStr,
+            safe(t.remarque || "")
           ]);
         }
       }
@@ -1659,8 +1644,8 @@
 
       doc.autoTable({
         startY: y,
-        head: [[ "Module", "Resp M.", "Bloc", "Date bloc", "Tâche", "Resp T.", "État", "Début", "Échéance" ]],
-        body: rows.length ? rows : [[ safe(m.name), safe(m.resp||""), "—", "—", "Aucune tâche", "", "", "", "" ]],
+        head: [[ "Module", "Resp M.", "Bloc", "Date bloc", "Tâche", "Resp T.", "État", "Début", "Échéance", "Remarques" ]],
+        body: rows.length ? rows : [[ safe(m.name), safe(m.resp||""), "—", "—", "Aucune tâche", "", "", "", "", "" ]],
         styles: { fontSize: 8, cellPadding: 1.6 },
         headStyles: { fillColor: [30,41,59] },
         margin: { left: 14, right: 14 }
@@ -1674,96 +1659,51 @@
     downloadPDF(doc, filename);
   };
 
-  // PDF Bloc
-  window.exportPDFBloc = () => {
-    const b = state.blocs.find(x => x.id === state.currentBlocId);
-    if (!b) return alert("Bloc introuvable");
-    const ctx = getBlocContext(b);
-    const f = ctx.formation;
-    const m = ctx.module;
+  // PDF Module : entier d'un module (dans la formation courante)
+  window.exportPDFModule = () => {
+    const m = state.modules.find(x => x.id === state.currentModuleId);
+    if (!m) return alert("Module introuvable");
 
+    const f = state.formations.find(x => x.id === m.formationId);
     const doc = getPDF();
     doc.setFontSize(16);
-    doc.text(`Bloc : ${safe(b.name)}`, 14, 18);
+    doc.text(`Module : ${safe(m.name)}`, 14, 18);
     doc.setFontSize(11);
-    doc.text(`Session : ${safe(f?.name||"—")}   |   Module : ${safe(m?.name||"—")}`, 14, 26);
-    doc.text(`Date bloc : ${b.date ? isoToEU(b.date) : "—"}   |   Resp bloc : ${[b.r1,b.r2].filter(Boolean).join(" / ") || "—"}`, 14, 32);
+    doc.text(`Session : ${safe(f?.name || "—")}   |   Resp: ${safe(m.resp||"—")}`, 14, 26);
 
-    const rows = (b.tasks || []).map(t => {
-      const info = getTaskStatusInfo(t, b.date);
-      return [
-        safe(t.title),
-        safe(t.resp||""),
-        statusLabel(info.id),
-        info.startStr,
-        info.endStr,
-        safe(t.desc||""),
-        safe(t.remarque||"")
-      ];
-    });
+    const blocs = moduleBlocs(m.id).slice().sort((a,b)=> (parseISOToLocalDate(a.date)?.getTime() ?? 0) - (parseISOToLocalDate(b.date)?.getTime() ?? 0));
+    const rows = [];
+
+    for (const b of blocs) {
+      for (const t of (b.tasks || [])) {
+        const info = getTaskStatusInfo(t, b.date);
+        rows.push([
+          safe(b.name),
+          b.date ? isoToEU(b.date) : "",
+          safe(t.title),
+          safe(t.resp || ""),
+          statusLabel(info.id),
+          info.startStr,
+          info.endStr,
+          safe(t.remarque || "")
+        ]);
+      }
+    }
 
     doc.autoTable({
-      startY: 40,
-      head: [[ "Tâche", "Resp", "État", "Début", "Échéance", "Instructions", "Remarques" ]],
-      body: rows.length ? rows : [[ "Aucune tâche", "", "", "", "", "", "" ]],
+      startY: 34,
+      head: [[ "Bloc", "Date bloc", "Tâche", "Resp", "État", "Début", "Échéance", "Remarques" ]],
+      body: rows.length ? rows : [[ "—", "—", "Aucune tâche", "", "", "", "", "" ]],
       styles: { fontSize: 8, cellPadding: 1.6 },
       headStyles: { fillColor: [30,41,59] },
       margin: { left: 14, right: 14 }
     });
 
-    const filename = `PDF-Bloc-${safe(b.name).replace(/\s+/g,"_")}.pdf`;
+    const filename = `PDF-Module-${safe(m.name).replace(/\s+/g,"_")}.pdf`;
     downloadPDF(doc, filename);
   };
-
-  // PDF Tâche
-  window.exportPDFTask = (taskId) => {
-    const b = state.blocs.find(x => x.id === state.currentBlocId);
-    if (!b) return alert("Bloc introuvable");
-    const t = (b.tasks || []).find(x => x.id === taskId);
-    if (!t) return alert("Tâche introuvable");
-    const ctx = getBlocContext(b);
-
-    const info = getTaskStatusInfo(t, b.date);
-
-    const doc = getPDF();
-    doc.setFontSize(16);
-    doc.text(`Tâche : ${safe(t.title)}`, 14, 18);
-    doc.setFontSize(11);
-    doc.text(`Resp : ${safe(t.resp||"—")}   |   État : ${statusLabel(info.id)}`, 14, 26);
-    doc.text(`Session : ${safe(ctx.formation?.name||"—")}`, 14, 32);
-    doc.text(`Module : ${safe(ctx.module?.name||"—")}`, 14, 38);
-    doc.text(`Bloc : ${safe(b.name)}   |   Date bloc : ${b.date ? isoToEU(b.date) : "—"}`, 14, 44);
-    doc.text(`Début : ${info.startStr}   |   Échéance : ${info.endStr}`, 14, 50);
-
-    doc.setFontSize(12);
-    doc.text("Instructions :", 14, 62);
-    doc.setFontSize(10);
-    const lines1 = doc.splitTextToSize(safe(t.desc||"—"), 180);
-    doc.text(lines1, 14, 68);
-
-    const y2 = 68 + (lines1.length * 5) + 8;
-    doc.setFontSize(12);
-    doc.text("Remarques :", 14, y2);
-    doc.setFontSize(10);
-    const lines2 = doc.splitTextToSize(safe(t.remarque||"—"), 180);
-    doc.text(lines2, 14, y2 + 6);
-
-    const filename = `PDF-Tache-${safe(t.title).replace(/\s+/g,"_")}.pdf`;
-    downloadPDF(doc, filename);
-  };
-
-  // ------------------ MODALS SETTINGS ------------------
-  window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-  window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
-
-  // ------------------ FILTERS ------------------
-  function updateGlobalFilterListAndRender(){
-    updateGlobalFilterList();
-    renderGlobalOrSessions();
-  }
 
   // ------------------ INIT ------------------
-  // refreshUI() est appelé après sync, mais on laisse un premier rendu à vide.
   refreshUI();
 </script>
 </body>
