@@ -46,10 +46,11 @@
     .btn{background:var(--primary);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold;}
     .btn-icon{background:rgba(0,0,0,.1);border:none;color:inherit;cursor:pointer;padding:7px;border-radius:6px;}
     .btn-mini{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:800;}
+    .btn-mini[disabled]{opacity:.5;cursor:not-allowed;}
 
     .filter-bar{
       background:var(--bg2);padding:15px 20px;border-radius:10px;margin-bottom:15px;
-      display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr;gap:20px;border:1px solid var(--bg3);
+      display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;border:1px solid var(--bg3);
       align-items:end;
     }
     .filter-group{display:flex;flex-direction:column;gap:5px;}
@@ -168,7 +169,7 @@
       </div>
     </header>
 
-    <!-- GLOBAL FILTERS + SEARCH -->
+    <!-- GLOBAL FILTERS (sans recherche) -->
     <div class="filter-bar">
       <div class="filter-group">
         <label>Responsable (global)</label>
@@ -195,10 +196,6 @@
           <option value="polcant">PolCant</option>
           <option value="asp">ASP</option>
         </select>
-      </div>
-      <div class="filter-group">
-        <label>Recherche (global)</label>
-        <input id="globalSearch" placeholder="Titre, resp, session, module, bloc..." oninput="renderGlobalOrSessions()">
       </div>
     </div>
 
@@ -408,13 +405,12 @@
     openTaskIds: new Set(),
   };
 
-  // ------------------ UTILS (safe ids + XSS) ------------------
+  // ------------------ UTILS ------------------
   function generateId() {
     try { return crypto.randomUUID(); }
     catch { return Date.now().toString(36) + Math.floor(Math.random()*100000).toString(36); }
   }
   function escId(v) { return String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
-
   function escapeHtml(v) {
     const s = String(v ?? "");
     return s
@@ -425,29 +421,22 @@
       .replaceAll("'", "&#039;");
   }
 
-  // ------------------ DATE HELPERS (robuste local) ------------------
+  // ------------------ DATE (local, robuste) ------------------
   function parseISOToLocalDate(iso) {
-    // iso: YYYY-MM-DD
     if (!iso || typeof iso !== "string") return null;
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
     if (!m) return null;
     const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
     const dt = new Date(y, mo - 1, d);
     dt.setHours(0,0,0,0);
-    // Vérif anti-overflow (31/02 etc.)
     if (dt.getFullYear() !== y || (dt.getMonth()+1) !== mo || dt.getDate() !== d) return null;
     return dt;
   }
-
   function isoToEU(iso) {
     const d = parseISOToLocalDate(iso);
     if (!d) return "";
-    const day = String(d.getDate()).padStart(2, "0");
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const year = d.getFullYear();
-    return `${day}.${month}.${year}`;
+    return `${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")}.${d.getFullYear()}`;
   }
-
   function euToISO(eu) {
     if (!eu) return "";
     const parts = eu.split(".");
@@ -457,16 +446,8 @@
     const iso = `${yyyy}-${mm.padStart(2,"0")}-${dd.padStart(2,"0")}`;
     return parseISOToLocalDate(iso) ? iso : "";
   }
-
-  function isValidEUDate(eu) {
-    return !!euToISO(eu);
-  }
-
-  function todayLocal() {
-    const t = new Date();
-    t.setHours(0,0,0,0);
-    return t;
-  }
+  function isValidEUDate(eu) { return !!euToISO(eu); }
+  function todayLocal() { const t = new Date(); t.setHours(0,0,0,0); return t; }
 
   // ------------------ PROGRESS COLOR ------------------
   function progressColor(p) {
@@ -528,19 +509,8 @@
     });
   }
 
-  // Petit confort : réduire les rafales d'écriture
-  let pushTimer = null;
-  function pushDebounced(ms = 350) {
-    if (pushTimer) clearTimeout(pushTimer);
-    pushTimer = setTimeout(() => {
-      pushTimer = null;
-      push().catch(console.error);
-    }, ms);
-  }
-
   // ------------------ DATE CALCS & STATUS ------------------
   function getCalcDate(baseISO, val, unit) {
-    // date "référence" = bloc.date ; val = nb à soustraire
     const base = parseISOToLocalDate(baseISO);
     if (!base) return null;
 
@@ -557,27 +527,48 @@
     return d;
   }
 
+  // Règles demandées :
+  // - Sélection manuelle possible uniquement : "" (auto) / progress (en cours) / done (terminé)
+  // - Auto :
+  //   * Avant start => not_started
+  //   * Entre start et (end - 8 jours) => todo
+  //   * À 7 jours avant end (et après) si pas done => alert
   function getTaskStatusInfo(task, blocDateISO) {
     const today = todayLocal();
     const start = getCalcDate(blocDateISO, task.sVal, task.sUnit);
     const end = getCalcDate(blocDateISO, task.eVal, task.eUnit);
 
-    let status = task.status || "todo";
+    const manual = (task.status ?? "").trim(); // "" => auto
 
-    // Normalisation : si aucune date de bloc, on ne force pas not_started/alert (tu peux changer si tu veux)
-    const hasBlocDate = !!parseISOToLocalDate(blocDateISO);
-
-    if (hasBlocDate && (status === "todo" || status === "not_started")) {
-      if (start && today < start) status = "not_started";
-      else if (start && today >= start && (!end || today < end)) status = "todo";
-      else if (start && end && today >= end) status = "todo"; // le passage en alert se gère plus bas
+    // Manuel prioritaire
+    if (manual === "done" || manual === "progress") {
+      const mapManual = {
+        progress: { rank: 3, color: "var(--st-progress)", dark: false },
+        done: { rank: 5, color: "var(--st-done)", dark: false },
+      };
+      const info = mapManual[manual];
+      return {
+        ...info,
+        id: manual,
+        startStr: start ? isoToEU(formatISO(start)) : "---",
+        endStr: end ? isoToEU(formatISO(end)) : "---",
+        endTime: end ? end.getTime() : Number.POSITIVE_INFINITY,
+      };
     }
 
-    // Alert uniquement si pas done/progress
-    if (hasBlocDate && status !== "done" && status !== "progress") {
+    // Auto si pas de date de bloc => on ne peut pas calculer : on met "À faire"
+    const hasBlocDate = !!parseISOToLocalDate(blocDateISO);
+
+    let statusAuto = "todo";
+    if (!hasBlocDate || !start || !end) {
+      statusAuto = "todo";
+    } else {
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      if (end && today >= end) status = "alert";
-      else if (end && (end.getTime() - today.getTime()) <= sevenDays) status = "alert";
+      const diff = end.getTime() - today.getTime(); // ms
+
+      if (today.getTime() < start.getTime()) statusAuto = "not_started";
+      else if (diff <= sevenDays) statusAuto = "alert"; // 7 jours avant (et après)
+      else statusAuto = "todo"; // jusqu'à 8 jours avant fin (diff >= 8 jours)
     }
 
     const map = {
@@ -588,20 +579,18 @@
       done:       { rank: 5, color: "var(--st-done)",     dark: false },
     };
 
-    const info = map[status] || map.todo;
-
-    const startISO = start ? `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,"0")}-${String(start.getDate()).padStart(2,"0")}` : "";
-    const endISO   = end   ? `${end.getFullYear()}-${String(end.getMonth()+1).padStart(2,"0")}-${String(end.getDate()).padStart(2,"0")}` : "";
-
+    const info = map[statusAuto] || map.todo;
     return {
       ...info,
-      id: status,
-      startISO,
-      endISO,
-      startStr: start ? isoToEU(startISO) : "---",
-      endStr: end ? isoToEU(endISO) : "---",
-      endTime: end ? end.getTime() : Number.POSITIVE_INFINITY
+      id: statusAuto,
+      startStr: start ? isoToEU(formatISO(start)) : "---",
+      endStr: end ? isoToEU(formatISO(end)) : "---",
+      endTime: end ? end.getTime() : Number.POSITIVE_INFINITY,
     };
+  }
+
+  function formatISO(d){
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
   }
 
   // ------------------ RELATION HELPERS ------------------
@@ -666,7 +655,7 @@
     refreshUI();
   };
 
-  // ------------------ GLOBAL FILTERS ------------------
+  // ------------------ GLOBAL FILTER LIST ------------------
   function updateGlobalFilterList() {
     const sel = document.getElementById("globalRespFilter");
     if (!sel) return;
@@ -679,38 +668,6 @@
     sel.innerHTML = html;
   }
 
-  function includesQuery(text, q) {
-    if (!q) return true;
-    return String(text || "").toLowerCase().includes(q);
-  }
-
-  function formationMatchesQuery(formationId, q) {
-    if (!q) return true;
-    const f = state.formations.find(x => x.id === formationId);
-    if (!f) return false;
-    const query = q.toLowerCase();
-
-    if (includesQuery(f.name, query) || includesQuery(f.type, query)) return true;
-
-    const mods = formationModules(formationId);
-    for (const m of mods) {
-      if (includesQuery(m.name, query) || includesQuery(m.resp, query)) return true;
-      const blocs = moduleBlocs(m.id);
-      for (const b of blocs) {
-        if (includesQuery(b.name, query) || includesQuery(b.r1, query) || includesQuery(b.r2, query)) return true;
-        for (const t of (b.tasks || [])) {
-          if (
-            includesQuery(t.title, query) ||
-            includesQuery(t.desc, query) ||
-            includesQuery(t.remarque, query) ||
-            includesQuery(t.resp, query)
-          ) return true;
-        }
-      }
-    }
-    return false;
-  }
-
   // ------------------ ALERTS DRAWER ------------------
   window.toggleAlertsDrawer = () => {
     const drawer = document.getElementById("alertsDrawer");
@@ -718,13 +675,12 @@
     drawer.classList.toggle("open");
   };
 
-  function renderAlertsDrawer({ resp, typ, q }) {
+  function renderAlertsDrawer({ resp, typ }) {
     const toggle = document.getElementById("alertsToggle");
     const countEl = document.getElementById("alertsCount");
     const box = document.getElementById("alertsDrawerContent");
     if (!toggle || !countEl || !box) return;
 
-    const query = (q || "").trim().toLowerCase();
     const rows = [];
 
     state.blocs.forEach(b => {
@@ -737,9 +693,6 @@
         const info = getTaskStatusInfo(t, b.date);
         if (info.id !== "alert") return;
         if (resp !== "all" && (t.resp || "") !== resp) return;
-
-        const hay = `${t.title||""} ${t.resp||""} ${ctx.formation.name||""} ${ctx.module?.name||""} ${b.name||""}`.toLowerCase();
-        if (query && !hay.includes(query)) return;
 
         rows.push({
           endTime: info.endTime,
@@ -786,10 +739,8 @@
     const resp = document.getElementById("globalRespFilter")?.value || "all";
     const stat = document.getElementById("globalStatusFilter")?.value || "all";
     const typ  = document.getElementById("globalTypeFilter")?.value || "all";
-    const q    = document.getElementById("globalSearch")?.value || "";
-    const query = q.trim().toLowerCase();
 
-    renderAlertsDrawer({ resp, typ, q });
+    renderAlertsDrawer({ resp, typ });
 
     const wantsGlobal = (resp !== "all" || stat !== "all");
 
@@ -804,8 +755,7 @@
       const list = state.formations.filter(f =>
         !f.isTemplate &&
         !isArchived(f) &&
-        (typ === "all" || f.type === typ) &&
-        formationMatchesQuery(f.id, query)
+        (typ === "all" || f.type === typ)
       );
 
       renderMainGrid("activeGrid", list, false);
@@ -823,9 +773,6 @@
         const info = getTaskStatusInfo(t, b.date);
         if (resp !== "all" && (t.resp || "") !== resp) return;
         if (stat !== "all" && info.id !== stat) return;
-
-        const hay = `${t.title||""} ${t.resp||""} ${ctx.formation.name||""} ${ctx.module?.name||""} ${b.name||""}`.toLowerCase();
-        if (query && !hay.includes(query)) return;
 
         rows.push({
           rank: info.rank, color: info.color, dark: info.dark, status: info.id,
@@ -912,7 +859,7 @@
       const fBlocs = formationAllBlocs(f.id);
       const allT = fBlocs.flatMap(b => b.tasks || []);
       const hasAlert = fBlocs.some(b => (b.tasks || []).some(t => getTaskStatusInfo(t, b.date).id === "alert"));
-      const doneCount = allT.filter(t => t.status === "done").length;
+      const doneCount = allT.filter(t => (t.status || "").trim() === "done").length;
       const prog = allT.length ? Math.round((doneCount / allT.length) * 100) : 0;
 
       return `
@@ -953,7 +900,8 @@
       const mBlocs = moduleBlocs(m.id);
       const allT = mBlocs.flatMap(b => b.tasks || []);
       const hasAlert = mBlocs.some(b => (b.tasks || []).some(t => getTaskStatusInfo(t, b.date).id === "alert"));
-      const prog = allT.length ? Math.round((allT.filter(t => t.status === "done").length / allT.length) * 100) : 0;
+      const doneCount = allT.filter(t => (t.status || "").trim() === "done").length;
+      const prog = allT.length ? Math.round((doneCount / allT.length) * 100) : 0;
 
       return `
         <div class="card" onclick="enterModule('${escId(m.id)}')" tabindex="0" role="button">
@@ -986,7 +934,8 @@
 
     document.getElementById("blocsGrid").innerHTML = sorted.map(b => {
       const hasAlert = (b.tasks || []).some(t => getTaskStatusInfo(t, b.date).id === "alert");
-      const prog = (b.tasks || []).length ? Math.round((b.tasks.filter(t => t.status === "done").length / b.tasks.length) * 100) : 0;
+      const doneCount = (b.tasks || []).filter(t => (t.status || "").trim() === "done").length;
+      const prog = (b.tasks || []).length ? Math.round((doneCount / b.tasks.length) * 100) : 0;
 
       return `
         <div class="card" onclick="enterBloc('${escId(b.id)}')" tabindex="0" role="button">
@@ -1025,22 +974,37 @@
     select.innerHTML = html;
   }
 
-  // ------------------ Inline remark (debounced) ------------------
-  const remarkTimers = {};
-  window.updateTaskRemark = (taskId, value) => {
+  // ------------------ REMARQUES : modification locale + bouton enregistrer ------------------
+  window.updateTaskRemarkDraft = (taskId, value) => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b || !b.tasks) return;
     const t = b.tasks.find(x => x.id === taskId);
     if (!t) return;
-    t.remarque = value;
 
-    if (remarkTimers[taskId]) clearTimeout(remarkTimers[taskId]);
-    remarkTimers[taskId] = setTimeout(() => {
-      pushDebounced(0);
-      delete remarkTimers[taskId];
-    }, 700);
+    t.remarqueDraft = value;         // brouillon (non enregistré)
+    t.remarqueDirty = true;          // flag UI
+    const btn = document.getElementById(`save-remark-${taskId}`);
+    if (btn) btn.disabled = false;
   };
-  window.saveTaskRemarkNow = () => push();
+
+  window.saveTaskRemark = async (taskId) => {
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b || !b.tasks) return;
+    const t = b.tasks.find(x => x.id === taskId);
+    if (!t) return;
+
+    t.remarque = t.remarqueDraft ?? t.remarque ?? "";
+    t.remarqueDirty = false;
+
+    // option : on peut supprimer le draft après save
+    // t.remarqueDraft = undefined;
+
+    const btn = document.getElementById(`save-remark-${taskId}`);
+    if (btn) btn.disabled = true;
+
+    await push();
+    refreshUI();
+  };
 
   // ------------------ TASKS RENDER ------------------
   window.renderTasks = () => {
@@ -1063,6 +1027,13 @@
     document.getElementById("tasksList").innerHTML = tasksToRender.map(t => {
       const info = getTaskStatusInfo(t, b.date);
       const isOpen = state.openTaskIds.has(String(t.id));
+
+      const manual = (t.status ?? "").trim(); // ""=auto
+      const selectValue = (manual === "done" || manual === "progress") ? manual : "";
+
+      const remarkValue = (t.remarqueDirty ? (t.remarqueDraft ?? t.remarque ?? "") : (t.remarque ?? ""));
+      const remarkDirty = !!t.remarqueDirty;
+
       return `
         <div class="task-container">
           <div class="task-bandeau ${info.dark ? "text-dark" : ""}" style="background:${info.color}" onclick="toggleDesc('${escId(t.id)}')">
@@ -1071,16 +1042,18 @@
               <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${escapeHtml(t.resp || "—")}</div>
               <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">Début : ${escapeHtml(info.startStr)}</div>
             </div>
+
             <div>
+              <!-- état : seulement Auto / En cours / Terminé -->
               <select class="status-select-large" onclick="event.stopPropagation()" onchange="updateTaskStatus('${escId(t.id)}', this.value)">
-                <option value="not_started" ${info.id==="not_started" ? "selected" : ""}>Pas commencé</option>
-                <option value="todo" ${info.id==="todo" ? "selected" : ""}>À faire</option>
-                <option value="progress" ${info.id==="progress" ? "selected" : ""}>En cours</option>
-                <option value="done" ${info.id==="done" ? "selected" : ""}>Terminé</option>
-                ${info.id==="alert" ? '<option value="alert" selected>⚠️ RAPPEL</option>' : ""}
+                <option value="" ${selectValue==="" ? "selected" : ""}>Auto</option>
+                <option value="progress" ${selectValue==="progress" ? "selected" : ""}>En cours</option>
+                <option value="done" ${selectValue==="done" ? "selected" : ""}>Terminé</option>
               </select>
             </div>
+
             <div style="font-size: 0.85rem; text-align: center">Échéance : <br>${escapeHtml(info.endStr)}</div>
+
             <div style="text-align:right">
               <button class="btn-icon" onclick="event.stopPropagation(); editTask('${escId(t.id)}')">✏️</button>
             </div>
@@ -1088,7 +1061,9 @@
 
           <div id="desc-${escapeHtml(t.id)}" class="task-desc-area ${isOpen ? "open" : ""}">
             <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px">
-              <div class="muted" style="font-size:.9rem">Resp: <b>${escapeHtml(t.resp || "—")}</b> • Échéance: <b>${escapeHtml(info.endStr)}</b></div>
+              <div class="muted" style="font-size:.9rem">
+                Affichage auto : <b>${escapeHtml(statusLabel(info.id))}</b> • Échéance: <b>${escapeHtml(info.endStr)}</b>
+              </div>
               <button class="btn-mini" onclick="event.stopPropagation(); exportPDFTask('${escId(t.id)}')">📄 PDF Tâche</button>
             </div>
 
@@ -1096,17 +1071,28 @@
               <div><strong>Instructions :</strong><br>${escapeHtml(t.desc || "Aucune.")}</div>
 
               <div style="border-left:1px solid rgba(255,255,255,.1); padding-left:20px">
-                <strong>Remarques / Suivi :</strong><br>
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                  <strong>Remarques / Suivi :</strong>
+                  <span class="pill" style="${remarkDirty ? 'background: rgba(251,191,36,.18); border-color: rgba(251,191,36,.35);' : ''}">
+                    ${remarkDirty ? "Modifié" : "Enregistré"}
+                  </span>
+                </div>
+
                 <textarea
                   style="height:90px; margin-top:8px"
                   placeholder="Écrire ici les remarques d'avancement..."
                   onclick="event.stopPropagation()"
-                  oninput="updateTaskRemark('${escId(t.id)}', this.value)"
-                >${escapeHtml(t.remarque || "")}</textarea>
+                  oninput="updateTaskRemarkDraft('${escId(t.id)}', this.value)"
+                >${escapeHtml(remarkValue)}</textarea>
 
                 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px">
-                  <button class="btn" style="padding:6px 10px; font-size:0.8rem"
-                    onclick="event.stopPropagation(); saveTaskRemarkNow()">
+                  <button
+                    id="save-remark-${escapeHtml(t.id)}"
+                    class="btn"
+                    style="padding:6px 10px; font-size:0.8rem"
+                    onclick="event.stopPropagation(); saveTaskRemark('${escId(t.id)}')"
+                    ${remarkDirty ? "" : "disabled"}
+                  >
                     Enregistrer
                   </button>
                 </div>
@@ -1309,12 +1295,18 @@
       resp: (document.getElementById("taskRespSelect").value || "").toUpperCase(),
       desc: document.getElementById("taskDesc").value || "",
       remarque: existing ? (existing.remarque || "") : "",
+      remarqueDraft: existing ? (existing.remarqueDraft ?? existing.remarque ?? "") : "",
+      remarqueDirty: false,
       sVal: document.getElementById("taskStartVal").value || 0,
       sUnit: document.getElementById("taskStartUnit").value || "weeks",
       eVal: document.getElementById("taskEndVal").value || 0,
       eUnit: document.getElementById("taskEndUnit").value || "weeks",
-      status: existing ? (existing.status || "todo") : "todo"
+      // état manuel : "" = auto ; seuls progress/done sont permis
+      status: existing ? ((existing.status ?? "").trim()) : ""
     };
+
+    // si ancien état était autre chose (todo/not_started/alert), on repasse en auto
+    if (t.status !== "progress" && t.status !== "done") t.status = "";
 
     if (state.editingId) b.tasks = (b.tasks || []).map(x => x.id === state.editingId ? t : x);
     else { if (!b.tasks) b.tasks = []; b.tasks.push(t); }
@@ -1353,7 +1345,14 @@
       const tplBlocs = state.blocs.filter(b => b.moduleId === m.id);
       tplBlocs.forEach(b => {
         const newBlocId = generateId();
-        const newTasks = (b.tasks || []).map(t => ({ ...t, id: generateId(), status: "todo", remarque: "" }));
+        const newTasks = (b.tasks || []).map(t => ({
+          ...t,
+          id: generateId(),
+          status: "",
+          remarque: "",
+          remarqueDraft: "",
+          remarqueDirty: false
+        }));
         state.blocs.push({ ...b, id: newBlocId, moduleId: newMId, date: "", tasks: newTasks });
       });
     });
@@ -1407,7 +1406,14 @@
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b) return;
     const t = (b.tasks || []).find(x => x.id === tId);
-    if (t) { t.status = newStat; pushDebounced(); }
+    if (!t) return;
+
+    // seuls autorisés : "" / progress / done
+    const v = (newStat ?? "").trim();
+    if (v === "progress" || v === "done" || v === "") {
+      t.status = v;
+      push();
+    }
   };
 
   window.toggleDesc = (id) => {
@@ -1746,7 +1752,18 @@
     downloadPDF(doc, filename);
   };
 
+  // ------------------ MODALS SETTINGS ------------------
+  window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
+  window.closeModal = (id) => { document.getElementById(id).classList.add("hidden"); state.editingId = null; };
+
+  // ------------------ FILTERS ------------------
+  function updateGlobalFilterListAndRender(){
+    updateGlobalFilterList();
+    renderGlobalOrSessions();
+  }
+
   // ------------------ INIT ------------------
+  // refreshUI() est appelé après sync, mais on laisse un premier rendu à vide.
   refreshUI();
 </script>
 </body>
