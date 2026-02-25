@@ -54,19 +54,6 @@
       background:var(--bg2);border:1px solid var(--bg3);border-radius:12px;padding:15px 20px;margin-bottom:15px;
     }
     .panel h3{font-size:1rem;margin-bottom:10px;}
-    .table{
-      width:100%;border-collapse:separate;border-spacing:0 10px;
-    }
-    .table th{font-size:.75rem;text-transform:uppercase;opacity:.7;text-align:left;padding:0 10px;}
-    .row{
-      background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.06);
-      border-radius:10px;
-    }
-    .row td{padding:12px 10px;vertical-align:top;}
-    .pill{
-      display:inline-block;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:bold;
-      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);
-    }
 
     .task-container{margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid var(--bg3);}
     .task-bandeau{display:grid;grid-template-columns:1.6fr 1fr .9fr 80px;align-items:center;padding:15px;cursor:pointer;color:#fff;font-weight:bold;}
@@ -80,6 +67,51 @@
 
     .hidden{display:none!important;}
     .muted{opacity:.75;}
+
+    /* ---------- DASHBOARD RAPPELS (latéral) ---------- */
+    .alerts-toggle{
+      position:fixed;
+      top:120px;
+      right:0;
+      background:var(--st-alert);
+      color:#fff;
+      padding:10px 14px;
+      border-radius:10px 0 0 10px;
+      cursor:pointer;
+      font-weight:800;
+      z-index:120;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      user-select:none;
+    }
+    .alerts-drawer{
+      position:fixed;
+      top:0;
+      right:-360px;
+      width:360px;
+      height:100%;
+      background:var(--bg2);
+      border-left:1px solid var(--bg3);
+      z-index:119;
+      padding:18px 16px;
+      transition:right .25s ease;
+      overflow-y:auto;
+      box-shadow:-10px 0 30px rgba(0,0,0,.35);
+    }
+    .alerts-drawer.open{ right:0; }
+    .alerts-header{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+    }
+    .alerts-item{
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.18);
+      border-radius:12px;
+      padding:10px 10px;
+      margin-bottom:10px;
+    }
+    .pill{
+      display:inline-block;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:bold;
+      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);
+    }
   </style>
 </head>
 <body>
@@ -90,6 +122,16 @@
     <button class="google-btn" onclick="handleLogin()">Se connecter avec Google</button>
     <p id="loginError" style="color: var(--st-alert); margin-top:10px"></p>
   </div>
+</div>
+
+<!-- DASHBOARD RAPPELS -->
+<div class="alerts-toggle hidden" id="alertsToggle" onclick="toggleAlertsDrawer()">⚠️ Rappels <span id="alertsCount" style="opacity:.9"></span></div>
+<div class="alerts-drawer" id="alertsDrawer">
+  <div class="alerts-header">
+    <div style="font-weight:900">⚠️ Rappels (prioritaire)</div>
+    <button class="btn-icon" onclick="toggleAlertsDrawer()" title="Fermer">✖</button>
+  </div>
+  <div id="alertsDrawerContent" class="muted">Aucun rappel</div>
 </div>
 
 <div class="app hidden" id="mainApp">
@@ -152,12 +194,6 @@
         <label>Recherche</label>
         <input id="globalSearch" placeholder="Titre, resp, session, module, bloc..." oninput="renderGlobalOrSessions()">
       </div>
-    </div>
-
-    <!-- ALERTS THIS WEEK -->
-    <div id="alertsPanel" class="panel hidden">
-      <h3>⚠️ Rappels (prioritaire)</h3>
-      <div id="alertsTable"></div>
     </div>
 
     <div id="globalTasksList" class="hidden"></div>
@@ -332,6 +368,7 @@
     editingId: null,
     currentView: "formationsView",
     lastParentView: "formationsView",
+    openTaskIds: new Set(), // ✅ FIX : mémorise les tâches ouvertes (évite fermeture pendant saisie)
   };
 
   function generateId() {
@@ -414,7 +451,7 @@
         state.formations = d.formations || [];
         state.modules = d.modules || [];
         state.blocs = d.blocs || [];
-        refreshUI();
+        refreshUI(); // ✅ re-render OK : tâches ouvertes seront restaurées
       } else {
         setDoc(doc(db, "data", "appState"), { formations: [], modules: [], blocs: [] });
       }
@@ -492,11 +529,18 @@
     sel.innerHTML = `<option value="all">Tous</option>` + sorted.map(n => `<option value="${n}" ${current===n?'selected':''}>${n}</option>`).join("");
   }
 
-  // ---------- ALERTS TABLE (Sessions) ----------
-  function renderAlertsPanel({ resp, typ, q }) {
-    const panel = document.getElementById("alertsPanel");
-    const box = document.getElementById("alertsTable");
-    if (!panel || !box) return;
+  // ---------- ALERTS DRAWER ----------
+  window.toggleAlertsDrawer = () => {
+    const drawer = document.getElementById("alertsDrawer");
+    if (!drawer) return;
+    drawer.classList.toggle("open");
+  };
+
+  function renderAlertsDrawer({ resp, typ, q }) {
+    const toggle = document.getElementById("alertsToggle");
+    const countEl = document.getElementById("alertsCount");
+    const box = document.getElementById("alertsDrawerContent");
+    if (!toggle || !countEl || !box) return;
 
     const query = (q || "").trim().toLowerCase();
 
@@ -516,11 +560,10 @@
         if (query && !hay.includes(query)) return;
 
         rows.push({
-          rank: info.rank,
-          title: t.title || "Sans titre",
-          resp: t.resp || "?",
           endStr: info.endStr,
           startStr: info.startStr,
+          title: t.title || "Sans titre",
+          resp: t.resp || "?",
           formation: ctx.formation?.name || "—",
           module: ctx.module?.name || "—",
           bloc: b.name || "—",
@@ -530,38 +573,29 @@
 
     rows.sort((a,b) => a.endStr.localeCompare(b.endStr));
 
+    toggle.classList.remove("hidden");
+    countEl.textContent = rows.length ? `(${rows.length})` : "";
+
     if (!rows.length) {
-      panel.classList.add("hidden");
-      box.innerHTML = "";
+      box.innerHTML = `<div class="muted">Aucun rappel avec ces filtres.</div>`;
       return;
     }
 
-    panel.classList.remove("hidden");
-    box.innerHTML = `
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Tâche</th>
-            <th>Resp</th>
-            <th>Échéance</th>
-            <th>Contexte</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map(r => `
-            <tr class="row">
-              <td>
-                <div style="font-weight:700">${r.title}</div>
-                <div class="muted" style="font-size:.85rem">Début: ${r.startStr}</div>
-              </td>
-              <td><span class="pill">${r.resp}</span></td>
-              <td><span class="pill" style="background: rgba(225,29,72,.18); border-color: rgba(225,29,72,.35);">${r.endStr}</span></td>
-              <td class="muted" style="font-size:.9rem">${r.formation} → ${r.module} → ${r.bloc}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    `;
+    box.innerHTML = rows.map(r => `
+      <div class="alerts-item">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+          <div style="font-weight:900">${r.title}</div>
+          <span class="pill" style="background: rgba(225,29,72,.18); border-color: rgba(225,29,72,.35);">⚠️ ${r.endStr}</span>
+        </div>
+        <div class="muted" style="margin-top:6px;font-size:.85rem">
+          Resp: <span class="pill">${r.resp}</span>
+        </div>
+        <div class="muted" style="margin-top:6px;font-size:.85rem">
+          ${r.formation} → ${r.module} → ${r.bloc}
+        </div>
+        <div class="muted" style="margin-top:6px;font-size:.85rem">Début: ${r.startStr}</div>
+      </div>
+    `).join("");
   }
 
   // ---------- GLOBAL RENDER (sessions grid or global tasks) ----------
@@ -572,17 +606,15 @@
     const q    = document.getElementById("globalSearch")?.value || "";
     const query = q.trim().toLowerCase();
 
-    // Always refresh the "Rappels" panel (it uses same filters except status)
-    renderAlertsPanel({ resp, typ, q });
+    // ✅ Drawer rappels (compact)
+    renderAlertsDrawer({ resp, typ, q });
 
-    // Global list is used when you filter by responsible or status (like before)
     const wantsGlobal = (resp !== "all" || stat !== "all");
 
     const globalBox = document.getElementById("globalTasksList");
     const grid = document.getElementById("activeGrid");
     if (!globalBox || !grid) return;
 
-    // If not global tasks view: show sessions grid filtered by corps + search by session name
     if (!wantsGlobal) {
       globalBox.classList.add("hidden");
       grid.classList.remove("hidden");
@@ -598,7 +630,6 @@
       return;
     }
 
-    // Global tasks list across all active sessions, filtered by corps + search
     const rows = [];
     state.blocs.forEach(b => {
       const ctx = getBlocContext(b);
@@ -766,7 +797,7 @@
     select.innerHTML = html;
   }
 
-  // Inline remark debounce
+  // ✅ Inline remark debounce (ne ferme plus grâce à openTaskIds)
   let remarkTimers = {};
   window.updateTaskRemark = (taskId, value) => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
@@ -774,17 +805,14 @@
     const t = b.tasks.find(x => x.id === taskId);
     if (!t) return;
     t.remarque = value;
+
     if (remarkTimers[taskId]) clearTimeout(remarkTimers[taskId]);
     remarkTimers[taskId] = setTimeout(() => {
       push();
       delete remarkTimers[taskId];
-    }, 500);
+    }, 600);
   };
   window.saveTaskRemarkNow = (taskId) => {
-    const b = state.blocs.find(x => x.id === state.currentBlocId);
-    if (!b || !b.tasks) return;
-    const t = b.tasks.find(x => x.id === taskId);
-    if (!t) return;
     push();
   };
 
@@ -807,6 +835,7 @@
 
     document.getElementById("tasksList").innerHTML = tasksToRender.map(t => {
       const info = getTaskStatusInfo(t, b.date);
+      const isOpen = state.openTaskIds.has(String(t.id));
       return `
         <div class="task-container">
           <div class="task-bandeau ${info.dark ? "text-dark" : ""}" style="background:${info.color}" onclick="toggleDesc('${escId(t.id)}')">
@@ -830,7 +859,7 @@
             </div>
           </div>
 
-          <div id="desc-${t.id}" class="task-desc-area">
+          <div id="desc-${t.id}" class="task-desc-area ${isOpen ? "open" : ""}">
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
               <div><strong>Instructions :</strong><br>${t.desc || "Aucune."}</div>
 
@@ -1141,7 +1170,12 @@
     if (t) { t.status = newStat; push(); }
   };
 
+  // ✅ FIX : toggle + mémorisation (évite fermeture au re-render)
   window.toggleDesc = (id) => {
+    const key = String(id);
+    if (state.openTaskIds.has(key)) state.openTaskIds.delete(key);
+    else state.openTaskIds.add(key);
+
     const el = document.getElementById(`desc-${id}`);
     if (el) el.classList.toggle("open");
   };
@@ -1173,6 +1207,7 @@
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b) return;
     b.tasks = (b.tasks || []).filter(t => t.id !== id);
+    state.openTaskIds.delete(String(id));
     push();
   };
 
@@ -1202,6 +1237,7 @@
 
   window.enterBloc = (id) => {
     state.currentBlocId = id;
+    state.openTaskIds = new Set(); // reset ouvertures à l’entrée du bloc
     const b = state.blocs.find(x => x.id === id);
     document.getElementById("blocHeaderInfo").innerHTML = b ? `<h2>${b.name}</h2><div class="muted">Date: ${b.date ? isoToEU(b.date) : "—"}</div>` : "";
     showView("tasksView");
@@ -1304,6 +1340,7 @@
       state.currentModuleId = null;
       state.currentBlocId = null;
       state.editingId = null;
+      state.openTaskIds = new Set();
 
       await push();
       showView("formationsView");
@@ -1319,4 +1356,3 @@
 </script>
 </body>
 </html>
-
