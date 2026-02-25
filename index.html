@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gestion FOI - Pilotage 4 Couches</title>
+
+  <!-- PDF: jsPDF + AutoTable -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.29/dist/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     :root{
       --primary:#38bdf8; --bg1:#0f172a; --bg2:#1e293b; --bg3:#334155;
@@ -18,9 +23,9 @@
     .login-box{background:var(--bg2);padding:40px;border-radius:12px;border:1px solid var(--bg3);text-align:center;width:100%;max-width:420px;}
     .google-btn{background:#fff;color:#444;padding:12px 24px;border-radius:8px;border:none;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin:25px auto;width:100%;}
 
-    .app{max-width:1100px;margin:auto;}
+    .app{width:100%;max-width:none;margin:0;}
     header,.mini-header{background:var(--bg2);padding:15px 20px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--bg3);}
-    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:15px;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:15px;}
 
     .card{background:var(--bg2);padding:18px;border-radius:12px;cursor:pointer;border:1px solid var(--bg3);position:relative;display:flex;flex-direction:column;min-height:150px;transition:.2s;overflow:hidden;}
     .card:hover{border-color:var(--primary);}
@@ -39,10 +44,16 @@
 
     .btn{background:var(--primary);color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:bold;}
     .btn-icon{background:rgba(0,0,0,.1);border:none;color:inherit;cursor:pointer;padding:7px;border-radius:6px;}
+    .btn-mini{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);color:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;font-weight:800;}
 
-    .filter-bar{background:var(--bg2);padding:15px 20px;border-radius:10px;margin-bottom:15px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;border:1px solid var(--bg3);}
+    .filter-bar{
+      background:var(--bg2);padding:15px 20px;border-radius:10px;margin-bottom:15px;
+      display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr;gap:20px;border:1px solid var(--bg3);
+      align-items:end;
+    }
     .filter-group{display:flex;flex-direction:column;gap:5px;}
     .filter-group label{font-size:.75rem;text-transform:uppercase;opacity:.7;font-weight:bold;}
+    input,select,textarea{width:100%;margin:8px 0 15px 0;padding:10px;background:var(--bg1);border:1px solid var(--bg3);color:#fff;border-radius:6px;}
 
     .task-container{margin-bottom:10px;border-radius:10px;overflow:hidden;border:1px solid var(--bg3);}
     .task-bandeau{display:grid;grid-template-columns:1.6fr 1fr .9fr 80px;align-items:center;padding:15px;cursor:pointer;color:#fff;font-weight:bold;}
@@ -52,11 +63,60 @@
     .task-desc-area.open{padding:15px;max-height:900px;border-top:1px solid rgba(255,255,255,.1);}
 
     .modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:100;}
-    .modal-content{background:var(--bg2);padding:25px;border-radius:12px;width:95%;max-width:550px;overflow-y:auto;max-height:90vh;}
-    input,select,textarea{width:100%;margin:8px 0 15px 0;padding:10px;background:var(--bg1);border:1px solid var(--bg3);color:#fff;border-radius:6px;}
+    .modal-content{background:var(--bg2);padding:25px;border-radius:12px;width:95%;max-width:600px;overflow-y:auto;max-height:90vh;}
 
     .hidden{display:none!important;}
     .muted{opacity:.75;}
+
+    /* ---------- DASHBOARD RAPPELS (latéral) ---------- */
+    .alerts-toggle{
+      position:fixed;
+      top:120px;
+      right:0;
+      background:var(--st-alert);
+      color:#fff;
+      padding:10px 14px;
+      border-radius:10px 0 0 10px;
+      cursor:pointer;
+      font-weight:800;
+      z-index:120;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      user-select:none;
+    }
+    .alerts-drawer{
+      position:fixed;
+      top:0;
+      right:-360px;
+      width:360px;
+      height:100%;
+      background:var(--bg2);
+      border-left:1px solid var(--bg3);
+      z-index:119;
+      padding:18px 16px;
+      transition:right .25s ease;
+      overflow-y:auto;
+      box-shadow:-10px 0 30px rgba(0,0,0,.35);
+    }
+    .alerts-drawer.open{ right:0; }
+    .alerts-header{
+      display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;
+    }
+    .alerts-item{
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(0,0,0,.18);
+      border-radius:12px;
+      padding:10px 10px;
+      margin-bottom:10px;
+    }
+    .pill{
+      display:inline-block;padding:4px 10px;border-radius:999px;font-size:.75rem;font-weight:bold;
+      background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);
+    }
+
+    .kpi{
+      display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;
+    }
+    .kpi .pill{opacity:.95}
   </style>
 </head>
 <body>
@@ -67,6 +127,16 @@
     <button class="google-btn" onclick="handleLogin()">Se connecter avec Google</button>
     <p id="loginError" style="color: var(--st-alert); margin-top:10px"></p>
   </div>
+</div>
+
+<!-- DASHBOARD RAPPELS -->
+<div class="alerts-toggle hidden" id="alertsToggle" onclick="toggleAlertsDrawer()">⚠️ Rappels <span id="alertsCount" style="opacity:.9"></span></div>
+<div class="alerts-drawer" id="alertsDrawer">
+  <div class="alerts-header">
+    <div style="font-weight:900">⚠️ Rappels (prioritaire)</div>
+    <button class="btn-icon" onclick="toggleAlertsDrawer()" title="Fermer">✖</button>
+  </div>
+  <div id="alertsDrawerContent" class="muted">Aucun rappel</div>
 </div>
 
 <div class="app hidden" id="mainApp">
@@ -81,11 +151,12 @@
           <div id="settingsMenu" class="hidden" style="
             position:absolute; right:0; top:42px;
             background:var(--bg2); border:1px solid var(--bg3);
-            border-radius:10px; padding:10px; width:220px;
+            border-radius:10px; padding:10px; width:240px;
             box-shadow:0 10px 30px rgba(0,0,0,.35);
             z-index:50;">
             <button class="btn" style="width:100%; background:#10b981" onclick="exportBackupJSON(); closeSettingsMenu()">💾 Backup JSON</button>
             <button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9" onclick="triggerImport(); closeSettingsMenu()">📥 Import JSON</button>
+            <button class="btn" style="width:100%; margin-top:8px; background:#475569" onclick="openRespSettings(); closeSettingsMenu()">👤 Responsables</button>
           </div>
         </div>
         <input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackupJSON(this.files[0])">
@@ -97,7 +168,7 @@
       </div>
     </header>
 
-    <!-- GLOBAL FILTERS -->
+    <!-- GLOBAL FILTERS + SEARCH -->
     <div class="filter-bar">
       <div class="filter-group">
         <label>Responsable (global)</label>
@@ -125,6 +196,10 @@
           <option value="asp">ASP</option>
         </select>
       </div>
+      <div class="filter-group">
+        <label>Recherche (global)</label>
+        <input id="globalSearch" placeholder="Titre, resp, session, module, bloc..." oninput="renderGlobalOrSessions()">
+      </div>
     </div>
 
     <div id="globalTasksList" class="hidden"></div>
@@ -144,8 +219,14 @@
   <div id="modulesView" class="hidden">
     <div class="mini-header">
       <button class="btn" onclick="showView('formationsView')">← Retour</button>
-      <h2 id="formationTitle"></h2>
-      <button class="btn" onclick="prepareNewModule()">+ Module</button>
+      <div>
+        <h2 id="formationTitle"></h2>
+        <div id="formationKpis" class="kpi"></div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn" style="background:#475569" onclick="exportPDFSession()">📄 PDF Session</button>
+        <button class="btn" onclick="prepareNewModule()">+ Module</button>
+      </div>
     </div>
     <div class="grid" id="modulesGrid"></div>
   </div>
@@ -163,7 +244,10 @@
     <div class="mini-header">
       <button class="btn" onclick="showView('blocsView')">← Retour</button>
       <div id="blocHeaderInfo"></div>
-      <button class="btn" onclick="prepareNewTask()">+ Tâche</button>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button class="btn" style="background:#475569" onclick="exportPDFBloc()">📄 PDF Bloc</button>
+        <button class="btn" onclick="prepareNewTask()">+ Tâche</button>
+      </div>
     </div>
 
     <div class="filter-bar" style="grid-template-columns:1fr 1fr;">
@@ -215,7 +299,9 @@
   <div class="modal-content">
     <h3>Module</h3>
     <label>Nom du Module (Phase)</label><input id="moduleName" />
-    <label>Responsable Module</label><input id="moduleResp" placeholder="Nom du responsable" />
+    <label>Responsable (initiales)</label>
+    <select id="moduleRespSelect"></select>
+
     <button class="btn" style="width:100%" onclick="saveModule()">Enregistrer</button>
     <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('moduleModal')">Annuler</button>
   </div>
@@ -226,10 +312,13 @@
     <h3>Bloc</h3>
     <label>Nom</label><input id="blocName" />
     <label>Date de référence (JJ.MM.AAAA)</label><input id="blocDate" placeholder="JJ.MM.AAAA" />
+
+    <label>Responsable(s) (initiales)</label>
     <div style="display:flex; gap:10px">
-      <input id="blocR1" placeholder="Resp 1" />
-      <input id="blocR2" placeholder="Resp 2" />
+      <select id="blocR1Select"></select>
+      <select id="blocR2Select"></select>
     </div>
+
     <button class="btn" style="width:100%" onclick="saveBloc()">Enregistrer</button>
     <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('blocModal')">Annuler</button>
   </div>
@@ -239,7 +328,10 @@
   <div class="modal-content">
     <h3>Réglages Tâche</h3>
     <label>Titre</label><input id="taskTitle" />
-    <label>Responsable</label><input id="taskResp" />
+
+    <label>Responsable (initiales)</label>
+    <select id="taskRespSelect"></select>
+
     <label>Instructions (Modèle)</label><textarea id="taskDesc" style="height:60px"></textarea>
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-top:10px">
@@ -268,6 +360,20 @@
   </div>
 </div>
 
+<!-- Modal Responsables -->
+<div id="respSettingsModal" class="modal-overlay hidden">
+  <div class="modal-content">
+    <h3>👤 Responsables (initiales)</h3>
+    <p class="muted" style="margin:8px 0 12px 0;">
+      Uniquement des initiales (ex: NMA, VGA...). Ensuite tu pourras les sélectionner pour Modules / Blocs / Tâches.
+    </p>
+    <label>Liste (séparée par des virgules)</label>
+    <textarea id="respListInput" style="height:90px" placeholder="NMA, VGA, ACA, NVA, WMA"></textarea>
+    <button class="btn" style="width:100%" onclick="saveRespSettings()">Enregistrer</button>
+    <button class="btn" style="width:100%; margin-top:10px; background:var(--bg3)" onclick="closeModal('respSettingsModal')">Annuler</button>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -287,19 +393,21 @@
   const auth = getAuth(app);
   const provider = new GoogleAuthProvider();
 
-  const ALLOWED = ["eapmge@gmail.com", "mentors.foi@gmail.com"];
-
   // ---------- STATE ----------
   let state = {
     formations: [],
     modules: [],
     blocs: [],
+    settings: {
+      responsibles: ["NMA","VGA","ACA","NVA","WMA"]
+    },
     currentFormationId: null,
     currentModuleId: null,
     currentBlocId: null,
     editingId: null,
     currentView: "formationsView",
     lastParentView: "formationsView",
+    openTaskIds: new Set(),
   };
 
   function generateId() {
@@ -335,24 +443,22 @@
     return d.getFullYear() === yyyy && (d.getMonth() + 1) === mm && d.getDate() === dd;
   }
 
-  // ---------- PROGRESS COLOR (uniform color based on %) ----------
+  // ---------- PROGRESS COLOR ----------
   function progressColor(p) {
     const x = Math.max(0, Math.min(100, Number(p) || 0));
-    const c1 = { r: 239, g: 68,  b: 68  };  // red
-    const c2 = { r: 249, g: 115, b: 22  };  // orange
-    const c3 = { r: 34,  g: 197, b: 94  };  // green
-
+    const c1 = { r: 239, g: 68,  b: 68  };
+    const c2 = { r: 249, g: 115, b: 22  };
+    const c3 = { r: 34,  g: 197, b: 94  };
     let a, b, t;
     if (x <= 50) { a = c1; b = c2; t = x / 50; }
     else { a = c2; b = c3; t = (x - 50) / 50; }
-
     const r = Math.round(a.r + (b.r - a.r) * t);
     const g = Math.round(a.g + (b.g - a.g) * t);
     const bl = Math.round(a.b + (b.b - a.b) * t);
     return `rgb(${r},${g},${bl})`;
   }
 
-  // ---------- AUTH ----------
+  // ---------- AUTH (sans "rôles" côté front) ----------
   window.handleLogin = () => {
     signInWithPopup(auth, provider).catch(e => {
       document.getElementById("loginError").textContent = e.message;
@@ -361,16 +467,12 @@
   window.handleLogout = () => signOut(auth);
 
   onAuthStateChanged(auth, (u) => {
-    if (u && ALLOWED.includes(u.email)) {
+    if (u) {
       document.getElementById("loginError").textContent = "";
       document.getElementById("loginView").classList.add("hidden");
       document.getElementById("mainApp").classList.remove("hidden");
       startSync();
     } else {
-      if (u && !ALLOWED.includes(u.email)) {
-        document.getElementById("loginError").textContent = `Accès refusé pour ${u.email}`;
-        signOut(auth);
-      }
       document.getElementById("loginView").classList.remove("hidden");
       document.getElementById("mainApp").classList.add("hidden");
     }
@@ -384,9 +486,10 @@
         state.formations = d.formations || [];
         state.modules = d.modules || [];
         state.blocs = d.blocs || [];
+        state.settings = d.settings || state.settings || { responsibles: [] };
         refreshUI();
       } else {
-        setDoc(doc(db, "data", "appState"), { formations: [], modules: [], blocs: [] });
+        setDoc(doc(db, "data", "appState"), { formations: [], modules: [], blocs: [], settings: state.settings });
       }
     }, (err) => console.error("snapshot error", err));
   }
@@ -395,6 +498,7 @@
       formations: state.formations,
       modules: state.modules,
       blocs: state.blocs,
+      settings: state.settings,
     });
   }
 
@@ -411,115 +515,239 @@
     return d;
   }
 
-function getTaskStatusInfo(task, blocDateISO) {
-  const today = new Date(); today.setHours(0,0,0,0);
+  function getTaskStatusInfo(task, blocDateISO) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const start = getCalcDate(blocDateISO, task.sVal, task.sUnit);
+    const end = getCalcDate(blocDateISO, task.eVal, task.eUnit);
+    let status = task.status || "todo";
 
-  const start = getCalcDate(blocDateISO, task.sVal, task.sUnit);
-  const end   = getCalcDate(blocDateISO, task.eVal, task.eUnit);
+    if (status === "todo" || status === "not_started") {
+      if (start && today < start) status = "not_started";
+      else if (start && today >= start && (!end || today < end)) status = "todo";
+    }
+    if (status !== "done" && status !== "progress") {
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      if (end && today >= end) status = "alert";
+      else if (end && (end - today) <= sevenDays) status = "alert";
+    }
 
-  // Etat manuel: only "progress" or "done". Anything else = auto.
-  const manual = (task.status === "progress" || task.status === "done") ? task.status : "";
-
-  // If manual done => always done
-  if (manual === "done") {
-    return {
-      rank: 5, color: "var(--st-done)", dark: false, id: "done",
-      startStr: start ? isoToEU(start.toISOString().split("T")[0]) : "---",
-      endStr:   end ? isoToEU(end.toISOString().split("T")[0]) : "---"
+    const map = {
+      alert: { rank: 1, color: "var(--st-alert)", dark: false },
+      todo: { rank: 2, color: "var(--st-todo)", dark: true },
+      progress: { rank: 3, color: "var(--st-progress)", dark: false },
+      not_started: { rank: 4, color: "var(--st-none)", dark: true },
+      done: { rank: 5, color: "var(--st-done)", dark: false },
     };
+    const info = map[status] || map.todo;
+    const startISO = start ? start.toISOString().split("T")[0] : "";
+    const endISO = end ? end.toISOString().split("T")[0] : "";
+    return { ...info, id: status, startStr: start ? isoToEU(startISO) : "---", endStr: end ? isoToEU(endISO) : "---" };
   }
-
-  // If manual progress => always progress (unless you want alert to override; here it DOES NOT)
-  if (manual === "progress") {
-    return {
-      rank: 3, color: "var(--st-progress)", dark: false, id: "progress",
-      startStr: start ? isoToEU(start.toISOString().split("T")[0]) : "---",
-      endStr:   end ? isoToEU(end.toISOString().split("T")[0]) : "---"
-    };
-  }
-
-  // AUTO rules
-  // 1) If no start or no end -> default to "todo" behavior (yellow) but keep safe
-  //    (You can adjust if you prefer "not_started" when start missing.)
-  let status = "todo";
-
-  if (start && today < start) status = "not_started";
-  else if (start && (!end || today < end)) status = "todo";
-
-  // Reminder: from 7 days before end (J-7) and beyond, if not done => alert
-  if (end) {
-    const msDay = 24 * 60 * 60 * 1000;
-    const daysToEnd = Math.floor((end - today) / msDay); // can be negative if overdue
-    if (daysToEnd <= 7) status = "alert";
-  }
-
-  const map = {
-    alert:       { rank: 1, color: "var(--st-alert)",    dark: false },
-    todo:        { rank: 2, color: "var(--st-todo)",     dark: true  },
-    progress:    { rank: 3, color: "var(--st-progress)", dark: false },
-    not_started: { rank: 4, color: "var(--st-none)",     dark: true  },
-    done:        { rank: 5, color: "var(--st-done)",     dark: false },
-  };
-
-  const info = map[status] || map.todo;
-
-  return {
-    ...info,
-    id: status,
-    startStr: start ? isoToEU(start.toISOString().split("T")[0]) : "---",
-    endStr:   end ? isoToEU(end.toISOString().split("T")[0]) : "---"
-  };
-}
 
   // ---------- RELATION HELPERS ----------
   function formationModules(formationId) { return state.modules.filter(m => m.formationId === formationId); }
   function moduleBlocs(moduleId) { return state.blocs.filter(b => b.moduleId === moduleId); }
   function formationAllBlocs(formationId) { return formationModules(formationId).flatMap(m => moduleBlocs(m.id)); }
   function isArchived(f) { return f.end && new Date(f.end) < new Date(); }
-
-  // ---------- GLOBAL FILTERS (Active sessions page) ----------
-  function updateGlobalFilterList() {
-    const sel = document.getElementById("globalRespFilter");
-    if (!sel) return;
-    const current = sel.value || "all";
-    const names = new Set();
-    state.blocs.forEach(b => (b.tasks || []).forEach(t => { if (t.resp && String(t.resp).trim()) names.add(String(t.resp).trim()); }));
-    const sorted = [...names].sort((a,b) => a.localeCompare(b,'fr'));
-    sel.innerHTML = `<option value="all">Tous</option>` + sorted.map(n => `<option value="${n}" ${current===n?'selected':''}>${n}</option>`).join("");
-  }
-
   function getBlocContext(bloc) {
     const mod = state.modules.find(m => m.id === bloc.moduleId);
     const form = mod ? state.formations.find(f => f.id === mod.formationId) : null;
     return { module: mod, formation: form };
   }
 
+  // ---------- RESPONSIBLES (initiales) ----------
+  function normalizeRespList(input) {
+    return (input || "")
+      .split(",")
+      .map(x => x.trim().toUpperCase())
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .sort((a,b) => a.localeCompare(b,'fr'));
+  }
+
+  function buildRespOptions(selected, allowEmpty = true) {
+    const list = Array.isArray(state.settings?.responsibles) ? state.settings.responsibles : [];
+    let html = "";
+    if (allowEmpty) html += `<option value="">—</option>`;
+    html += list.map(r => `<option value="${r}" ${selected===r ? "selected":""}>${r}</option>`).join("");
+    return html;
+  }
+
+  function refreshRespSelects() {
+    const mSel = document.getElementById("moduleRespSelect");
+    const b1 = document.getElementById("blocR1Select");
+    const b2 = document.getElementById("blocR2Select");
+    const tSel = document.getElementById("taskRespSelect");
+    if (mSel) mSel.innerHTML = buildRespOptions(mSel.value || "", true);
+    if (b1) b1.innerHTML = buildRespOptions(b1.value || "", true);
+    if (b2) b2.innerHTML = buildRespOptions(b2.value || "", true);
+    if (tSel) tSel.innerHTML = buildRespOptions(tSel.value || "", true);
+  }
+
+  window.openRespSettings = () => {
+    const current = (state.settings?.responsibles || []).join(", ");
+    document.getElementById("respListInput").value = current;
+    openModal("respSettingsModal");
+  };
+
+  window.saveRespSettings = async () => {
+    const raw = document.getElementById("respListInput").value;
+    const list = normalizeRespList(raw);
+    state.settings = state.settings || {};
+    state.settings.responsibles = list;
+    await push();
+    closeModal("respSettingsModal");
+    refreshUI();
+  };
+
+  // ---------- GLOBAL FILTER LIST ----------
+  function updateGlobalFilterList() {
+    const sel = document.getElementById("globalRespFilter");
+    if (!sel) return;
+
+    const fromSettings = Array.isArray(state.settings?.responsibles) ? state.settings.responsibles : [];
+    const current = sel.value || "all";
+
+    let html = `<option value="all">Tous</option>`;
+    html += fromSettings.map(n => `<option value="${n}" ${current===n?'selected':''}>${n}</option>`).join("");
+    sel.innerHTML = html;
+  }
+
+  // ---------- SEARCH HELPERS (FIX) ----------
+  function includesQuery(text, q) {
+    if (!q) return true;
+    return String(text || "").toLowerCase().includes(q);
+  }
+
+  function formationMatchesQuery(formationId, q) {
+    if (!q) return true;
+    const f = state.formations.find(x => x.id === formationId);
+    if (!f) return false;
+    const query = q.toLowerCase();
+
+    // match session name / type
+    if (includesQuery(f.name, query) || includesQuery(f.type, query)) return true;
+
+    // match modules / blocs / tasks
+    const mods = formationModules(formationId);
+    for (const m of mods) {
+      if (includesQuery(m.name, query) || includesQuery(m.resp, query)) return true;
+      const blocs = moduleBlocs(m.id);
+      for (const b of blocs) {
+        if (includesQuery(b.name, query) || includesQuery(b.r1, query) || includesQuery(b.r2, query)) return true;
+        for (const t of (b.tasks || [])) {
+          if (
+            includesQuery(t.title, query) ||
+            includesQuery(t.desc, query) ||
+            includesQuery(t.remarque, query) ||
+            includesQuery(t.resp, query)
+          ) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // ---------- ALERTS DRAWER ----------
+  window.toggleAlertsDrawer = () => {
+    const drawer = document.getElementById("alertsDrawer");
+    if (!drawer) return;
+    drawer.classList.toggle("open");
+  };
+
+  function renderAlertsDrawer({ resp, typ, q }) {
+    const toggle = document.getElementById("alertsToggle");
+    const countEl = document.getElementById("alertsCount");
+    const box = document.getElementById("alertsDrawerContent");
+    if (!toggle || !countEl || !box) return;
+
+    const query = (q || "").trim().toLowerCase();
+
+    const rows = [];
+    state.blocs.forEach(b => {
+      const ctx = getBlocContext(b);
+      if (!ctx.formation || ctx.formation.isTemplate) return;
+      if (isArchived(ctx.formation)) return;
+      if (typ !== "all" && ctx.formation.type !== typ) return;
+
+      (b.tasks || []).forEach(t => {
+        const info = getTaskStatusInfo(t, b.date);
+        if (info.id !== "alert") return;
+        if (resp !== "all" && (t.resp || "") !== resp) return;
+
+        const hay = `${t.title||""} ${t.resp||""} ${ctx.formation.name||""} ${ctx.module?.name||""} ${b.name||""}`.toLowerCase();
+        if (query && !hay.includes(query)) return;
+
+        rows.push({
+          endStr: info.endStr,
+          startStr: info.startStr,
+          title: t.title || "Sans titre",
+          resp: t.resp || "?",
+          formation: ctx.formation?.name || "—",
+          module: ctx.module?.name || "—",
+          bloc: b.name || "—",
+        });
+      });
+    });
+
+    rows.sort((a,b) => a.endStr.localeCompare(b.endStr));
+
+    toggle.classList.remove("hidden");
+    countEl.textContent = rows.length ? `(${rows.length})` : "";
+
+    if (!rows.length) {
+      box.innerHTML = `<div class="muted">Aucun rappel avec ces filtres.</div>`;
+      return;
+    }
+
+    box.innerHTML = rows.map(r => `
+      <div class="alerts-item">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+          <div style="font-weight:900">${r.title}</div>
+          <span class="pill" style="background: rgba(225,29,72,.18); border-color: rgba(225,29,72,.35);">⚠️ ${r.endStr}</span>
+        </div>
+        <div class="muted" style="margin-top:6px;font-size:.85rem">
+          Resp: <span class="pill">${r.resp}</span>
+        </div>
+        <div class="muted" style="margin-top:6px;font-size:.85rem">
+          ${r.formation} → ${r.module} → ${r.bloc}
+        </div>
+        <div class="muted" style="margin-top:6px;font-size:.85rem">Début: ${r.startStr}</div>
+      </div>
+    `).join("");
+  }
+
+  // ---------- GLOBAL RENDER (sessions grid or global tasks) ----------
   window.renderGlobalOrSessions = () => {
     const resp = document.getElementById("globalRespFilter")?.value || "all";
     const stat = document.getElementById("globalStatusFilter")?.value || "all";
     const typ  = document.getElementById("globalTypeFilter")?.value || "all";
-    const wantsGlobal = (resp !== "all" || stat !== "all"); // global list triggered by resp/status only
+    const q    = document.getElementById("globalSearch")?.value || "";
+    const query = q.trim().toLowerCase();
+
+    renderAlertsDrawer({ resp, typ, q });
+
+    const wantsGlobal = (resp !== "all" || stat !== "all");
 
     const globalBox = document.getElementById("globalTasksList");
     const grid = document.getElementById("activeGrid");
     if (!globalBox || !grid) return;
 
-    // If not global tasks view: show sessions grid filtered by corps
     if (!wantsGlobal) {
       globalBox.classList.add("hidden");
       grid.classList.remove("hidden");
-      renderMainGrid(
-        "activeGrid",
-        state.formations.filter(f =>
-          !f.isTemplate &&
-          !isArchived(f) &&
-          (typ === "all" || f.type === typ)
-        )
+
+      const list = state.formations.filter(f =>
+        !f.isTemplate &&
+        !isArchived(f) &&
+        (typ === "all" || f.type === typ) &&
+        formationMatchesQuery(f.id, query) // ✅ FIX
       );
+
+      renderMainGrid("activeGrid", list, false);
       return;
     }
 
-    // Global tasks list across all active sessions, filtered by corps too
     const rows = [];
     state.blocs.forEach(b => {
       const ctx = getBlocContext(b);
@@ -531,6 +759,9 @@ function getTaskStatusInfo(task, blocDateISO) {
         const info = getTaskStatusInfo(t, b.date);
         if (resp !== "all" && (t.resp || "") !== resp) return;
         if (stat !== "all" && info.id !== stat) return;
+
+        const hay = `${t.title||""} ${t.resp||""} ${ctx.formation.name||""} ${ctx.module?.name||""} ${b.name||""}`.toLowerCase();
+        if (query && !hay.includes(query)) return;
 
         rows.push({
           rank: info.rank, color: info.color, dark: info.dark, status: info.id,
@@ -566,16 +797,45 @@ function getTaskStatusInfo(task, blocDateISO) {
 
   // ---------- UI / RENDER ----------
   window.refreshUI = () => {
+    refreshRespSelects();
     if (state.currentView === "formationsView") {
       updateGlobalFilterList();
       renderGlobalOrSessions();
     }
     if (state.currentView === "archivesView") renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
-    if (state.currentView === "templatesListView") renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate), false, true);
+    if (state.currentView === "templatesListView") renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate), false);
     if (state.currentView === "modulesView") renderModules();
     if (state.currentView === "blocsView") renderBlocs();
     if (state.currentView === "tasksView") { updateFilterList(); renderTasks(); }
   };
+
+  function computeFormationKpis(formationId) {
+    const blocs = formationAllBlocs(formationId);
+    const tasks = blocs.flatMap(b => b.tasks || []);
+    const counts = { alert:0, not_started:0, todo:0, progress:0, done:0, total: tasks.length };
+    for (const b of blocs) {
+      for (const t of (b.tasks || [])) {
+        const info = getTaskStatusInfo(t, b.date);
+        if (counts[info.id] !== undefined) counts[info.id] += 1;
+      }
+    }
+    return counts;
+  }
+
+  function renderFormationKpis() {
+    const box = document.getElementById("formationKpis");
+    if (!box) return;
+    if (!state.currentFormationId) { box.innerHTML = ""; return; }
+    const k = computeFormationKpis(state.currentFormationId);
+    const pill = (label, val, extra="") => `<span class="pill" ${extra}>${label}: ${val}</span>`;
+    box.innerHTML = `
+      ${pill("Total", k.total)}
+      ${pill("⚠️", k.alert, 'style="background: rgba(225,29,72,.18); border-color: rgba(225,29,72,.35);"')}
+      ${pill("À faire", k.todo)}
+      ${pill("En cours", k.progress)}
+      ${pill("Terminé", k.done, 'style="background: rgba(5,150,105,.18); border-color: rgba(5,150,105,.35);"')}
+    `;
+  }
 
   function renderMainGrid(elId, list, isArchive = false) {
     const sorted = [...list].sort((a,b) => new Date(a.start || 0) - new Date(b.start || 0));
@@ -617,6 +877,9 @@ function getTaskStatusInfo(task, blocDateISO) {
     const list = state.modules.filter(m => m.formationId === state.currentFormationId);
     const sorted = [...list].sort((a,b) => (a.name||"").localeCompare(b.name||""));
     const showClone = isCurrentFormationTemplate();
+
+    renderFormationKpis();
+
     document.getElementById("modulesGrid").innerHTML = sorted.map(m => {
       const mBlocs = moduleBlocs(m.id);
       const allT = mBlocs.flatMap(b => b.tasks || []);
@@ -629,7 +892,7 @@ function getTaskStatusInfo(task, blocDateISO) {
             <h3>${m.name}</h3>
             ${hasAlert ? '<span class="alert-badge">!</span>' : ''}
           </div>
-          <p style="opacity:0.8">👤 Resp: ${m.resp || '?'}</p>
+          <p style="opacity:0.8">👤 Resp: ${m.resp || '—'}</p>
           <div class="prog-container">
             <div class="prog-bar" style="width:${prog}%; background-color:${progressColor(prog)}"></div>
           </div>
@@ -647,6 +910,7 @@ function getTaskStatusInfo(task, blocDateISO) {
     const list = state.blocs.filter(b => b.moduleId === state.currentModuleId);
     const sorted = [...list].sort((a,b) => new Date(a.date || 0) - new Date(b.date || 0));
     const showClone = isCurrentFormationTemplate();
+
     document.getElementById("blocsGrid").innerHTML = sorted.map(b => {
       const hasAlert = (b.tasks || []).some(t => getTaskStatusInfo(t, b.date).id === "alert");
       const prog = (b.tasks || []).length ? Math.round((b.tasks.filter(t => t.status === "done").length / b.tasks.length) * 100) : 0;
@@ -657,7 +921,8 @@ function getTaskStatusInfo(task, blocDateISO) {
             <h3>${b.name}</h3>
             ${hasAlert ? '<span class="alert-badge">!</span>' : ''}
           </div>
-          <p>📅 ${b.date ? isoToEU(b.date) : 'Non définie'}</p>
+          <p class="muted" style="margin-top:6px">📅 ${b.date ? isoToEU(b.date) : 'Non définie'}</p>
+          <p class="muted" style="margin-top:6px">👤 Resp: ${[b.r1,b.r2].filter(Boolean).join(" / ") || "—"}</p>
           <div class="prog-container">
             <div class="prog-bar" style="width:${prog}%; background-color:${progressColor(prog)}"></div>
           </div>
@@ -676,7 +941,13 @@ function getTaskStatusInfo(task, blocDateISO) {
     if (!b) return;
     const select = document.getElementById("respFilter");
     const currentVal = select.value;
-    const names = [...new Set((b.tasks || []).map(t => t.resp).filter(n => n && n.trim() !== ""))].sort();
+
+    // ✅ on filtre sur la liste officielle + ce qu’on trouve dans les tâches (au cas où)
+    const fromSettings = new Set(state.settings?.responsibles || []);
+    (b.tasks || []).forEach(t => { if (t.resp) fromSettings.add(String(t.resp).trim().toUpperCase()); });
+
+    const names = [...fromSettings].filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr'));
+
     let html = '<option value="all">Tous</option>';
     names.forEach(n => { html += `<option value="${n}" ${currentVal === n ? "selected" : ""}>${n}</option>`; });
     select.innerHTML = html;
@@ -690,19 +961,14 @@ function getTaskStatusInfo(task, blocDateISO) {
     const t = b.tasks.find(x => x.id === taskId);
     if (!t) return;
     t.remarque = value;
+
     if (remarkTimers[taskId]) clearTimeout(remarkTimers[taskId]);
     remarkTimers[taskId] = setTimeout(() => {
       push();
       delete remarkTimers[taskId];
-    }, 500);
+    }, 700);
   };
-  window.saveTaskRemarkNow = (taskId) => {
-    const b = state.blocs.find(x => x.id === state.currentBlocId);
-    if (!b || !b.tasks) return;
-    const t = b.tasks.find(x => x.id === taskId);
-    if (!t) return;
-    push();
-  };
+  window.saveTaskRemarkNow = () => push();
 
   window.renderTasks = () => {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
@@ -717,26 +983,29 @@ function getTaskStatusInfo(task, blocDateISO) {
     const tasksToRender = (b.tasks || [])
       .filter(t => {
         const info = getTaskStatusInfo(t, b.date);
-        return (filterResp === "all" || t.resp === filterResp) && (filterStatus === "all" || info.id === filterStatus);
+        return (filterResp === "all" || (t.resp||"") === filterResp) && (filterStatus === "all" || info.id === filterStatus);
       })
       .sort((t1, t2) => getTaskStatusInfo(t1, b.date).rank - getTaskStatusInfo(t2, b.date).rank);
 
     document.getElementById("tasksList").innerHTML = tasksToRender.map(t => {
       const info = getTaskStatusInfo(t, b.date);
+      const isOpen = state.openTaskIds.has(String(t.id));
       return `
         <div class="task-container">
           <div class="task-bandeau ${info.dark ? "text-dark" : ""}" style="background:${info.color}" onclick="toggleDesc('${escId(t.id)}')">
             <div>
               <div style="font-size: 1.05rem">${t.title}</div>
-              <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${t.resp || "?"}</div>
+              <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${t.resp || "—"}</div>
               <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">Début : ${info.startStr}</div>
             </div>
             <div>
               <select class="status-select-large" onclick="event.stopPropagation()" onchange="updateTaskStatus('${escId(t.id)}', this.value)">
-  <option value="" ${(!t.status || (t.status!=="progress" && t.status!=="done")) ? "selected" : ""}>— (auto)</option>
-  <option value="progress" ${t.status==="progress" ? "selected" : ""}>En cours</option>
-  <option value="done" ${t.status==="done" ? "selected" : ""}>Terminé</option>
-</select>
+                <option value="not_started" ${info.id==="not_started" ? "selected" : ""}>Pas commencé</option>
+                <option value="todo" ${info.id==="todo" ? "selected" : ""}>À faire</option>
+                <option value="progress" ${info.id==="progress" ? "selected" : ""}>En cours</option>
+                <option value="done" ${info.id==="done" ? "selected" : ""}>Terminé</option>
+                ${info.id==="alert" ? '<option value="alert" selected>⚠️ RAPPEL</option>' : ""}
+              </select>
             </div>
             <div style="font-size: 0.85rem; text-align: center">Échéance : <br>${info.endStr}</div>
             <div style="text-align:right">
@@ -744,14 +1013,19 @@ function getTaskStatusInfo(task, blocDateISO) {
             </div>
           </div>
 
-          <div id="desc-${t.id}" class="task-desc-area">
+          <div id="desc-${t.id}" class="task-desc-area ${isOpen ? "open" : ""}">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px">
+              <div class="muted" style="font-size:.9rem">Resp: <b>${t.resp || "—"}</b> • Échéance: <b>${info.endStr}</b></div>
+              <button class="btn-mini" onclick="event.stopPropagation(); exportPDFTask('${escId(t.id)}')">📄 PDF Tâche</button>
+            </div>
+
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px">
               <div><strong>Instructions :</strong><br>${t.desc || "Aucune."}</div>
 
               <div style="border-left:1px solid rgba(255,255,255,.1); padding-left:20px">
                 <strong>Remarques / Suivi :</strong><br>
                 <textarea
-                  style="height:80px; margin-top:8px"
+                  style="height:90px; margin-top:8px"
                   placeholder="Écrire ici les remarques d'avancement..."
                   onclick="event.stopPropagation()"
                   oninput="updateTaskRemark('${escId(t.id)}', this.value)"
@@ -759,7 +1033,7 @@ function getTaskStatusInfo(task, blocDateISO) {
 
                 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px">
                   <button class="btn" style="padding:6px 10px; font-size:0.8rem"
-                    onclick="event.stopPropagation(); saveTaskRemarkNow('${escId(t.id)}')">
+                    onclick="event.stopPropagation(); saveTaskRemarkNow()">
                     Enregistrer
                   </button>
                 </div>
@@ -791,12 +1065,26 @@ function getTaskStatusInfo(task, blocDateISO) {
     openModal("formationModal");
   };
 
-  window.prepareNewModule = () => { state.editingId = null; document.getElementById("moduleName").value=""; document.getElementById("moduleResp").value=""; openModal("moduleModal"); };
-  window.prepareNewBloc = () => { state.editingId = null; document.getElementById("blocName").value=""; document.getElementById("blocDate").value=""; document.getElementById("blocR1").value=""; document.getElementById("blocR2").value=""; openModal("blocModal"); };
+  window.prepareNewModule = () => {
+    state.editingId = null;
+    document.getElementById("moduleName").value="";
+    document.getElementById("moduleRespSelect").innerHTML = buildRespOptions("", true);
+    openModal("moduleModal");
+  };
+
+  window.prepareNewBloc = () => {
+    state.editingId = null;
+    document.getElementById("blocName").value="";
+    document.getElementById("blocDate").value="";
+    document.getElementById("blocR1Select").innerHTML = buildRespOptions("", true);
+    document.getElementById("blocR2Select").innerHTML = buildRespOptions("", true);
+    openModal("blocModal");
+  };
+
   window.prepareNewTask = () => {
     state.editingId = null;
     document.getElementById("taskTitle").value = "";
-    document.getElementById("taskResp").value = "";
+    document.getElementById("taskRespSelect").innerHTML = buildRespOptions("", true);
     document.getElementById("taskDesc").value = "";
     document.getElementById("taskStartVal").value = 4;
     document.getElementById("taskStartUnit").value = "weeks";
@@ -825,7 +1113,7 @@ function getTaskStatusInfo(task, blocDateISO) {
     const m = state.modules.find(x => x.id === id);
     if (!m) return alert("Module introuvable");
     document.getElementById("moduleName").value = m.name || "";
-    document.getElementById("moduleResp").value = m.resp || "";
+    document.getElementById("moduleRespSelect").innerHTML = buildRespOptions((m.resp||""), true);
     openModal("moduleModal");
   };
 
@@ -835,8 +1123,8 @@ function getTaskStatusInfo(task, blocDateISO) {
     if (!b) return alert("Bloc introuvable");
     document.getElementById("blocName").value = b.name || "";
     document.getElementById("blocDate").value = b.date ? isoToEU(b.date) : "";
-    document.getElementById("blocR1").value = b.r1 || "";
-    document.getElementById("blocR2").value = b.r2 || "";
+    document.getElementById("blocR1Select").innerHTML = buildRespOptions((b.r1||""), true);
+    document.getElementById("blocR2Select").innerHTML = buildRespOptions((b.r2||""), true);
     openModal("blocModal");
   };
 
@@ -847,7 +1135,7 @@ function getTaskStatusInfo(task, blocDateISO) {
     const t = (b.tasks || []).find(x => x.id === id);
     if (!t) return alert("Tâche introuvable");
     document.getElementById("taskTitle").value = t.title || "";
-    document.getElementById("taskResp").value = t.resp || "";
+    document.getElementById("taskRespSelect").innerHTML = buildRespOptions((t.resp||""), true);
     document.getElementById("taskDesc").value = t.desc || "";
     document.getElementById("taskStartVal").value = t.sVal ?? 4;
     document.getElementById("taskStartUnit").value = t.sUnit || "weeks";
@@ -899,7 +1187,7 @@ function getTaskStatusInfo(task, blocDateISO) {
       id: state.editingId || generateId(),
       formationId: state.currentFormationId,
       name: document.getElementById("moduleName").value || "Sans nom",
-      resp: document.getElementById("moduleResp").value || ""
+      resp: (document.getElementById("moduleRespSelect").value || "").toUpperCase()
     };
     if (state.editingId) state.modules = state.modules.map(m => m.id === state.editingId ? d : m);
     else state.modules.push(d);
@@ -908,7 +1196,6 @@ function getTaskStatusInfo(task, blocDateISO) {
 
   window.saveBloc = () => {
     if (!state.currentModuleId) return alert("Sélectionner un module avant de créer un bloc.");
-
     const name = document.getElementById("blocName").value || "Sans nom";
     const dateEU = document.getElementById("blocDate").value || "";
     if (dateEU && !isValidEUDate(dateEU)) {
@@ -922,8 +1209,8 @@ function getTaskStatusInfo(task, blocDateISO) {
       moduleId: state.currentModuleId,
       name,
       date: dateEU ? euToISO(dateEU) : "",
-      r1: document.getElementById("blocR1").value || "",
-      r2: document.getElementById("blocR2").value || "",
+      r1: (document.getElementById("blocR1Select").value || "").toUpperCase(),
+      r2: (document.getElementById("blocR2Select").value || "").toUpperCase(),
       tasks: [...(old.tasks || [])]
     };
 
@@ -943,14 +1230,14 @@ function getTaskStatusInfo(task, blocDateISO) {
     const t = {
       id: state.editingId || generateId(),
       title: document.getElementById("taskTitle").value || "Sans titre",
-      resp: document.getElementById("taskResp").value || "",
+      resp: (document.getElementById("taskRespSelect").value || "").toUpperCase(),
       desc: document.getElementById("taskDesc").value || "",
       remarque: existing ? (existing.remarque || "") : "",
       sVal: document.getElementById("taskStartVal").value || 0,
       sUnit: document.getElementById("taskStartUnit").value || "weeks",
       eVal: document.getElementById("taskEndVal").value || 0,
       eUnit: document.getElementById("taskEndUnit").value || "weeks",
-      status: existing ? (existing.status || "") : ""
+      status: existing ? (existing.status || "todo") : "todo"
     };
 
     if (state.editingId) b.tasks = (b.tasks || []).map(x => x.id === state.editingId ? t : x);
@@ -960,7 +1247,7 @@ function getTaskStatusInfo(task, blocDateISO) {
     closeModal("taskModal");
   };
 
-  // ---------- TEMPLATE DEPLOY (EU dates) ----------
+  // ---------- TEMPLATE DEPLOY ----------
   window.deployTemplate = (tplId) => {
     const tpl = state.formations.find(f => f.id === tplId);
     if (!tpl) return alert("Modèle introuvable");
@@ -969,23 +1256,14 @@ function getTaskStatusInfo(task, blocDateISO) {
     if (!name || !name.trim()) return;
 
     const startEU = prompt("Date de début (JJ.MM.AAAA) ?", "");
-    if (!startEU || !isValidEUDate(startEU)) {
-      alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 15.03.2026)");
-      return;
-    }
+    if (!startEU || !isValidEUDate(startEU)) { alert("Date invalide (JJ.MM.AAAA)"); return; }
 
     const endEU = prompt("Date de fin (JJ.MM.AAAA) ?", "");
-    if (!endEU || !isValidEUDate(endEU)) {
-      alert("Date invalide. Format attendu : JJ.MM.AAAA (ex: 30.06.2026)");
-      return;
-    }
+    if (!endEU || !isValidEUDate(endEU)) { alert("Date invalide (JJ.MM.AAAA)"); return; }
 
     const start = euToISO(startEU);
     const end = euToISO(endEU);
-    if (new Date(end) < new Date(start)) {
-      alert("La date de fin ne peut pas être avant la date de début.");
-      return;
-    }
+    if (new Date(end) < new Date(start)) { alert("Fin < début"); return; }
 
     const newFormId = generateId();
     const newForm = { ...tpl, id: newFormId, name: name.trim(), isTemplate: false, start, end };
@@ -1050,21 +1328,16 @@ function getTaskStatusInfo(task, blocDateISO) {
 
   // ---------- STATUS / TOGGLE / DELETE ----------
   window.updateTaskStatus = (tId, newStat) => {
-  const b = state.blocs.find(x => x.id === state.currentBlocId);
-  if (!b) return;
-  const t = (b.tasks || []).find(x => x.id === tId);
-  if (!t) return;
-
-  // "" => auto (on supprime le statut manuel)
-  if (newStat === "") {
-    delete t.status;
-  } else {
-    t.status = newStat; // "progress" or "done"
-  }
-  push();
-};
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b) return;
+    const t = (b.tasks || []).find(x => x.id === tId);
+    if (t) { t.status = newStat; push(); }
+  };
 
   window.toggleDesc = (id) => {
+    const key = String(id);
+    if (state.openTaskIds.has(key)) state.openTaskIds.delete(key);
+    else state.openTaskIds.add(key);
     const el = document.getElementById(`desc-${id}`);
     if (el) el.classList.toggle("open");
   };
@@ -1096,6 +1369,7 @@ function getTaskStatusInfo(task, blocDateISO) {
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b) return;
     b.tasks = (b.tasks || []).filter(t => t.id !== id);
+    state.openTaskIds.delete(String(id));
     push();
   };
 
@@ -1113,27 +1387,34 @@ function getTaskStatusInfo(task, blocDateISO) {
     state.currentFormationId = id;
     const f = state.formations.find(x => x.id === id);
     document.getElementById("formationTitle").textContent = f ? f.name : "";
+    renderFormationKpis();
     showView("modulesView");
   };
 
   window.enterModule = (id) => {
     state.currentModuleId = id;
     const m = state.modules.find(x => x.id === id);
-    document.getElementById("moduleTitle").textContent = m ? m.name : "";
+    document.getElementById("moduleTitle").textContent = m ? `${m.name} — Resp: ${m.resp||"—"}` : "";
     showView("blocsView");
   };
 
   window.enterBloc = (id) => {
     state.currentBlocId = id;
+    state.openTaskIds = new Set();
     const b = state.blocs.find(x => x.id === id);
-    document.getElementById("blocHeaderInfo").innerHTML = b ? `<h2>${b.name}</h2><div class="muted">Date: ${b.date ? isoToEU(b.date) : "—"}</div>` : "";
+    const ctx = b ? getBlocContext(b) : { module:null, formation:null };
+    document.getElementById("blocHeaderInfo").innerHTML = b ? `
+      <div>
+        <h2>${b.name}</h2>
+        <div class="muted">Date: ${b.date ? isoToEU(b.date) : "—"} • Resp: ${[b.r1,b.r2].filter(Boolean).join(" / ") || "—"}</div>
+      </div>
+    ` : "";
     showView("tasksView");
   };
 
-  // Fix: back from blocs should go to modules
   document.getElementById("backBtn").onclick = () => showView("modulesView");
 
-  // ---------- SETTINGS MENU (⚙️) ----------
+  // ---------- SETTINGS MENU ----------
   window.toggleSettingsMenu = (ev) => {
     ev?.stopPropagation?.();
     const menu = document.getElementById("settingsMenu");
@@ -1159,7 +1440,8 @@ function getTaskStatusInfo(task, blocDateISO) {
       appState: {
         formations: state.formations || [],
         modules: state.modules || [],
-        blocs: state.blocs || []
+        blocs: state.blocs || [],
+        settings: state.settings || {}
       }
     };
 
@@ -1222,11 +1504,13 @@ function getTaskStatusInfo(task, blocDateISO) {
       state.formations = root.formations || [];
       state.modules = root.modules || [];
       state.blocs = root.blocs || [];
+      state.settings = root.settings || state.settings || { responsibles: [] };
 
       state.currentFormationId = null;
       state.currentModuleId = null;
       state.currentBlocId = null;
       state.editingId = null;
+      state.openTaskIds = new Set();
 
       await push();
       showView("formationsView");
@@ -1237,7 +1521,180 @@ function getTaskStatusInfo(task, blocDateISO) {
     }
   };
 
-  // Initial
+  // ---------- PDF HELPERS ----------
+  function getPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:"p", unit:"mm", format:"a4" });
+    doc.setFont("helvetica","normal");
+    return doc;
+  }
+  function safe(v){ return (v===null || v===undefined) ? "" : String(v); }
+
+  function downloadPDF(doc, filename) {
+    doc.save(filename);
+  }
+
+  function statusLabel(id) {
+    const map = {
+      alert: "⚠️ RAPPEL",
+      not_started: "Pas commencé",
+      todo: "À faire",
+      progress: "En cours",
+      done: "Terminé"
+    };
+    return map[id] || id;
+  }
+
+  // PDF Session (formation)
+  window.exportPDFSession = () => {
+    const f = state.formations.find(x => x.id === state.currentFormationId);
+    if (!f) return alert("Session introuvable");
+
+    const doc = getPDF();
+    doc.setFontSize(16);
+    doc.text(`Session : ${safe(f.name)}`, 14, 18);
+    doc.setFontSize(11);
+    doc.text(`Corps : ${safe(f.type).toUpperCase()}   |   Début : ${f.start ? isoToEU(f.start) : "—"}   |   Fin : ${f.end ? isoToEU(f.end) : "—"}`, 14, 26);
+
+    const mods = formationModules(f.id).slice().sort((a,b)=>safe(a.name).localeCompare(safe(b.name),'fr'));
+    let y = 34;
+
+    for (const m of mods) {
+      const blocs = moduleBlocs(m.id).slice().sort((a,b)=> new Date(a.date||0)-new Date(b.date||0));
+      const rows = [];
+      for (const b of blocs) {
+        for (const t of (b.tasks || [])) {
+          const info = getTaskStatusInfo(t, b.date);
+          rows.push([
+            safe(m.name),
+            safe(m.resp || ""),
+            safe(b.name),
+            b.date ? isoToEU(b.date) : "",
+            safe(t.title),
+            safe(t.resp || ""),
+            statusLabel(info.id),
+            info.startStr,
+            info.endStr
+          ]);
+        }
+      }
+
+      doc.setFontSize(13);
+      doc.text(`Module : ${safe(m.name)}  (Resp: ${safe(m.resp||"—")})`, 14, y);
+      y += 4;
+
+      doc.autoTable({
+        startY: y,
+        head: [[ "Module", "Resp M.", "Bloc", "Date bloc", "Tâche", "Resp T.", "État", "Début", "Échéance" ]],
+        body: rows.length ? rows : [[ safe(m.name), safe(m.resp||""), "—", "—", "Aucune tâche", "", "", "", "" ]],
+        styles: { fontSize: 8, cellPadding: 1.6 },
+        headStyles: { fillColor: [30,41,59] },
+        margin: { left: 14, right: 14 }
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+      if (y > 260) { doc.addPage(); y = 18; }
+    }
+
+    const filename = `PDF-Session-${safe(f.name).replace(/\s+/g,"_")}.pdf`;
+    downloadPDF(doc, filename);
+  };
+
+  // PDF Bloc
+  window.exportPDFBloc = () => {
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b) return alert("Bloc introuvable");
+    const ctx = getBlocContext(b);
+    const f = ctx.formation;
+    const m = ctx.module;
+
+    const doc = getPDF();
+    doc.setFontSize(16);
+    doc.text(`Bloc : ${safe(b.name)}`, 14, 18);
+    doc.setFontSize(11);
+    doc.text(`Session : ${safe(f?.name||"—")}   |   Module : ${safe(m?.name||"—")}`, 14, 26);
+    doc.text(`Date bloc : ${b.date ? isoToEU(b.date) : "—"}   |   Resp bloc : ${[b.r1,b.r2].filter(Boolean).join(" / ") || "—"}`, 14, 32);
+
+    const rows = (b.tasks || []).map(t => {
+      const info = getTaskStatusInfo(t, b.date);
+      return [
+        safe(t.title),
+        safe(t.resp||""),
+        statusLabel(info.id),
+        info.startStr,
+        info.endStr,
+        safe(t.desc||""),
+        safe(t.remarque||"")
+      ];
+    });
+
+    doc.autoTable({
+      startY: 40,
+      head: [[ "Tâche", "Resp", "État", "Début", "Échéance", "Instructions", "Remarques" ]],
+      body: rows.length ? rows : [[ "Aucune tâche", "", "", "", "", "", "" ]],
+      styles: { fontSize: 8, cellPadding: 1.6 },
+      headStyles: { fillColor: [30,41,59] },
+      margin: { left: 14, right: 14 }
+    });
+
+    const filename = `PDF-Bloc-${safe(b.name).replace(/\s+/g,"_")}.pdf`;
+    downloadPDF(doc, filename);
+  };
+
+  // PDF Tâche (du bloc courant)
+  window.exportPDFTask = (taskId) => {
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b) return alert("Bloc introuvable");
+    const t = (b.tasks || []).find(x => x.id === taskId);
+    if (!t) return alert("Tâche introuvable");
+    const ctx = getBlocContext(b);
+
+    const info = getTaskStatusInfo(t, b.date);
+
+    const doc = getPDF();
+    doc.setFontSize(16);
+    doc.text(`Tâche : ${safe(t.title)}`, 14, 18);
+    doc.setFontSize(11);
+    doc.text(`Resp : ${safe(t.resp||"—")}   |   État : ${statusLabel(info.id)}`, 14, 26);
+    doc.text(`Session : ${safe(ctx.formation?.name||"—")}`, 14, 32);
+    doc.text(`Module : ${safe(ctx.module?.name||"—")}`, 14, 38);
+    doc.text(`Bloc : ${safe(b.name)}   |   Date bloc : ${b.date ? isoToEU(b.date) : "—"}`, 14, 44);
+    doc.text(`Début : ${info.startStr}   |   Échéance : ${info.endStr}`, 14, 50);
+
+    doc.setFontSize(12);
+    doc.text("Instructions :", 14, 62);
+    doc.setFontSize(10);
+    doc.text(doc.splitTextToSize(safe(t.desc||"—"), 180), 14, 68);
+
+    const y2 = 68 + (doc.splitTextToSize(safe(t.desc||"—"), 180).length * 5) + 8;
+    doc.setFontSize(12);
+    doc.text("Remarques :", 14, y2);
+    doc.setFontSize(10);
+    doc.text(doc.splitTextToSize(safe(t.remarque||"—"), 180), 14, y2 + 6);
+
+    const filename = `PDF-Tache-${safe(t.title).replace(/\s+/g,"_")}.pdf`;
+    downloadPDF(doc, filename);
+  };
+
+  // ---------- TOGGLE / DELETE ----------
+  window.updateTaskStatus = (tId, newStat) => {
+    const b = state.blocs.find(x => x.id === state.currentBlocId);
+    if (!b) return;
+    const t = (b.tasks || []).find(x => x.id === tId);
+    if (t) { t.status = newStat; push(); }
+  };
+
+  // ---------- NAV ----------
+  window.showView = (id) => {
+    if (["formationsView","templatesListView","archivesView"].includes(id)) state.lastParentView = id;
+    state.currentView = id;
+    document.querySelectorAll(".app > div").forEach(d => d.classList.add("hidden"));
+    const el = document.getElementById(id);
+    if (el) el.classList.remove("hidden");
+    refreshUI();
+  };
+
+  // Initial render
   refreshUI();
 </script>
 </body>
