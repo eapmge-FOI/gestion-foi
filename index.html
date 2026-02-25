@@ -62,7 +62,7 @@
       display:grid;
       grid-template-columns: 1.5fr 0.9fr 1fr;
       align-items:center;
-      padding:15px;
+      padding:12px 14px; /* un peu plus compact */
       cursor:pointer;
       color:#fff;
       font-weight:bold;
@@ -142,26 +142,27 @@
     .status-checks{
       display:flex;
       flex-direction:column;
-      gap:8px;
+      gap:6px;
       justify-self:end;
       align-items:flex-start;
-      background:rgba(0,0,0,.12);
-      border:1px solid rgba(255,255,255,.12);
-      padding:10px 12px;
+      background:rgba(0,0,0,.10);
+      border:1px solid rgba(255,255,255,.10);
+      padding:8px 10px; /* plus compact */
       border-radius:12px;
-      min-width:165px;
+      min-width:150px; /* un peu plus étroit */
     }
     .chk{
       display:flex;
       align-items:center;
-      gap:10px;
-      font-weight:900;
-      font-size:.85rem;
+      gap:8px;
+      font-weight:800;
+      font-size:.75rem; /* ✅ plus petit */
       user-select:none;
+      line-height:1.1; /* ✅ plus compact */
     }
-    .chk input{ width:auto; margin:0; transform:scale(1.15); cursor:pointer; }
+    .chk input{ width:auto; margin:0; transform:scale(1.05); cursor:pointer; }
     .dot{
-      width:12px;height:12px;border-radius:50%;
+      width:11px;height:11px;border-radius:50%;
       border:2px solid rgba(255,255,255,.8);
       display:inline-block;
     }
@@ -171,16 +172,9 @@
     .dot.progress{ background: var(--st-progress); border-color: rgba(255,255,255,.9); }
     .dot.done{ background: var(--st-done); border-color: rgba(255,255,255,.9); }
 
-    /* ---------- QUICK ACTION ICONS (left area) ---------- */
-    .task-actions{
-      display:flex;
-      gap:6px;
-      align-items:center;
-      margin-top:8px;
-      opacity:.95;
-    }
+    .task-actions{display:flex;gap:6px;align-items:center;margin-top:8px;opacity:.95;}
 
-    /* ---------- JUMP MODAL (from alerts) ---------- */
+    /* ---------- JUMP MODAL ---------- */
     #jumpModal .modal-content{ max-width:560px; }
     .jump-row{display:grid;grid-template-columns: 1fr 1fr;gap:10px;margin-top:10px;}
     .jump-row .pill{width:100%; text-align:center; padding:8px 10px; cursor:pointer;}
@@ -208,7 +202,7 @@
   <div id="alertsDrawerContent" class="muted">Aucun rappel</div>
 </div>
 
-<!-- JUMP MODAL (click alert) -->
+<!-- JUMP MODAL -->
 <div id="jumpModal" class="modal-overlay hidden">
   <div class="modal-content">
     <h3>Aller à la tâche</h3>
@@ -217,10 +211,6 @@
     <div class="jump-row">
       <div class="pill" onclick="jumpToTaskView()">📌 Ouvrir la liste des tâches</div>
       <div class="pill" onclick="openTaskDetailsFromJump()">✏️ Ouvrir le détail (déplié)</div>
-    </div>
-
-    <div style="margin-top:14px" class="muted">
-      Astuce: une fois dans le bloc, la tâche sera automatiquement ouverte et mise en évidence.
     </div>
 
     <button class="btn" style="width:100%; margin-top:14px; background:var(--bg3)" onclick="closeModal('jumpModal')">Fermer</button>
@@ -233,7 +223,6 @@
     <header>
       <h1>📚 Sessions Actives</h1>
       <div style="display:flex; gap:10px; align-items:center">
-
         <div style="position:relative;">
           <button class="btn-icon" id="settingsBtn" title="Réglages" onclick="toggleSettingsMenu(event)">⚙️</button>
           <div id="settingsMenu" class="hidden" style="
@@ -249,7 +238,6 @@
         </div>
 
         <input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackupJSON(this.files[0])">
-
         <button class="btn" style="background:#475569" onclick="showView('templatesListView')">📂 Modèles</button>
         <button class="btn" style="background:#475569" onclick="showView('archivesView')">📦 Archives</button>
         <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
@@ -360,7 +348,7 @@
   </div>
 </div>
 
-<!-- MODALS (CRUD) -->
+<!-- MODALS -->
 <div id="formationModal" class="modal-overlay hidden">
   <div class="modal-content">
     <h3 id="formModalTitle">Session</h3>
@@ -416,10 +404,8 @@
   <div class="modal-content">
     <h3>Réglages Tâche</h3>
     <label>Titre</label><input id="taskTitle" />
-
     <label>Responsable (initiales)</label>
     <select id="taskRespSelect"></select>
-
     <label>Instructions (Modèle)</label><textarea id="taskDesc" style="height:60px"></textarea>
 
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px; margin-top:10px">
@@ -492,7 +478,6 @@
     editingId: null,
     currentView: "formationsView",
     openTaskIds: new Set(),
-    // pour jump depuis rappels
     jump: null, // { formationId, moduleId, blocId, taskId }
   };
 
@@ -504,15 +489,10 @@
   function escId(v) { return String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
   function escapeHtml(v) {
     const s = String(v ?? "");
-    return s
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+    return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   }
 
-  // ------------------ DATE (local) ------------------
+  // ------------------ DATE (local safe) ------------------
   function parseISOToLocalDate(iso) {
     if (!iso || typeof iso !== "string") return null;
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
@@ -541,7 +521,6 @@
     return parseISOToLocalDate(iso) ? iso : "";
   }
   function todayLocal() { const t = new Date(); t.setHours(0,0,0,0); return t; }
-  function isValidEUDate(eu) { return !!euToISO(eu); }
 
   // ------------------ CALCS ------------------
   function getCalcDate(baseISO, val, unit) {
@@ -561,53 +540,78 @@
     return d;
   }
 
-  // override: "" (auto) / progress / done
+  /**
+   * ✅ RÈGLES demandées
+   * - Si today < start => "Pas commencé" (sauf si terminé coché, alors "Terminé")
+   * - Si start <= today <= (end - 8 jours) => "À faire" (ou "En cours" / "Terminé" si coché)
+   * - Si today >= (end - 7 jours) => "Rappel" si Auto, À faire, En cours ; et "Terminé" si coché terminé
+   *
+   * Remarques:
+   * - Le statut stocké est uniquement: "" (auto) / "progress" / "done"
+   * - Le bandeau affiche le statut calculé (pas "auto")
+   */
   function getTaskStatusInfo(task, blocDateISO) {
     const today = todayLocal();
     const start = getCalcDate(blocDateISO, task.sVal, task.sUnit);
     const end = getCalcDate(blocDateISO, task.eVal, task.eUnit);
     const override = (task.status ?? "").trim(); // "" => auto
 
-    // manuel
-    if (override === "done" || override === "progress") {
-      const map = {
-        progress: { id:"progress", label:"En cours", rank: 3, color: "var(--st-progress)", dark:false, dot:"progress" },
-        done:     { id:"done",     label:"Terminé", rank: 5, color: "var(--st-done)",     dark:false, dot:"done" },
-      };
-      const info = map[override];
-      return {
-        ...info,
-        startStr: start ? isoToEU(formatISO(start)) : "---",
-        endStr: end ? isoToEU(formatISO(end)) : "---",
-        endTime: end ? end.getTime() : Number.POSITIVE_INFINITY
-      };
-    }
+    const startStr = start ? isoToEU(formatISO(start)) : "---";
+    const endStr   = end ? isoToEU(formatISO(end)) : "---";
+    const endTime  = end ? end.getTime() : Number.POSITIVE_INFINITY;
 
-    // auto
-    let autoId = "todo";
-    if (!start || !end) {
-      autoId = "todo";
-    } else {
-      const diff = end.getTime() - today.getTime();
-      const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      if (today.getTime() < start.getTime()) autoId = "not_started";
-      else if (diff <= sevenDays) autoId = "alert";
-      else autoId = "todo";
-    }
-
-    const mapAuto = {
+    // helpers
+    const map = {
       alert:      { id:"alert",      label:"⚠️ RAPPEL",    rank: 1, color: "var(--st-alert)", dark:false, dot:"alert" },
       todo:       { id:"todo",       label:"À faire",      rank: 2, color: "var(--st-todo)",  dark:true,  dot:"todo"  },
+      progress:   { id:"progress",   label:"En cours",     rank: 3, color: "var(--st-progress)", dark:false, dot:"progress" },
       not_started:{ id:"not_started",label:"Pas commencé", rank: 4, color: "var(--st-none)",  dark:true,  dot:"none"  },
+      done:       { id:"done",       label:"Terminé",      rank: 5, color: "var(--st-done)",  dark:false, dot:"done"  },
     };
 
-    const info = mapAuto[autoId] || mapAuto.todo;
-    return {
-      ...info,
-      startStr: start ? isoToEU(formatISO(start)) : "---",
-      endStr: end ? isoToEU(formatISO(end)) : "---",
-      endTime: end ? end.getTime() : Number.POSITIVE_INFINITY
-    };
+    // si pas de dates exploitables => auto => À faire, manuel => En cours/Terminé
+    if (!start || !end) {
+      if (override === "done") return { ...map.done, startStr, endStr, endTime };
+      if (override === "progress") return { ...map.progress, startStr, endStr, endTime };
+      return { ...map.todo, startStr, endStr, endTime };
+    }
+
+    // seuils
+    const msDay = 24 * 60 * 60 * 1000;
+    const thresholdTodoEnd = new Date(end.getTime() - 8 * msDay); // end - 8 jours (inclus)
+    thresholdTodoEnd.setHours(0,0,0,0);
+
+    const thresholdAlertStart = new Date(end.getTime() - 7 * msDay); // end - 7 jours (à partir de là => rappel)
+    thresholdAlertStart.setHours(0,0,0,0);
+
+    // Terminé forcé
+    if (override === "done") {
+      return { ...map.done, startStr, endStr, endTime };
+    }
+
+    // En cours forcé, MAIS devient rappel en zone -7 jours
+    if (override === "progress") {
+      if (today.getTime() >= thresholdAlertStart.getTime()) {
+        return { ...map.alert, startStr, endStr, endTime }; // ✅ rappel même si "en cours"
+      }
+      // sinon en cours
+      return { ...map.progress, startStr, endStr, endTime };
+    }
+
+    // Auto
+    if (today.getTime() < start.getTime()) {
+      return { ...map.not_started, startStr, endStr, endTime };
+    }
+
+    // zone rappel : today >= end-7
+    if (today.getTime() >= thresholdAlertStart.getTime()) {
+      return { ...map.alert, startStr, endStr, endTime };
+    }
+
+    // zone à faire : entre start et end-8 (et jusqu’à juste avant end-7)
+    // (si today est après end-8 mais avant end-7, on reste "à faire" ce jour-là)
+    // Ici, comme on a déjà exclu today >= end-7, tout ce qui reste après start => "à faire"
+    return { ...map.todo, startStr, endStr, endTime };
   }
 
   function statusLabel(id) {
@@ -931,9 +935,8 @@
     refreshUI();
   };
 
-  // ------------------ STATUS (3 checkboxes as radio) ------------------
+  // ------------------ STATUS (radio behavior with 3 checkboxes) ------------------
   function setStatusRadio(taskId, value) {
-    // value: "auto" | "progress" | "done"
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b) return;
     const t = (b.tasks || []).find(x => x.id === taskId);
@@ -945,11 +948,11 @@
 
     push();
   }
-  window.setStatusAuto = (taskId) => { setStatusRadio(taskId, "auto"); };
-  window.setStatusProgress = (taskId) => { setStatusRadio(taskId, "progress"); };
-  window.setStatusDone = (taskId) => { setStatusRadio(taskId, "done"); };
+  window.setStatusAuto = (taskId) => setStatusRadio(taskId, "auto");
+  window.setStatusProgress = (taskId) => setStatusRadio(taskId, "progress");
+  window.setStatusDone = (taskId) => setStatusRadio(taskId, "done");
 
-  // ------------------ TASKS RENDER ------------------
+  // ------------------ TASKS ------------------
   window.toggleDesc = (id) => {
     const key = String(id);
     if (state.openTaskIds.has(key)) state.openTaskIds.delete(key);
@@ -979,7 +982,7 @@
       const info = getTaskStatusInfo(t, b.date);
       const isOpen = state.openTaskIds.has(String(t.id));
 
-      const override = (t.status ?? "").trim(); // "" auto
+      const override = (t.status ?? "").trim();
       const isAuto = !override;
       const isProg = override === "progress";
       const isDone = override === "done";
@@ -987,13 +990,9 @@
       const remarkValue = (t.remarqueDirty ? (t.remarqueDraft ?? t.remarque ?? "") : (t.remarque ?? ""));
       const remarkDirty = !!t.remarqueDirty;
 
-      // couleur du bandeau = couleur du statut affiché
-      const bandColor = info.color;
-
-      // centre: chip de statut affiché + dates
       return `
         <div class="task-container">
-          <div class="task-bandeau ${info.dark ? "text-dark" : ""}" style="background:${bandColor}" onclick="toggleDesc('${escId(t.id)}')">
+          <div class="task-bandeau ${info.dark ? "text-dark" : ""}" style="background:${info.color}" onclick="toggleDesc('${escId(t.id)}')">
 
             <div>
               <div style="font-size: 1.05rem">${escapeHtml(t.title)}</div>
@@ -1024,9 +1023,6 @@
                 <span class="dot done"></span>
                 Terminé
               </label>
-              <div class="muted" style="font-size:.72rem; margin-top:2px">
-                (1 seul choix à la fois)
-              </div>
             </div>
 
           </div>
@@ -1072,7 +1068,6 @@
       `;
     }).join("") || `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche</div>`;
 
-    // si on vient d’un rappel: ouvrir et scroller vers la tâche
     if (state.jump?.taskId && state.jump?.blocId === state.currentBlocId) {
       const tid = state.jump.taskId;
       state.openTaskIds.add(String(tid));
@@ -1087,7 +1082,7 @@
     }
   };
 
-  // ------------------ ALERTS DRAWER (click -> jump modal) ------------------
+  // ------------------ ALERTS DRAWER ------------------
   window.toggleAlertsDrawer = () => document.getElementById("alertsDrawer")?.classList.toggle("open");
 
   function renderAlertsDrawer({ resp, typ }) {
@@ -1167,7 +1162,6 @@
         Module: <b>${escapeHtml(ctxMod?.name || "—")}</b><br>
         Bloc: <b>${escapeHtml(ctxBloc?.name || "—")}</b>
       </div>
-      <div class="muted" style="margin-top:8px">IDs: <span class="mono">${escapeHtml(taskId)}</span></div>
     `;
     openModal("jumpModal");
   };
@@ -1175,17 +1169,13 @@
   window.jumpToTaskView = () => {
     if (!state.jump) return;
     closeModal("jumpModal");
-    // navigation en cascade
     enterFormation(state.jump.formationId);
     enterModule(state.jump.moduleId);
     enterBloc(state.jump.blocId);
-    toggleAlertsDrawer(); // ferme si ouvert
+    toggleAlertsDrawer();
   };
 
-  window.openTaskDetailsFromJump = () => {
-    // identique: on ouvre le bloc, puis on déplie la tâche (fait dans renderTasks)
-    window.jumpToTaskView();
-  };
+  window.openTaskDetailsFromJump = () => window.jumpToTaskView();
 
   // ------------------ GLOBAL RENDER ------------------
   window.renderGlobalOrSessions = () => {
@@ -1238,7 +1228,7 @@
 
     globalBox.innerHTML = rows.length ? rows.map(r => `
       <div class="task-container">
-        <div class="task-bandeau ${r.dark ? "text-dark" : ""}" style="background:${r.color}; grid-template-columns: 1.8fr 1fr 1fr;">
+        <div class="task-bandeau ${r.dark ? "text-dark" : ""}" style="background:${r.color}; grid-template-columns: 1.8fr 0.9fr 1fr;">
           <div>
             <div style="font-size: 1.05rem">${escapeHtml(r.title)}</div>
             <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${escapeHtml(r.resp)}</div>
@@ -1251,27 +1241,14 @@
     `).join("") : `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche pour ces filtres</div>`;
   };
 
-  // ------------------ UI REFRESH ------------------
-  window.refreshUI = () => {
-    refreshRespSelects();
+  // ------------------ MODALS & NAV ------------------
+  window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
+  window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
 
-    if (state.currentView === "formationsView") {
-      updateGlobalFilterList();
-      renderGlobalOrSessions();
-    }
-    if (state.currentView === "archivesView") renderMainGrid("archivesGrid", state.formations.filter(f => !f.isTemplate && isArchived(f)), true);
-    if (state.currentView === "templatesListView") renderMainGrid("templateGrid", state.formations.filter(f => f.isTemplate), false);
-    if (state.currentView === "modulesView") renderModules();
-    if (state.currentView === "blocsView") renderBlocs();
-    if (state.currentView === "tasksView") { updateTaskRespFilterList(); renderTasks(); }
-  };
-
-  // ------------------ NAV ------------------
   window.showView = (id) => {
     state.currentView = id;
     document.querySelectorAll(".app > div").forEach(d => d.classList.add("hidden"));
-    const el = document.getElementById(id);
-    if (el) el.classList.remove("hidden");
+    document.getElementById(id)?.classList.remove("hidden");
     refreshUI();
   };
 
@@ -1294,7 +1271,6 @@
   window.enterBloc = (id) => {
     state.currentBlocId = id;
     state.openTaskIds = new Set();
-
     const b = state.blocs.find(x => x.id === id);
     document.getElementById("blocHeaderInfo").innerHTML = b ? `
       <div>
@@ -1313,13 +1289,9 @@
     document.getElementById("settingsMenu")?.classList.toggle("hidden");
   };
   window.closeSettingsMenu = () => document.getElementById("settingsMenu")?.classList.add("hidden");
-  document.addEventListener("click", () => closeSettingsMenu());
+  document.addEventListener("click", () => window.closeSettingsMenu());
 
-  // ------------------ MODALS ------------------
-  window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-  window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
-
-  // ------------------ CRUD ------------------
+  // ------------------ CRUD (same as before, compact) ------------------
   window.openFormModal = (tpl) => {
     state.editingId = null;
     document.getElementById("formIsTemplate").value = tpl ? "true" : "false";
@@ -1522,20 +1494,17 @@
     state.blocs = state.blocs.filter(b => !modulesToRemove.includes(b.moduleId));
     push();
   };
-
   window.deleteModule = (id) => {
     if (!confirm("Supprimer module (cela supprimera aussi ses blocs) ?")) return;
     state.modules = state.modules.filter(m => m.id !== id);
     state.blocs = state.blocs.filter(b => b.moduleId !== id);
     push();
   };
-
   window.deleteBloc = (id) => {
     if (!confirm("Supprimer bloc (et ses tâches) ?")) return;
     state.blocs = state.blocs.filter(b => b.id !== id);
     push();
   };
-
   window.deleteTask = (id) => {
     if (!confirm("Supprimer tâche ?")) return;
     const b = state.blocs.find(x => x.id === state.currentBlocId);
@@ -1545,7 +1514,7 @@
     push();
   };
 
-  // ------------------ TEMPLATE (optional kept minimal) ------------------
+  // ------------------ TEMPLATE (optional) ------------------
   window.deployTemplate = (tplId) => {
     const tpl = state.formations.find(f => f.id === tplId);
     if (!tpl) return alert("Modèle introuvable");
@@ -1774,33 +1743,9 @@
     downloadPDF(doc, `PDF-Module-${safe(m.name).replace(/\s+/g,"_")}.pdf`);
   };
 
-  // ------------------ SETTINGS MENU auto-close already handled ------------------
-
-  // ------------------ GLOBAL + ALERTS ------------------
-  window.renderGlobalOrSessions = window.renderGlobalOrSessions;
-
-  // ------------------ INIT + VIEW ------------------
-  // default view already in DOM. We'll refresh once sync is ready.
-  window.showView = window.showView;
-
-  // ------------------ MODAL HELPERS (for jump modal too) ------------------
-  window.openModal = (id) => document.getElementById(id).classList.remove("hidden");
-  window.closeModal = (id) => document.getElementById(id).classList.add("hidden");
-
-  // ------------------ VIEW INIT ------------------
-  function showInitial() {
-    // ensure visible view is formationsView after login sync
-    state.currentView = "formationsView";
-    document.querySelectorAll(".app > div").forEach(d => d.classList.add("hidden"));
-    document.getElementById("formationsView")?.classList.remove("hidden");
-    refreshUI();
-  }
-
-  // ------------------ REFRESH ------------------
-  function refreshRespSelectsWrapper() { refreshRespSelects(); }
-
+  // ------------------ UI REFRESH ------------------
   window.refreshUI = () => {
-    refreshRespSelectsWrapper();
+    refreshRespSelects();
     if (state.currentView === "formationsView") {
       updateGlobalFilterList();
       renderGlobalOrSessions();
@@ -1812,79 +1757,53 @@
     if (state.currentView === "tasksView") { updateTaskRespFilterList(); renderTasks(); }
   };
 
-  // ------------------ GLOBAL (render sessions/filtered tasks) ------------------
-  window.renderGlobalOrSessions = () => {
-    const resp = document.getElementById("globalRespFilter")?.value || "all";
-    const stat = document.getElementById("globalStatusFilter")?.value || "all";
-    const typ  = document.getElementById("globalTypeFilter")?.value || "all";
-
-    renderAlertsDrawer({ resp, typ });
-
-    const wantsGlobal = (resp !== "all" || stat !== "all");
-    const globalBox = document.getElementById("globalTasksList");
-    const grid = document.getElementById("activeGrid");
-    if (!globalBox || !grid) return;
-
-    if (!wantsGlobal) {
-      globalBox.classList.add("hidden");
-      grid.classList.remove("hidden");
-      const list = state.formations.filter(f => !f.isTemplate && !isArchived(f) && (typ === "all" || f.type === typ));
-      renderMainGrid("activeGrid", list, false);
-      return;
-    }
-
-    const rows = [];
-    state.blocs.forEach(b => {
-      const ctx = getBlocContext(b);
-      if (!ctx.formation || ctx.formation.isTemplate) return;
-      if (isArchived(ctx.formation)) return;
-      if (typ !== "all" && ctx.formation.type !== typ) return;
-
-      (b.tasks || []).forEach(t => {
-        const info = getTaskStatusInfo(t, b.date);
-        if (resp !== "all" && (t.resp || "") !== resp) return;
-        if (stat !== "all" && info.id !== stat) return;
-
-        rows.push({
-          rank: info.rank, color: info.color, dark: info.dark, status: info.id,
-          startStr: info.startStr, endStr: info.endStr,
-          title: t.title || "Sans titre", resp: t.resp || "?",
-          formation: ctx.formation?.name || "—",
-          module: ctx.module?.name || "—",
-          bloc: b.name || "—",
-        });
-      });
-    });
-
-    rows.sort((a,b) => a.rank - b.rank);
-
-    grid.classList.add("hidden");
-    globalBox.classList.remove("hidden");
-
-    globalBox.innerHTML = rows.length ? rows.map(r => `
-      <div class="task-container">
-        <div class="task-bandeau ${r.dark ? "text-dark" : ""}" style="background:${r.color}; grid-template-columns: 1.8fr 0.9fr 1fr;">
-          <div>
-            <div style="font-size: 1.05rem">${escapeHtml(r.title)}</div>
-            <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${escapeHtml(r.resp)}</div>
-            <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">${escapeHtml(r.formation)} → ${escapeHtml(r.module)} → ${escapeHtml(r.bloc)}</div>
-          </div>
-          <div class="status-center"><span class="label">${escapeHtml(statusLabel(r.status))}</span></div>
-          <div style="font-size:0.85rem; text-align:center">Échéance:<br><b>${escapeHtml(r.endStr)}</b></div>
-        </div>
-      </div>
-    `).join("") : `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche pour ces filtres</div>`;
+  // ------------------ GLOBAL NAV ------------------
+  window.showView = (id) => {
+    state.currentView = id;
+    document.querySelectorAll(".app > div").forEach(d => d.classList.add("hidden"));
+    document.getElementById(id)?.classList.remove("hidden");
+    refreshUI();
   };
 
-  // ensure initial view after first sync render if needed
-  // (not strictly required, but keeps UI consistent)
-  // if user reloads while logged in, onSnapshot will call refreshUI.
+  window.enterFormation = (id) => {
+    state.currentFormationId = id;
+    const f = state.formations.find(x => x.id === id);
+    document.getElementById("formationTitle").textContent = f ? (f.name || "") : "";
+    renderFormationKpis();
+    showView("modulesView");
+  };
 
-</script>
+  window.enterModule = (id) => {
+    state.currentModuleId = id;
+    const m = state.modules.find(x => x.id === id);
+    document.getElementById("moduleTitle").textContent = m ? (m.name || "") : "";
+    document.getElementById("moduleSubTitle").textContent = m ? `Resp: ${m.resp||"—"}` : "";
+    showView("blocsView");
+  };
 
-<script>
-  // Non-module helpers used by onclick above (bridge)
-  // These are assigned in module as window.* already.
+  window.enterBloc = (id) => {
+    state.currentBlocId = id;
+    state.openTaskIds = new Set();
+    const b = state.blocs.find(x => x.id === id);
+    document.getElementById("blocHeaderInfo").innerHTML = b ? `
+      <div>
+        <h2>${escapeHtml(b.name)}</h2>
+        <div class="muted">Date: ${b.date ? escapeHtml(isoToEU(b.date)) : "—"} • Resp: ${escapeHtml([b.r1,b.r2].filter(Boolean).join(" / ") || "—")}</div>
+      </div>
+    ` : "";
+    showView("tasksView");
+  };
+
+  document.getElementById("backBtn").onclick = () => showView("modulesView");
+
+  // ------------------ SETTINGS MENU ------------------
+  window.toggleSettingsMenu = (ev) => {
+    ev?.stopPropagation?.();
+    document.getElementById("settingsMenu")?.classList.toggle("hidden");
+  };
+  window.closeSettingsMenu = () => document.getElementById("settingsMenu")?.classList.add("hidden");
+  document.addEventListener("click", () => window.closeSettingsMenu());
+
 </script>
 </body>
 </html>
