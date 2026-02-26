@@ -1174,7 +1174,7 @@
 
     renderAlertsDrawer({ resp, typ });
 
-    const wantsGlobal = (resp !== "all" || stat !== "all");
+    const wantsGlobal = (resp !== "all" || stat !== "all" || typ !== "all");
     const globalBox = document.getElementById("globalTasksList");
     const grid = document.getElementById("activeGrid");
     if (!globalBox || !grid) return;
@@ -1806,4 +1806,5 @@
 </script>
 </body>
 </html>
+
 
