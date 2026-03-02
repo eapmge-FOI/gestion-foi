@@ -219,7 +219,7 @@
 
   <div id="formationsView">
     <header>
-      <h1>📚 Sessions Actives</h1>
+      <h1>📚 Sessions Actives <span id="adminBadge" class="pill hidden" style="background: rgba(225,29,72,.18); border-color: rgba(225,29,72,.35); margin-left:10px;">ADMIN</span></h1>
       <div style="display:flex; gap:10px; align-items:center">
         <div style="position:relative;">
           <button class="btn-icon" id="settingsBtn" title="Réglages" onclick="toggleSettingsMenu(event)">⚙️</button>
@@ -804,7 +804,7 @@ window.toggleAdminMode = () => {
       const doneCount = allT.filter(t => (t.status || "").trim() === "done").length;
       const prog = allT.length ? Math.round((doneCount / allT.length) * 100) : 0;
 
-      const allowDelete = !!f.isTemplate; // ✅ suppression uniquement pour modèles
+      const allowDelete = !!f.isTemplate || isAdminMode(); // ✅ modèles OU admin
 
       return `
         <div class="card style-${escapeHtml(f.type)}" onclick="enterFormation('${escId(f.id)}')">
@@ -833,7 +833,8 @@ window.toggleAdminMode = () => {
     const sorted = [...list].sort((a,b) => (a.name||"").localeCompare(b.name||"",'fr'));
     renderFormationKpis();
 
-    const showClone = isCurrentFormationTemplate();
+    const showDelete = isCurrentFormationTemplate() || isAdminMode();
+const showClone = isCurrentFormationTemplate(); // optionnel: clone seulement en modèle
 
     document.getElementById("modulesGrid").innerHTML = sorted.map(m => {
       const mBlocs = moduleBlocs(m.id);
@@ -855,7 +856,7 @@ window.toggleAdminMode = () => {
           <div style="display:flex; gap:5px; margin-top:auto">
             <button class="btn-icon" onclick="event.stopPropagation(); editModule('${escId(m.id)}')">✏️</button>
             ${showClone ? `<button class="btn-icon" title="Dupliquer module" onclick="event.stopPropagation(); cloneModule('${escId(m.id)}')">📄</button>` : ``}
-            ${showClone ? `<button class="btn-icon" onclick="event.stopPropagation(); deleteModule('${escId(m.id)}')">🗑️</button>` : ``}
+            ${showDelete ? `<button class="btn-icon" onclick="event.stopPropagation(); deleteModule('${escId(m.id)}')">🗑️</button>` : ``}
           </div>
         </div>
       `;
@@ -865,7 +866,8 @@ window.toggleAdminMode = () => {
   function renderBlocs() {
     const list = state.blocs.filter(b => b.moduleId === state.currentModuleId);
     const sorted = [...list].sort((a,b) => (parseISOToLocalDate(a.date)?.getTime() ?? 0) - (parseISOToLocalDate(b.date)?.getTime() ?? 0));
-    const showClone = isCurrentFormationTemplate();
+    const showDelete = isCurrentFormationTemplate() || isAdminMode();
+const showClone = isCurrentFormationTemplate();
 
     document.getElementById("blocsGrid").innerHTML = sorted.map(b => {
       const hasAlert = (b.tasks || []).some(t => getTaskStatusInfo(t, b.date).id === "alert");
@@ -886,7 +888,7 @@ window.toggleAdminMode = () => {
           <div style="display:flex; gap:5px; margin-top:auto">
             <button class="btn-icon" onclick="event.stopPropagation(); editBloc('${escId(b.id)}')">✏️</button>
             ${showClone ? `<button class="btn-icon" title="Dupliquer bloc" onclick="event.stopPropagation(); cloneBloc('${escId(b.id)}')">📄</button>` : ``}
-            ${showClone ? `<button class="btn-icon" onclick="event.stopPropagation(); deleteBloc('${escId(b.id)}')">🗑️</button>` : ``}
+            ${showDelete ? `<button class="btn-icon" onclick="event.stopPropagation(); deleteBloc('${escId(b.id)}')">🗑️</button>` : ``}
           </div>
         </div>
       `;
@@ -979,7 +981,7 @@ window.toggleAdminMode = () => {
       })
       .sort((t1, t2) => getTaskStatusInfo(t1, b.date).rank - getTaskStatusInfo(t2, b.date).rank);
 
-    const allowDelete = isCurrentFormationTemplate(); // ✅ suppression tâche uniquement en modèle
+    const allowDelete = isCurrentFormationTemplate() || isAdminMode(); // ✅ modèles OU admin
 
     document.getElementById("tasksList").innerHTML = tasksToRender.map(t => {
       const info = getTaskStatusInfo(t, b.date);
@@ -1974,6 +1976,7 @@ window.importBackupJSON = async (file) => {
 
   // ------------------ UI REFRESH ------------------
   window.refreshUI = () => {
+document.getElementById("adminBadge")?.classList.toggle("hidden", !isAdminMode());
     refreshRespSelects();
     if (state.currentView === "formationsView") {
       updateGlobalFilterList();
