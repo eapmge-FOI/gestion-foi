@@ -223,28 +223,21 @@
       <div style="display:flex; gap:10px; align-items:center">
         <div style="position:relative;">
           <button class="btn-icon" id="settingsBtn" title="Réglages" onclick="toggleSettingsMenu(event)">⚙️</button>
-<div id="settingsMenu" class="hidden" style="
-  position:absolute; right:0; top:42px;
-  background:var(--bg2); border:1px solid var(--bg3);
-  border-radius:10px; padding:10px; width:240px;
-  box-shadow:0 10px 30px rgba(0,0,0,.35);
-  z-index:250;">
+          <div id="settingsMenu" class="hidden" style="
+            position:absolute; right:0; top:42px;
+            background:var(--bg2); border:1px solid var(--bg3);
+            border-radius:10px; padding:10px; width:240px;
+            box-shadow:0 10px 30px rgba(0,0,0,.35);
+            z-index:250;">
+            <button class="btn" style="width:100%; background:#10b981" onclick="exportBackupJSON(); closeSettingsMenu()">💾 Backup JSON</button>
+            <button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9" onclick="triggerImport(); closeSettingsMenu()">📥 Import JSON</button>
+            <button class="btn" style="width:100%; margin-top:8px; background:#475569" onclick="openRespSettings(); closeSettingsMenu()">👤 Responsables</button>
+        <button class="btn" style="width:100%; margin-top:8px; background:#475569"
+        onclick="showView('templatesListView'); closeSettingsMenu()">📂 Modèles</button>
 
-  <button class="btn" style="width:100%; background:#10b981"
-          onclick="exportBackupJSON(); closeSettingsMenu()">💾 Backup JSON</button>
-
-  <button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9"
-          onclick="triggerImport(); closeSettingsMenu()">📥 Import JSON</button>
-
-  <button class="btn" style="width:100%; margin-top:8px; background:#475569"
-          onclick="openRespSettings(); closeSettingsMenu()">👤 Responsables</button>
-
-  <button class="btn" style="width:100%; margin-top:8px; background:#475569"
-          onclick="showView('templatesListView'); closeSettingsMenu()">📂 Modèles</button>
-
-  <button class="btn" style="width:100%; margin-top:8px; background:#475569"
-          onclick="showView('archivesView'); closeSettingsMenu()">📦 Archives</button>
-</div>
+<button class="btn" style="width:100%; margin-top:8px; background:#475569"
+        onclick="showView('archivesView'); closeSettingsMenu()">📦 Archives</button>
+          </div>
         </div>
 
         <input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackupJSON(this.files[0])">
