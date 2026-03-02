@@ -1664,17 +1664,134 @@ rows.push({
     return root && Array.isArray(root.formations) && Array.isArray(root.modules) && Array.isArray(root.blocs);
   }
 
-  window.importBackupJSON = async (file) => {
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      if (!isValidBackupShape(data)) {
-        alert("JSON invalide : il doit contenir formations/modules/blocs (ou appState.formations/modules/blocs).");
-        return;
-      }
-      const root = data.appState ? data.appState : data;
-      const ok = confirm("⚠️ Import : cela va REMPLACER toutes les données (formations/modules/blocs) dans Firestore. Continuer ?");
+function getAllTaskIdsFromBlocs(blocs) {
+  const set = new Set();
+  (blocs || []).forEach(b => (b.tasks || []).forEach(t => set.add(String(t.id))));
+  return set;
+}
+
+function mergeImportedState(root) {
+  // root = { formations, modules, blocs, settings }
+
+  const existingFormationIds = new Set((state.formations || []).map(f => String(f.id)));
+  const existingModuleIds    = new Set((state.modules || []).map(m => String(m.id)));
+  const existingBlocIds      = new Set((state.blocs || []).map(b => String(b.id)));
+  const existingTaskIds      = getAllTaskIdsFromBlocs(state.blocs || []);
+
+  const formIdMap = new Map();  // old -> new
+  const modIdMap  = new Map();  // old -> new
+
+  // --- SETTINGS: merge responsibles (union) ---
+  const currResp = Array.isArray(state.settings?.responsibles) ? state.settings.responsibles : [];
+  const impResp  = Array.isArray(root.settings?.responsibles) ? root.settings.responsibles : [];
+  const respMerged = normalizeRespList([...currResp, ...impResp].join(","));
+  state.settings = state.settings || {};
+  state.settings.responsibles = respMerged;
+
+  // --- FORMATIONS ---
+  (root.formations || []).forEach(f => {
+    const oldId = String(f.id);
+    let newId = oldId;
+
+    if (!newId || existingFormationIds.has(newId)) {
+      newId = generateId();
+    }
+    formIdMap.set(oldId, newId);
+    existingFormationIds.add(newId);
+
+    state.formations.push({ ...f, id: newId });
+  });
+
+  // --- MODULES ---
+  (root.modules || []).forEach(m => {
+    const oldId = String(m.id);
+    let newId = oldId;
+
+    if (!newId || existingModuleIds.has(newId)) {
+      newId = generateId();
+    }
+    modIdMap.set(oldId, newId);
+    existingModuleIds.add(newId);
+
+    const oldFormationId = String(m.formationId);
+    const newFormationId = formIdMap.get(oldFormationId) || oldFormationId;
+
+    state.modules.push({
+      ...m,
+      id: newId,
+      formationId: newFormationId
+    });
+  });
+
+  // --- BLOCS + TASKS ---
+  (root.blocs || []).forEach(b => {
+    const oldBlocId = String(b.id);
+    let newBlocId = oldBlocId;
+
+    if (!newBlocId || existingBlocIds.has(newBlocId)) {
+      newBlocId = generateId();
+    }
+    existingBlocIds.add(newBlocId);
+
+    const oldModuleId = String(b.moduleId);
+    const newModuleId = modIdMap.get(oldModuleId) || oldModuleId;
+
+    const newTasks = (b.tasks || []).map(t => {
+      let tid = String(t.id);
+      if (!tid || existingTaskIds.has(tid)) tid = generateId();
+      existingTaskIds.add(tid);
+
+      // sécurise les champs attendus par ton UI
+      const remarque = t.remarque ?? "";
+      return {
+        ...t,
+        id: tid,
+        status: (t.status ?? "").trim(),          // "", "progress", "done"
+        remarque,
+        remarqueDraft: t.remarqueDraft ?? remarque,
+        remarqueDirty: !!t.remarqueDirty
+      };
+    });
+
+    state.blocs.push({
+      ...b,
+      id: newBlocId,
+      moduleId: newModuleId,
+      tasks: newTasks
+    });
+  });
+}
+
+window.importBackupJSON = async (file) => {
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+
+    if (!isValidBackupShape(data)) {
+      alert("JSON invalide : il doit contenir formations/modules/blocs (ou appState.formations/modules/blocs).");
+      return;
+    }
+
+    const root = data.appState ? data.appState : data;
+
+    // ✅ Choix du mode d'import
+    const mode = (prompt(
+      "Mode d'import ?\n" +
+      "- taper R pour REMPLACER (efface tout puis importe)\n" +
+      "- taper A pour AJOUTER (fusionne avec l'existant)\n" +
+      "- Annuler pour abandonner",
+      "A"
+    ) || "").trim().toUpperCase();
+
+    if (!mode) return; // user cancel prompt
+    if (mode !== "R" && mode !== "A") {
+      alert("Choix invalide. Tape R ou A.");
+      return;
+    }
+
+    if (mode === "R") {
+      const ok = confirm("⚠️ Import REMPLACER : cela va EFFACER et remplacer toutes les données. Continuer ?");
       if (!ok) return;
 
       state.formations = root.formations || [];
@@ -1682,20 +1799,28 @@ rows.push({
       state.blocs = root.blocs || [];
       state.settings = root.settings || state.settings || { responsibles: [] };
 
-      state.currentFormationId = null;
-      state.currentModuleId = null;
-      state.currentBlocId = null;
-      state.editingId = null;
-      state.openTaskIds = new Set();
+    } else if (mode === "A") {
+      const ok = confirm("Import AJOUTER : cela va fusionner le contenu importé avec l'existant. Continuer ?");
+      if (!ok) return;
 
-      await push();
-      showView("formationsView");
-      alert("✅ Import terminé.");
-    } catch (e) {
-      console.error(e);
-      alert("Erreur import : " + (e?.message || e));
+      mergeImportedState(root);
     }
-  };
+
+    // reset navigation state
+    state.currentFormationId = null;
+    state.currentModuleId = null;
+    state.currentBlocId = null;
+    state.editingId = null;
+    state.openTaskIds = new Set();
+
+    await push();
+    showView("formationsView");
+    alert("✅ Import terminé.");
+  } catch (e) {
+    console.error(e);
+    alert("Erreur import : " + (e?.message || e));
+  }
+};
 
   // ------------------ PDF ------------------
   function getPDF() {
