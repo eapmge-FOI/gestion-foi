@@ -237,6 +237,8 @@
 
 <button class="btn" style="width:100%; margin-top:8px; background:#475569"
         onclick="showView('archivesView'); closeSettingsMenu()">📦 Archives</button>
+<button class="btn" style="width:100%; margin-top:8px; background:#e11d48"
+        onclick="toggleAdminMode(); closeSettingsMenu()">🛡️ Mode administrateur</button>
           </div>
         </div>
 
@@ -481,6 +483,7 @@
     currentView: "formationsView",
     openTaskIds: new Set(),
     jump: null, // { formationId, moduleId, blocId, taskId }
+adminMode: false,
   };
 
   // ------------------ UTILS ------------------
@@ -493,6 +496,30 @@
     const s = String(v ?? "");
     return s.replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
   }
+function isAdminMode() {
+  return !!state.adminMode;
+}
+
+window.toggleAdminMode = () => {
+  // si déjà actif => on coupe
+  if (isAdminMode()) {
+    state.adminMode = false;
+    alert("Mode administrateur désactivé.");
+    refreshUI();
+    return;
+  }
+
+  // sinon on demande le code
+  const pass = (prompt("Activer le mode administrateur : saisir le code") || "").trim();
+  if (pass !== "1602") {
+    alert("Code incorrect.");
+    return;
+  }
+
+  state.adminMode = true;
+  alert("Mode administrateur ACTIVÉ. Suppressions possibles dans les sessions actives.");
+  refreshUI();
+};
 
   // ------------------ DATE (local safe) ------------------
   function parseISOToLocalDate(iso) {
@@ -1494,28 +1521,39 @@ rows.push({
   };
 
   // ------------------ DELETE (ONLY for templates) ------------------
-  function ensureTemplateOrRefuse() {
-    if (!isCurrentFormationTemplate()) {
-      alert("Suppression désactivée sur les sessions actives. Supprime uniquement depuis les modèles.");
-      return false;
-    }
-    return true;
+function ensureDeleteAllowedOrRefuse() {
+  // ✅ Toujours autorisé si on est dans un modèle
+  if (isCurrentFormationTemplate()) return true;
+
+  // ✅ Autorisé dans une session active seulement si admin mode
+  if (isAdminMode()) return true;
+
+  alert("Suppression désactivée sur les sessions actives. Active le mode administrateur (⚙️) ou supprime depuis les modèles.");
+  return false;
+}
+
+window.deleteForm = (id) => {
+  const f = state.formations.find(x => x.id === id);
+  if (!f) return;
+
+  // ✅ si session active => admin mode obligatoire
+  if (!f.isTemplate && !isAdminMode()) {
+    alert("Suppression désactivée sur les sessions actives. Active le mode administrateur (⚙️).");
+    return;
   }
 
-  window.deleteForm = (id) => {
-    const f = state.formations.find(x => x.id === id);
-    if (!f?.isTemplate) { alert("Suppression désactivée sur les sessions actives."); return; }
-    if (!confirm("Supprimer le modèle (cela supprimera aussi ses modules/blocs) ?")) return;
+  const label = f.isTemplate ? "modèle" : "session active";
+  if (!confirm(`Supprimer ce ${label} (cela supprimera aussi ses modules/blocs) ?`)) return;
 
-    state.formations = state.formations.filter(x => x.id !== id);
-    const modulesToRemove = state.modules.filter(m => m.formationId === id).map(m => m.id);
-    state.modules = state.modules.filter(m => m.formationId !== id);
-    state.blocs = state.blocs.filter(b => !modulesToRemove.includes(b.moduleId));
-    push();
-  };
+  state.formations = state.formations.filter(x => x.id !== id);
+  const modulesToRemove = state.modules.filter(m => m.formationId === id).map(m => m.id);
+  state.modules = state.modules.filter(m => m.formationId !== id);
+  state.blocs = state.blocs.filter(b => !modulesToRemove.includes(b.moduleId));
+  push();
+};
 
   window.deleteModule = (id) => {
-    if (!ensureTemplateOrRefuse()) return;
+    if (!ensureDeleteAllowedOrRefuse()) return;
     if (!confirm("Supprimer module (cela supprimera aussi ses blocs) ?")) return;
     state.modules = state.modules.filter(m => m.id !== id);
     state.blocs = state.blocs.filter(b => b.moduleId !== id);
@@ -1523,14 +1561,14 @@ rows.push({
   };
 
   window.deleteBloc = (id) => {
-    if (!ensureTemplateOrRefuse()) return;
+    if (!ensureDeleteAllowedOrRefuse()) return;
     if (!confirm("Supprimer bloc (et ses tâches) ?")) return;
     state.blocs = state.blocs.filter(b => b.id !== id);
     push();
   };
 
   window.deleteTask = (id) => {
-    if (!ensureTemplateOrRefuse()) return;
+    if (!ensureDeleteAllowedOrRefuse()) return;
     if (!confirm("Supprimer tâche ?")) return;
     const b = state.blocs.find(x => x.id === state.currentBlocId);
     if (!b) return;
@@ -1587,7 +1625,7 @@ rows.push({
   };
 
   window.cloneModule = (moduleId) => {
-    if (!ensureTemplateOrRefuse()) return;
+    if (!ensureDeleteAllowedOrRefuse()) return;
     const m = state.modules.find(x => x.id === moduleId);
     if (!m) return alert("Module introuvable");
 
@@ -1609,7 +1647,7 @@ rows.push({
   };
 
   window.cloneBloc = (blocId) => {
-    if (!ensureTemplateOrRefuse()) return;
+    if (!ensureDeleteAllowedOrRefuse()) return;
     const b = state.blocs.find(x => x.id === blocId);
     if (!b) return alert("Bloc introuvable");
 
