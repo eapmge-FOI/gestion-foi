@@ -1778,7 +1778,6 @@ window.importBackupJSON = async (file) => {
 
     const root = data.appState ? data.appState : data;
 
-    // ✅ Choix du mode d'import
     const mode = (prompt(
       "Mode d'import ?\n" +
       "- taper R pour REMPLACER (efface tout puis importe)\n" +
@@ -1787,27 +1786,26 @@ window.importBackupJSON = async (file) => {
       "A"
     ) || "").trim().toUpperCase();
 
-    if (!mode) return; // user cancel prompt
+    if (!mode) return;
     if (mode !== "R" && mode !== "A") {
       alert("Choix invalide. Tape R ou A.");
       return;
     }
 
-if (mode === "R") {
-  const ok = confirm("⚠️ Import REMPLACER : cela va EFFACER et remplacer toutes les données. Continuer ?");
-  if (!ok) return;
+    if (mode === "R") {
+      const ok = confirm("⚠️ Import REMPLACER : cela va EFFACER et remplacer toutes les données. Continuer ?");
+      if (!ok) return;
 
-  const pass = (prompt("Confirmation requise : saisir le mot de passe pour EFFACER (4 chiffres).") || "").trim();
-  if (pass !== "1602") {
-    alert("Mot de passe incorrect. Import annulé.");
-    return;
-  }
+      const pass = (prompt("Confirmation requise : saisir le mot de passe pour EFFACER (4 chiffres).") || "").trim();
+      if (pass !== "1602") {
+        alert("Mot de passe incorrect. Import annulé.");
+        return;
+      }
 
-  state.formations = root.formations || [];
-  state.modules = root.modules || [];
-  state.blocs = root.blocs || [];
-  state.settings = root.settings || state.settings || { responsibles: [] };
-}
+      state.formations = root.formations || [];
+      state.modules = root.modules || [];
+      state.blocs = root.blocs || [];
+      state.settings = root.settings || state.settings || { responsibles: [] };
 
     } else if (mode === "A") {
       const ok = confirm("Import AJOUTER : cela va fusionner le contenu importé avec l'existant. Continuer ?");
@@ -1816,7 +1814,6 @@ if (mode === "R") {
       mergeImportedState(root);
     }
 
-    // reset navigation state
     state.currentFormationId = null;
     state.currentModuleId = null;
     state.currentBlocId = null;
@@ -1831,7 +1828,6 @@ if (mode === "R") {
     alert("Erreur import : " + (e?.message || e));
   }
 };
-
   // ------------------ PDF ------------------
   function getPDF() {
     const { jsPDF } = window.jspdf;
