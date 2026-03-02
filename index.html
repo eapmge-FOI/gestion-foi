@@ -1222,20 +1222,27 @@ rows.push({
     globalBox.classList.remove("hidden");
 
     globalBox.innerHTML = rows.length ? rows.map(r => `
-      <div class="task-container"
-     style="cursor:pointer"
-     onclick="if('${escId(r.taskId)}'){ openJumpModal('${escId(r.formationId)}','${escId(r.moduleId)}','${escId(r.blocId)}','${escId(r.taskId)}'); }"
-        <div class="task-bandeau ${r.dark ? "text-dark" : ""}" style="background:${r.color}; grid-template-columns: 1.8fr 0.9fr 1fr;">
-          <div>
-            <div style="font-size: 1.05rem">${escapeHtml(r.title)}</div>
-            <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${escapeHtml(r.resp)}</div>
-            <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">${escapeHtml(r.formation)} → ${escapeHtml(r.module)} → ${escapeHtml(r.bloc)}</div>
-          </div>
-          <div class="status-center"><span class="label">${escapeHtml(statusLabel(r.status))}</span></div>
-          <div style="font-size:0.85rem; text-align:center">Échéance:<br><b>${escapeHtml(r.endStr)}</b></div>
+  <div class="task-container"
+       style="cursor:pointer"
+       onclick="if('${escId(r.taskId)}'){ openJumpModal('${escId(r.formationId)}','${escId(r.moduleId)}','${escId(r.blocId)}','${escId(r.taskId)}'); }">
+    <div class="task-bandeau ${r.dark ? "text-dark" : ""}"
+         style="background:${r.color}; grid-template-columns: 1.8fr 0.9fr 1fr;">
+      <div>
+        <div style="font-size: 1.05rem">${escapeHtml(r.title)}</div>
+        <div style="font-size: 0.8rem; opacity: 0.9">Resp: ${escapeHtml(r.resp)}</div>
+        <div style="font-size: 0.75rem; font-weight: normal; margin-top:3px">
+          ${escapeHtml(r.formation)} → ${escapeHtml(r.module)} → ${escapeHtml(r.bloc)}
         </div>
       </div>
-    `).join("") : `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche pour ces filtres</div>`;
+      <div class="status-center">
+        <span class="label">${escapeHtml(statusLabel(r.status))}</span>
+      </div>
+      <div style="font-size:0.85rem; text-align:center">
+        Échéance:<br><b>${escapeHtml(r.endStr)}</b>
+      </div>
+    </div>
+  </div>
+`).join("") : `<div style="text-align:center; padding:30px; opacity:0.5">Aucune tâche pour ces filtres</div>`;
   };
 
   // ------------------ MODALS & NAV ------------------
