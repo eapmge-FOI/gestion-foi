@@ -1199,14 +1199,20 @@
         if (resp !== "all" && (t.resp || "") !== resp) return;
         if (stat !== "all" && info.id !== stat) return;
 
-        rows.push({
-          rank: info.rank, color: info.color, dark: info.dark, status: info.id,
-          startStr: info.startStr, endStr: info.endStr,
-          title: t.title || "Sans titre", resp: t.resp || "?",
-          formation: ctx.formation?.name || "—",
-          module: ctx.module?.name || "—",
-          bloc: b.name || "—",
-        });
+rows.push({
+  rank: info.rank, color: info.color, dark: info.dark, status: info.id,
+  startStr: info.startStr, endStr: info.endStr,
+  title: t.title || "Sans titre", resp: t.resp || "?",
+  formation: ctx.formation?.name || "—",
+  module: ctx.module?.name || "—",
+  bloc: b.name || "—",
+
+  // ✅ AJOUT POUR NAVIGATION
+  formationId: ctx.formation?.id,
+  moduleId: ctx.module?.id,
+  blocId: b.id,
+  taskId: t.id
+});
       });
     });
 
@@ -1216,7 +1222,9 @@
     globalBox.classList.remove("hidden");
 
     globalBox.innerHTML = rows.length ? rows.map(r => `
-      <div class="task-container">
+      <div class="task-container"
+     style="cursor:pointer"
+     onclick="if('${escId(r.taskId)}'){ openJumpModal('${escId(r.formationId)}','${escId(r.moduleId)}','${escId(r.blocId)}','${escId(r.taskId)}'); }"
         <div class="task-bandeau ${r.dark ? "text-dark" : ""}" style="background:${r.color}; grid-template-columns: 1.8fr 0.9fr 1fr;">
           <div>
             <div style="font-size: 1.05rem">${escapeHtml(r.title)}</div>
@@ -1806,5 +1814,6 @@
 </script>
 </body>
 </html>
+
 
 
