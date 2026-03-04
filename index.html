@@ -1875,6 +1875,31 @@ function replaceByTarget(filtered, target) {
   state.settings.responsibles = normalizeRespList([...currResp, ...impResp].join(","));
 }
 
+function applyTargetFlags(filtered, target) {
+  if (!filtered || !Array.isArray(filtered.formations)) return filtered;
+
+  // On force le type selon la cible choisie
+  if (target === "templates") {
+    filtered.formations = filtered.formations.map(f => ({
+      ...f,
+      isTemplate: true,
+      start: "",   // un modèle n’a pas de dates
+      end: ""
+    }));
+  }
+
+  if (target === "sessions") {
+    filtered.formations = filtered.formations.map(f => ({
+      ...f,
+      isTemplate: false
+      // on ne touche pas start/end
+    }));
+  }
+
+  // target === "all" => on ne force rien
+  return filtered;
+}
+
 window.importBackupJSON = async (file, target = "sessions") => {
   if (!file) return;
 
@@ -1888,7 +1913,8 @@ window.importBackupJSON = async (file, target = "sessions") => {
     }
 
     const root = data.appState ? data.appState : data;
-    const filtered = filterStateByTarget(root, target);
+    let filtered = filterStateByTarget(root, target);
+filtered = applyTargetFlags(filtered, target);
 
     const mode = (prompt(
       "Mode d'import ?\n" +
