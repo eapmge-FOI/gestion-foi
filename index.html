@@ -230,7 +230,14 @@
             box-shadow:0 10px 30px rgba(0,0,0,.35);
             z-index:250;">
             <button class="btn" style="width:100%; background:#10b981" onclick="exportBackupJSON(); closeSettingsMenu()">💾 Backup JSON</button>
-            <button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9" onclick="triggerImport(); closeSettingsMenu()">📥 Import JSON</button>
+            <button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9"
+        onclick="triggerImport('sessions'); closeSettingsMenu()">📥 Import JSON (Sessions)</button>
+
+<button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9"
+        onclick="triggerImport('templates'); closeSettingsMenu()">📥 Import JSON (Modèles)</button>
+
+<button class="btn" style="width:100%; margin-top:8px; background:#0ea5e9"
+        onclick="triggerImport('all'); closeSettingsMenu()">📥 Import JSON (Tout)</button>
             <button class="btn" style="width:100%; margin-top:8px; background:#475569" onclick="openRespSettings(); closeSettingsMenu()">👤 Responsables</button>
         <button class="btn" style="width:100%; margin-top:8px; background:#475569"
         onclick="showView('templatesListView'); closeSettingsMenu()">📂 Modèles</button>
@@ -242,7 +249,8 @@
           </div>
         </div>
 
-        <input id="importFile" type="file" accept="application/json" class="hidden" onchange="importBackupJSON(this.files[0])">
+        <input id="importFile" type="file" accept="application/json" class="hidden"
+       onchange="importBackupJSON(this.files[0], this.dataset.target || 'sessions')">
 
         <button class="btn" style="background:var(--st-alert)" onclick="handleLogout()">🚪</button>
       </div>
@@ -1695,12 +1703,14 @@ window.deleteForm = (id) => {
     URL.revokeObjectURL(url);
   };
 
-  window.triggerImport = () => {
-    const input = document.getElementById("importFile");
-    if (!input) return alert("Input fichier introuvable (#importFile).");
-    input.value = "";
-    input.click();
-  };
+window.triggerImport = (target = "sessions") => {
+  const input = document.getElementById("importFile");
+  if (!input) return alert("Input fichier introuvable (#importFile).");
+
+  input.dataset.target = target;   // ✅ on stocke la cible ici
+  input.value = "";
+  input.click();
+};
 
   function isValidBackupShape(data) {
     const root = data?.appState ? data.appState : data;
@@ -1805,8 +1815,67 @@ function mergeImportedState(root) {
   });
 }
 
-window.importBackupJSON = async (file) => {
-  if (!file) return;
+function filterStateByTarget(root, target) {
+  // target: "sessions" | "templates" | "all"
+  const keep = (f) => {
+    if (target === "all") return true;
+    if (target === "sessions") return !f.isTemplate;
+    if (target === "templates") return !!f.isTemplate;
+    return true;
+  };
+
+  const formations = (root.formations || []).filter(keep);
+  const formIds = new Set(formations.map(f => String(f.id)));
+
+  const modules = (root.modules || []).filter(m => formIds.has(String(m.formationId)));
+  const modIds = new Set(modules.map(m => String(m.id)));
+
+  const blocs = (root.blocs || []).filter(b => modIds.has(String(b.moduleId)));
+
+  return { formations, modules, blocs, settings: root.settings || {} };
+}
+
+function replaceByTarget(filtered, target) {
+  // On remplace seulement la partie ciblée dans la DB actuelle
+  if (target === "all") {
+    state.formations = filtered.formations || [];
+    state.modules = filtered.modules || [];
+    state.blocs = filtered.blocs || [];
+    state.settings = filtered.settings || state.settings || { responsibles: [] };
+    return;
+  }
+
+  const keepFormation = (f) => {
+    if (target === "sessions") return !!f.isTemplate;     // on garde les modèles
+    if (target === "templates") return !f.isTemplate;     // on garde les sessions
+    return true;
+  };
+
+  // 1) formations
+  const keptFormations = (state.formations || []).filter(keepFormation);
+  state.formations = [...keptFormations, ...(filtered.formations || [])];
+
+  const keptFormIds = new Set(keptFormations.map(f => String(f.id)));
+
+  // 2) modules
+  // on garde les modules rattachés aux formations conservées
+  const keptModules = (state.modules || []).filter(m => keptFormIds.has(String(m.formationId)));
+  state.modules = [...keptModules, ...(filtered.modules || [])];
+
+  const keptModIds = new Set(keptModules.map(m => String(m.id)));
+
+  // 3) blocs
+  const keptBlocs = (state.blocs || []).filter(b => keptModIds.has(String(b.moduleId)));
+  state.blocs = [...keptBlocs, ...(filtered.blocs || [])];
+
+  // 4) settings (option: fusion au lieu de remplacer)
+  const currResp = Array.isArray(state.settings?.responsibles) ? state.settings.responsibles : [];
+  const impResp  = Array.isArray(filtered.settings?.responsibles) ? filtered.settings.responsibles : [];
+  state.settings = state.settings || {};
+  state.settings.responsibles = normalizeRespList([...currResp, ...impResp].join(","));
+}
+
+window.importBackupJSON = async (file, target = "sessions") => {  if (!file) return;
   try {
     const text = await file.text();
     const data = JSON.parse(text);
@@ -1817,6 +1886,7 @@ window.importBackupJSON = async (file) => {
     }
 
     const root = data.appState ? data.appState : data;
+const filtered = filterStateByTarget(root, target);
 
     const mode = (prompt(
       "Mode d'import ?\n" +
@@ -1832,15 +1902,18 @@ window.importBackupJSON = async (file) => {
       return;
     }
 
-    if (mode === "R") {
-      const ok = confirm("⚠️ Import REMPLACER : cela va EFFACER et remplacer toutes les données. Continuer ?");
-      if (!ok) return;
+if (mode === "R") {
+  const ok = confirm(`⚠️ Import REMPLACER (${target}) : cela va remplacer les données ciblées. Continuer ?`);
+  if (!ok) return;
 
-      const pass = (prompt("Confirmation requise : saisir le mot de passe pour EFFACER (4 chiffres).") || "").trim();
-      if (pass !== "1602") {
-        alert("Mot de passe incorrect. Import annulé.");
-        return;
-      }
+  const pass = (prompt("Confirmation requise : saisir le mot de passe pour EFFACER (4 chiffres).") || "").trim();
+  if (pass !== "1602") {
+    alert("Mot de passe incorrect. Import annulé.");
+    return;
+  }
+
+  replaceByTarget(filtered, target);
+}
 
       state.formations = root.formations || [];
       state.modules = root.modules || [];
@@ -1851,7 +1924,7 @@ window.importBackupJSON = async (file) => {
       const ok = confirm("Import AJOUTER : cela va fusionner le contenu importé avec l'existant. Continuer ?");
       if (!ok) return;
 
-      mergeImportedState(root);
+      mergeImportedState(filtered);
     }
 
     state.currentFormationId = null;
@@ -1994,6 +2067,7 @@ document.getElementById("adminBadge")?.classList.toggle("hidden", !isAdminMode()
 </script>
 </body>
 </html>
+
 
 
 
