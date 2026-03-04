@@ -1875,7 +1875,9 @@ function replaceByTarget(filtered, target) {
   state.settings.responsibles = normalizeRespList([...currResp, ...impResp].join(","));
 }
 
-window.importBackupJSON = async (file, target = "sessions") => {  if (!file) return;
+window.importBackupJSON = async (file, target = "sessions") => {
+  if (!file) return;
+
   try {
     const text = await file.text();
     const data = JSON.parse(text);
@@ -1886,11 +1888,11 @@ window.importBackupJSON = async (file, target = "sessions") => {  if (!file) ret
     }
 
     const root = data.appState ? data.appState : data;
-const filtered = filterStateByTarget(root, target);
+    const filtered = filterStateByTarget(root, target);
 
     const mode = (prompt(
       "Mode d'import ?\n" +
-      "- taper R pour REMPLACER (efface tout puis importe)\n" +
+      "- taper R pour REMPLACER (remplace la cible)\n" +
       "- taper A pour AJOUTER (fusionne avec l'existant)\n" +
       "- Annuler pour abandonner",
       "A"
@@ -1902,26 +1904,20 @@ const filtered = filterStateByTarget(root, target);
       return;
     }
 
-if (mode === "R") {
-  const ok = confirm(`⚠️ Import REMPLACER (${target}) : cela va remplacer les données ciblées. Continuer ?`);
-  if (!ok) return;
+    if (mode === "R") {
+      const ok = confirm(`⚠️ Import REMPLACER (${target}) : cela va remplacer uniquement la cible. Continuer ?`);
+      if (!ok) return;
 
-  const pass = (prompt("Confirmation requise : saisir le mot de passe pour EFFACER (4 chiffres).") || "").trim();
-  if (pass !== "1602") {
-    alert("Mot de passe incorrect. Import annulé.");
-    return;
-  }
+      const pass = (prompt("Confirmation requise : saisir le mot de passe pour EFFACER (4 chiffres).") || "").trim();
+      if (pass !== "1602") {
+        alert("Mot de passe incorrect. Import annulé.");
+        return;
+      }
 
-  replaceByTarget(filtered, target);
-}
+      replaceByTarget(filtered, target);
 
-      state.formations = root.formations || [];
-      state.modules = root.modules || [];
-      state.blocs = root.blocs || [];
-      state.settings = root.settings || state.settings || { responsibles: [] };
-
-    } else if (mode === "A") {
-      const ok = confirm("Import AJOUTER : cela va fusionner le contenu importé avec l'existant. Continuer ?");
+    } else {
+      const ok = confirm(`Import AJOUTER (${target}) : cela va fusionner uniquement la cible avec l'existant. Continuer ?`);
       if (!ok) return;
 
       mergeImportedState(filtered);
@@ -1936,6 +1932,7 @@ if (mode === "R") {
     await push();
     showView("formationsView");
     alert("✅ Import terminé.");
+
   } catch (e) {
     console.error(e);
     alert("Erreur import : " + (e?.message || e));
